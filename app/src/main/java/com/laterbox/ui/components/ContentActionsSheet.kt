@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -24,9 +26,8 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Launch
 import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Unarchive
@@ -61,6 +62,7 @@ fun ContentActionsSheet(
     onToggleArchive: () -> Unit,
     onEditNotes: () -> Unit,
     onMoveToTrash: () -> Unit,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     onRestore: (() -> Unit)? = null,
     onPermanentDelete: (() -> Unit)? = null
 ) {
@@ -100,7 +102,7 @@ fun ContentActionsSheet(
 
             if (!item.isDeleted) {
                 ActionItemRow(
-                    icon = Icons.Default.Launch,
+                    icon = Icons.AutoMirrored.Filled.Launch,
                     label = "Open in Later Box",
                     onClick = {
                         onDismiss()
@@ -118,13 +120,25 @@ fun ContentActionsSheet(
                 )
 
                 ActionItemRow(
-                    icon = Icons.Default.PlaylistAdd,
+                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
                     label = "Add to Playlists…",
                     onClick = {
                         onDismiss()
                         onAddToPlaylist()
                     }
                 )
+
+                if (onRemoveFromPlaylist != null) {
+                    ActionItemRow(
+                        icon = Icons.Default.RemoveCircleOutline,
+                        label = "Remove from this Playlist",
+                        tint = extended.amberAccent,
+                        onClick = {
+                            onDismiss()
+                            onRemoveFromPlaylist()
+                        }
+                    )
+                }
 
                 ActionItemRow(
                     icon = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

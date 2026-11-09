@@ -23,48 +23,54 @@ data class ExtendedColors(
     val amberAccentSubtle: Color,
     val warmError: Color,
     val textSecondary: Color,
-    val cardBackground: Color
+    val cardBackground: Color,
+    val pillInactive: Color,
+    val pillActive: Color,
+    val gridListActive: Color
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
         border = WarmBorderLight,
-        amberAccent = AmberAccent,
-        amberAccentSubtle = AmberAccentSubtleLight,
+        amberAccent = WarmCaramelAccent,
+        amberAccentSubtle = WarmCaramelSubtle,
         warmError = WarmTerracotta,
         textSecondary = WarmTextSecondaryLight,
-        cardBackground = WarmSurfaceLight
+        cardBackground = WarmCardBackground,
+        pillInactive = PillInactiveBackground,
+        pillActive = PillActiveBackground,
+        gridListActive = GridListActiveBackground
     )
 }
 
 private val LightColorScheme = lightColorScheme(
-    primary = AmberAccent,
-    onPrimary = NeutralWhite,
-    primaryContainer = AmberAccentSubtleLight,
-    onPrimaryContainer = AmberAccent,
+    primary = WarmCaramelAccent,
+    onPrimary = Color(0xFF1C1A17),
+    primaryContainer = WarmCaramelSubtle,
+    onPrimaryContainer = WarmCaramelAccent,
     secondary = WarmTextSecondaryLight,
-    onSecondary = NeutralWhite,
-    secondaryContainer = WarmSurfaceVariantLight,
+    onSecondary = Color.White,
+    secondaryContainer = PillInactiveBackground,
     onSecondaryContainer = WarmTextPrimaryLight,
-    background = WarmBackgroundLight,
+    background = WarmCreamBackground,
     onBackground = WarmTextPrimaryLight,
-    surface = WarmSurfaceLight,
+    surface = WarmCardBackground,
     onSurface = WarmTextPrimaryLight,
-    surfaceVariant = WarmSurfaceVariantLight,
+    surfaceVariant = PillInactiveBackground,
     onSurfaceVariant = WarmTextSecondaryLight,
     outline = WarmBorderLight,
     outlineVariant = WarmBorderLight,
     error = WarmTerracotta,
-    onError = NeutralWhite
+    onError = Color.White
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AmberAccentLight,
-    onPrimary = CharcoalBackgroundDark,
-    primaryContainer = AmberAccentSubtleDark,
-    onPrimaryContainer = AmberAccentLight,
+    primary = WarmCaramelAccentDark,
+    onPrimary = Color(0xFF161513),
+    primaryContainer = CharcoalSurfaceVariantDark,
+    onPrimaryContainer = WarmCaramelAccentDark,
     secondary = WarmTextSecondaryDark,
-    onSecondary = NeutralWhite,
+    onSecondary = Color.White,
     secondaryContainer = CharcoalSurfaceVariantDark,
     onSecondaryContainer = WarmTextPrimaryDark,
     background = CharcoalBackgroundDark,
@@ -76,7 +82,7 @@ private val DarkColorScheme = darkColorScheme(
     outline = CharcoalBorderDark,
     outlineVariant = CharcoalBorderDark,
     error = WarmTerracottaDark,
-    onError = NeutralWhite
+    onError = Color.White
 )
 
 @Composable
@@ -95,20 +101,26 @@ fun LaterBoxTheme(
     val extendedColors = if (darkTheme) {
         ExtendedColors(
             border = CharcoalBorderDark,
-            amberAccent = AmberAccentLight,
-            amberAccentSubtle = AmberAccentSubtleDark,
+            amberAccent = WarmCaramelAccentDark,
+            amberAccentSubtle = CharcoalSurfaceVariantDark,
             warmError = WarmTerracottaDark,
             textSecondary = WarmTextSecondaryDark,
-            cardBackground = CharcoalSurfaceDark
+            cardBackground = CharcoalSurfaceDark,
+            pillInactive = CharcoalSurfaceVariantDark,
+            pillActive = Color.White,
+            gridListActive = CharcoalSurfaceVariantDark
         )
     } else {
         ExtendedColors(
             border = WarmBorderLight,
-            amberAccent = AmberAccent,
-            amberAccentSubtle = AmberAccentSubtleLight,
+            amberAccent = WarmCaramelAccent,
+            amberAccentSubtle = WarmCaramelSubtle,
             warmError = WarmTerracotta,
             textSecondary = WarmTextSecondaryLight,
-            cardBackground = WarmSurfaceLight
+            cardBackground = WarmCardBackground,
+            pillInactive = PillInactiveBackground,
+            pillActive = PillActiveBackground,
+            gridListActive = GridListActiveBackground
         )
     }
 
@@ -117,8 +129,6 @@ fun LaterBoxTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = Color.Transparent.toArgb()
-                window.navigationBarColor = Color.Transparent.toArgb()
                 val controller = WindowCompat.getInsetsController(window, view)
                 controller.isAppearanceLightStatusBars = !darkTheme
                 controller.isAppearanceLightNavigationBars = !darkTheme

@@ -148,8 +148,11 @@ fun PlaylistDetailScreen(
             onToggleFavorite = { viewModel.toggleFavorite(item) },
             onToggleArchive = {},
             onEditNotes = {},
-            onMoveToTrash = {
+            onRemoveFromPlaylist = {
                 viewModel.removeItemFromPlaylist(item.id)
+            },
+            onMoveToTrash = {
+                viewModel.moveToTrash(item.id)
             }
         )
     }

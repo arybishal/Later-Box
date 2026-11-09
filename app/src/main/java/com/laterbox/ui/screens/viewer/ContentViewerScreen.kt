@@ -14,16 +14,23 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,29 +43,36 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ContentType
 import com.laterbox.ui.components.openInExternalApp
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import kotlinx.coroutines.launch
 import java.io.File
 
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +83,22 @@ fun ContentViewerScreen(
 ) {
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Record last opened timestamp immediately
+    LaunchedEffect(item.id) {
+        LaterBoxApp.instance.contentRepository.updateLastOpened(item.id)
+    }
+
+    val onProgressUpdate: (Float) -> Unit = { progress ->
+        scope.launch {
+            LaterBoxApp.instance.contentRepository.updateReadProgress(item.id, progress)
+        }
+    }
+
+    val isSocialPlatform = item.sourceDomain?.let { d ->
+        d.contains("instagram.com") || d.contains("tiktok.com") || d.contains("twitter.com") || d.contains("x.com")
+    } ?: false
 
     Scaffold(
         topBar = {
@@ -104,7 +134,7 @@ fun ContentViewerScreen(
                     IconButton(onClick = { openInExternalApp(context, item.url) }) {
                         Icon(
                             imageVector = Icons.Default.OpenInBrowser,
-                            contentDescription = "Open in Browser",
+                            contentDescription = "Open in Original App",
                             tint = extended.amberAccent
                         )
                     }
@@ -130,29 +160,67 @@ fun ContentViewerScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                // If it is a local video or direct stream
-                item.contentType == ContentType.VIDEO && (item.localMediaPath != null || item.url.endsWith(".mp4")) -> {
-                    VideoPlayerView(
-                        mediaUri = item.localMediaPath ?: item.url
+            // Notice banner for social sites that prefer native app playback
+            if (isSocialPlatform) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(extended.amberAccentSubtle)
+                        .clickable { openInExternalApp(context, item.url) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = extended.amberAccent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "For full interactive comments and video, tap to open in the app.",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        tint = extended.amberAccent,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
-                // If it is an image
-                item.contentType == ContentType.IMAGE -> {
-                    ImageViewerView(
-                        model = item.localMediaPath?.let { File(it) } ?: item.url
-                    )
-                }
-                // Otherwise load in-app web reader
-                else -> {
-                    InAppWebReader(
-                        url = item.url
-                    )
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    // Local or streamable video
+                    item.contentType == ContentType.VIDEO && (item.localMediaPath != null || item.url.endsWith(".mp4")) -> {
+                        VideoPlayerView(
+                            mediaUri = item.localMediaPath ?: item.url,
+                            initialProgress = item.readProgress,
+                            onProgressUpdate = onProgressUpdate
+                        )
+                    }
+                    // Image view
+                    item.contentType == ContentType.IMAGE -> {
+                        ImageViewerView(
+                            model = item.localMediaPath?.let { File(it) } ?: item.url
+                        )
+                    }
+                    // In-app web reader
+                    else -> {
+                        InAppWebReader(
+                            url = item.url,
+                            initialProgress = item.readProgress,
+                            onProgressUpdate = onProgressUpdate
+                        )
+                    }
                 }
             }
         }
@@ -161,11 +229,16 @@ fun ContentViewerScreen(
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun InAppWebReader(url: String) {
+fun InAppWebReader(
+    url: String,
+    initialProgress: Float,
+    onProgressUpdate: (Float) -> Unit
+) {
     val extended = LaterBoxThemeTokens.extended
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    var hasRestoredScroll by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         if (isLoading && progress < 1f) {
@@ -210,6 +283,15 @@ fun InAppWebReader(url: String) {
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             isLoading = false
+                            if (!hasRestoredScroll && initialProgress > 0f) {
+                                postDelayed({
+                                    val maxScroll = (contentHeight * scale - height).toInt()
+                                    if (maxScroll > 0) {
+                                        scrollTo(0, (initialProgress * maxScroll).toInt())
+                                    }
+                                    hasRestoredScroll = true
+                                }, 300)
+                            }
                         }
 
                         override fun shouldOverrideUrlLoading(
@@ -217,6 +299,14 @@ fun InAppWebReader(url: String) {
                             request: WebResourceRequest?
                         ): Boolean {
                             return false
+                        }
+                    }
+
+                    setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                        val maxScroll = (contentHeight * scale - height).toInt()
+                        if (maxScroll > 0) {
+                            val currentProgress = (scrollY.toFloat() / maxScroll).coerceIn(0f, 1f)
+                            onProgressUpdate(currentProgress)
                         }
                     }
 
@@ -238,19 +328,43 @@ fun InAppWebReader(url: String) {
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayerView(mediaUri: String) {
+fun VideoPlayerView(
+    mediaUri: String,
+    initialProgress: Float,
+    onProgressUpdate: (Float) -> Unit
+) {
     val context = LocalContext.current
+    var hasRestoredSeek by remember { mutableStateOf(false) }
+
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             val uri = if (mediaUri.startsWith("http")) Uri.parse(mediaUri) else Uri.fromFile(File(mediaUri))
             setMediaItem(MediaItem.fromUri(uri))
             prepare()
             playWhenReady = true
+
+            addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_READY && !hasRestoredSeek && initialProgress > 0f) {
+                        val duration = this@apply.duration
+                        if (duration > 0) {
+                            seekTo((initialProgress * duration).toLong())
+                        }
+                        hasRestoredSeek = true
+                    }
+                }
+            })
         }
     }
 
     DisposableEffect(Unit) {
         onDispose {
+            val duration = exoPlayer.duration
+            val position = exoPlayer.currentPosition
+            if (duration > 0) {
+                val progress = (position.toFloat() / duration).coerceIn(0f, 1f)
+                onProgressUpdate(progress)
+            }
             exoPlayer.release()
         }
     }

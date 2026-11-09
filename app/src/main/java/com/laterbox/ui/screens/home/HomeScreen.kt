@@ -14,21 +14,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.PlayCircleOutline
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,20 +37,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
 import com.laterbox.ui.components.ContentActionsSheet
-import com.laterbox.ui.components.ContentCardGrid
 import com.laterbox.ui.components.ContentCardList
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
-import com.laterbox.ui.components.EmptyStateView
-import com.laterbox.ui.components.LaterBoxHeader
-import com.laterbox.ui.components.LaterBoxSearchBar
+import com.laterbox.ui.components.EmptyDashedCard
 import com.laterbox.ui.components.PlaylistCard
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import java.util.Calendar
@@ -73,6 +68,8 @@ fun getGreeting(): String {
 @Composable
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToLibrary: () -> Unit,
+    onNavigateToSearch: () -> Unit,
     onNavigateToPlaylist: (Long) -> Unit,
     onOpenItem: (SavedItemEntity) -> Unit,
     viewModel: HomeViewModel = viewModel()
@@ -81,8 +78,6 @@ fun HomeScreen(
     val recentItems by viewModel.recentItems.collectAsState()
     val continueItems by viewModel.continueItems.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -93,233 +88,211 @@ fun HomeScreen(
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
-        topBar = {
-            LaterBoxHeader(
-                greeting = getGreeting(),
-                subtitle = "Later Box • Personal Vault",
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = extended.amberAccent,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Save Content",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 88.dp)
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 100.dp)
         ) {
-            // Global Search Field
+            // Header: "Save now. Enjoy later." + "Good evening" + Avatar Circle "L"
             item {
-                LaterBoxSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { viewModel.onSearchQueryChanged(it) },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(bottom = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Save now. Enjoy later.",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                            color = extended.textSecondary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = getGreeting(),
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 32.sp,
+                            lineHeight = 38.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
+                    // Avatar Circle "L" (Clickable to open Settings)
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, extended.border, CircleShape)
+                            .background(extended.cardBackground)
+                            .clickable { onNavigateToSettings() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "L",
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
             }
 
-            // Search Active View
-            if (searchQuery.isNotBlank()) {
-                item {
+            // Search Bar: "Search your library"
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                        .background(extended.cardBackground)
+                        .clickable { onNavigateToSearch() }
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
                     Text(
-                        text = "Search Results (${searchResults.size})",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                        text = "Search your library",
+                        fontSize = 15.sp,
+                        color = extended.textSecondary
+                    )
+                }
+                Spacer(modifier = Modifier.height(28.dp))
+            }
+
+            // Section: Your playlists
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your playlists",
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Button(
+                        onClick = { showCreatePlaylistDialog = true },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = extended.amberAccent,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "New",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Playlists are optional. Saves without one stay in your ",
+                        fontSize = 13.sp,
+                        color = extended.textSecondary
+                    )
+                    Text(
+                        text = "Inbox.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            val inbox = playlists.find { it.isDefaultInbox }
+                            if (inbox != null) onNavigateToPlaylist(inbox.id)
+                            else onNavigateToLibrary()
+                        }
                     )
                 }
 
-                if (searchResults.isEmpty()) {
-                    item {
-                        EmptyStateView(
-                            icon = Icons.Default.BookmarkBorder,
-                            title = "No results found",
-                            description = "No saved content matches \"$searchQuery\"."
-                        )
-                    }
-                } else {
-                    items(searchResults) { item ->
-                        ContentCardList(
-                            item = item,
-                            onClick = { onOpenItem(item) },
-                            onFavoriteToggle = { viewModel.toggleFavorite(item) },
-                            onMenuClick = { selectedItemForActions = item },
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            } else {
-                // Continue Watching / Reading Section (if available)
-                if (continueItems.isNotEmpty()) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayCircleOutline,
-                                contentDescription = null,
-                                tint = extended.amberAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Continue",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
 
-                    item {
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(bottom = 18.dp)
-                        ) {
-                            items(continueItems) { item ->
-                                ContentCardGrid(
-                                    item = item,
-                                    onClick = { onOpenItem(item) },
-                                    onFavoriteToggle = { viewModel.toggleFavorite(item) },
-                                    onMenuClick = { selectedItemForActions = item },
-                                    modifier = Modifier.width(220.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Your Playlists Section
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Your Playlists",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "+ New",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = extended.amberAccent,
-                            modifier = Modifier
-                                .clickable { showCreatePlaylistDialog = true }
-                                .padding(4.dp)
-                        )
-                    }
-                }
-
+            // Playlists list (if more than inbox)
+            if (playlists.isNotEmpty()) {
                 item {
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 22.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(bottom = 28.dp)
                     ) {
-                        // Quick Add Playlist Card
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .width(140.dp)
-                                    .height(130.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .border(1.dp, extended.border, RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .clickable { showCreatePlaylistDialog = true }
-                                    .padding(14.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                        tint = extended.amberAccent,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "New Playlist",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = extended.amberAccent
-                                    )
-                                }
-                            }
-                        }
-
                         items(playlists) { playlist ->
                             PlaylistCard(
                                 playlist = playlist,
                                 onClick = { onNavigateToPlaylist(playlist.id) },
                                 modifier = Modifier
-                                    .width(150.dp)
-                                    .height(130.dp)
+                                    .width(140.dp)
+                                    .height(115.dp)
                             )
                         }
                     }
                 }
-
-                // Recent Saves Section
+            } else {
                 item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            // Section: Recent saves
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Recent Saves",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                        text = "Recent saves",
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Text(
+                        text = "Library",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier
+                            .clickable { onNavigateToLibrary() }
+                            .padding(4.dp)
                     )
                 }
 
-                if (recentItems.isEmpty()) {
-                    item {
-                        EmptyStateView(
-                            icon = Icons.Default.BookmarkBorder,
-                            title = "Your box is empty",
-                            description = "Share content from any app (YouTube, Instagram, Browser) to save it for later.",
-                            actionLabel = "Add Link Manually",
-                            onActionClick = { showAddDialog = true }
-                        )
-                    }
-                } else {
-                    items(recentItems) { item ->
-                        ContentCardList(
-                            item = item,
-                            onClick = { onOpenItem(item) },
-                            onFavoriteToggle = { viewModel.toggleFavorite(item) },
-                            onMenuClick = { selectedItemForActions = item },
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                        )
-                    }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+
+            // Empty state card or recent items
+            if (recentItems.isEmpty()) {
+                item {
+                    EmptyDashedCard(
+                        title = "Nothing saved yet",
+                        description = "Paste a link from Instagram, YouTube, a browser, or anywhere else. Later Box keeps the original address even if the preview cannot be read.",
+                        buttonLabel = "Save something",
+                        onButtonClick = { showAddDialog = true }
+                    )
+                }
+            } else {
+                items(recentItems) { item ->
+                    ContentCardList(
+                        item = item,
+                        onClick = { onOpenItem(item) },
+                        onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                        onMenuClick = { selectedItemForActions = item },
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
             }
         }
@@ -376,25 +349,41 @@ fun HomeScreen(
 
     // Add to Playlist Dialog
     selectedItemForPlaylists?.let { item ->
-        AddToPlaylistDialog(
-            allPlaylists = playlists.map { p ->
-                com.laterbox.data.local.entity.PlaylistEntity(
-                    id = p.id,
-                    name = p.name,
-                    description = p.description,
-                    iconName = p.iconName,
-                    isDefaultInbox = p.isDefaultInbox
-                )
-            },
-            initiallySelectedIds = emptyList(),
+        HomePlaylistDialogHost(
+            item = item,
+            viewModel = viewModel,
+            playlists = playlists,
             onDismiss = { selectedItemForPlaylists = null },
-            onSavePlaylists = { pIds ->
-                viewModel.updatePlaylistsForItem(item.id, pIds)
-                selectedItemForPlaylists = null
-            },
-            onCreateNewPlaylist = {
-                showCreatePlaylistDialog = true
-            }
+            onCreateNewPlaylist = { showCreatePlaylistDialog = true }
         )
     }
+}
+
+@Composable
+private fun HomePlaylistDialogHost(
+    item: SavedItemEntity,
+    viewModel: HomeViewModel,
+    playlists: List<com.laterbox.data.local.relation.PlaylistWithCount>,
+    onDismiss: () -> Unit,
+    onCreateNewPlaylist: () -> Unit
+) {
+    val currentPlaylists by viewModel.getPlaylistsForItem(item.id).collectAsState(initial = emptyList())
+    AddToPlaylistDialog(
+        allPlaylists = playlists.map { p ->
+            com.laterbox.data.local.entity.PlaylistEntity(
+                id = p.id,
+                name = p.name,
+                description = p.description,
+                iconName = p.iconName,
+                isDefaultInbox = p.isDefaultInbox
+            )
+        },
+        initiallySelectedIds = currentPlaylists.map { it.id },
+        onDismiss = onDismiss,
+        onSavePlaylists = { pIds ->
+            viewModel.updatePlaylistsForItem(item.id, pIds)
+            onDismiss()
+        },
+        onCreateNewPlaylist = onCreateNewPlaylist
+    )
 }

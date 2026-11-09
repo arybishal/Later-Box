@@ -5,6 +5,7 @@ import com.laterbox.data.local.dao.SavedItemDao
 import com.laterbox.data.local.entity.ItemPlaylistCrossRef
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.local.relation.SavedItemWithPlaylists
+import com.laterbox.data.model.ContentType
 import com.laterbox.data.model.SortOrder
 import com.laterbox.data.network.MetadataExtractor
 import com.laterbox.data.storage.MediaStorageManager
@@ -47,20 +48,53 @@ class ContentRepository(
 
     fun getItemWithPlaylists(id: Long): Flow<SavedItemWithPlaylists?> = savedItemDao.getItemWithPlaylists(id)
 
+    suspend fun saveContent(
+        url: String,
+        title: String? = null,
+        notes: String? = null,
+        playlistIds: List<Long> = emptyList()
+    ): Long {
+        val cleanUrl = url.trim()
+        val cleanTitle = title?.trim()?.ifEmpty { null } ?: cleanUrl
+        val item = SavedItemEntity(
+            url = cleanUrl,
+            title = cleanTitle,
+            notes = notes?.trim()?.ifEmpty { null },
+            contentType = ContentType.fromMimeOrUrl(null, cleanUrl)
+        )
+        return saveItem(item, playlistIds, fetchMetadataAsync = true)
+    }
+
     suspend fun saveItem(
         item: SavedItemEntity,
         playlistIds: List<Long> = emptyList(),
         fetchMetadataAsync: Boolean = true
     ): Long {
-        val insertedId = savedItemDao.insertItem(item)
-
-        // If no playlists selected, assign to Inbox
+        // Resolve target playlists (default to Inbox if none selected)
         val finalPlaylists = if (playlistIds.isEmpty()) {
             val inbox = playlistDao.getDefaultInbox()
             if (inbox != null) listOf(inbox.id) else emptyList()
         } else {
             playlistIds
         }
+
+        // Duplicate URL Detection
+        if (item.url.startsWith("http://") || item.url.startsWith("https://")) {
+            val existing = savedItemDao.getItemByUrl(item.url)
+            if (existing != null) {
+                // Link existing item to newly selected playlists
+                for (pId in finalPlaylists) {
+                    playlistDao.insertCrossRef(ItemPlaylistCrossRef(contentId = existing.id, playlistId = pId))
+                }
+                if (!item.notes.isNullOrBlank()) {
+                    val mergedNotes = if (existing.notes.isNullOrBlank()) item.notes else "${existing.notes}\n${item.notes}"
+                    savedItemDao.updateNotes(existing.id, mergedNotes)
+                }
+                return existing.id
+            }
+        }
+
+        val insertedId = savedItemDao.insertItem(item)
 
         for (pId in finalPlaylists) {
             playlistDao.insertCrossRef(ItemPlaylistCrossRef(contentId = insertedId, playlistId = pId))
@@ -72,11 +106,19 @@ class ContentRepository(
                     val meta = MetadataExtractor.extractMetadata(item.url)
                     val current = savedItemDao.getItemById(insertedId)
                     if (current != null) {
+                        val isGenericTitle = current.title == current.url ||
+                                current.title.isBlank() ||
+                                current.title.equals(current.sourceDomain, ignoreCase = true) ||
+                                current.title.equals(meta.sourceDomain, ignoreCase = true) ||
+                                current.title.equals(meta.sourceApp, ignoreCase = true) ||
+                                current.title.equals("Saved Link", ignoreCase = true)
+
                         val updated = current.copy(
-                            title = if (current.title == current.url || current.title.isBlank()) meta.title else current.title,
+                            title = if (isGenericTitle) meta.title else current.title,
                             description = current.description ?: meta.description,
                             thumbnailUrl = current.thumbnailUrl ?: meta.thumbnailUrl,
                             sourceDomain = current.sourceDomain ?: meta.sourceDomain,
+                            sourceApp = current.sourceApp ?: meta.sourceApp,
                             contentType = if (current.contentType == com.laterbox.data.model.ContentType.LINK) meta.contentType else current.contentType
                         )
                         savedItemDao.updateItem(updated)
@@ -109,7 +151,6 @@ class ContentRepository(
     }
 
     suspend fun emptyTrash() {
-        val trashed = savedItemDao.getItemById(-1) // triggers cleanup logic if needed
         savedItemDao.emptyTrash()
     }
 
@@ -122,7 +163,12 @@ class ContentRepository(
     }
 
     suspend fun updateReadProgress(id: Long, progress: Float) {
-        savedItemDao.updateReadProgress(id, progress)
+        savedItemDao.updateReadProgress(id, progress, lastOpened = System.currentTimeMillis())
+    }
+
+    suspend fun updateLastOpened(id: Long) {
+        val current = savedItemDao.getItemById(id) ?: return
+        savedItemDao.updateReadProgress(id, current.readProgress, lastOpened = System.currentTimeMillis())
     }
 
     suspend fun updateNotes(id: Long, notes: String?) {

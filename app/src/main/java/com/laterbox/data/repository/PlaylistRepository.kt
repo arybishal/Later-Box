@@ -7,6 +7,7 @@ import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.local.relation.PlaylistWithCount
 import com.laterbox.data.local.relation.PlaylistWithItems
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 
 class PlaylistRepository(
     private val playlistDao: PlaylistDao
@@ -27,8 +28,14 @@ class PlaylistRepository(
     fun getPlaylistsForItem(contentId: Long): Flow<List<PlaylistEntity>> = playlistDao.getPlaylistsForItem(contentId)
 
     suspend fun createPlaylist(name: String, description: String? = null, iconName: String = "bookmark"): Long {
+        val trimmedName = name.trim()
+        val all = playlistDao.getAllPlaylists()
+        // If a playlist with same name exists, return its id
+        val existing = all.firstOrNull()?.find { it.name.equals(trimmedName, ignoreCase = true) }
+        if (existing != null) return existing.id
+
         val playlist = PlaylistEntity(
-            name = name.trim(),
+            name = trimmedName,
             description = description?.trim(),
             iconName = iconName,
             isDefaultInbox = false

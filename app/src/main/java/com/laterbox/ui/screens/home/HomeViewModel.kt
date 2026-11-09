@@ -111,4 +111,6 @@ class HomeViewModel(
             playlistRepository.updatePlaylistsForItem(itemId, playlistIds)
         }
     }
+
+    fun getPlaylistsForItem(itemId: Long) = playlistRepository.getPlaylistsForItem(itemId)
 }

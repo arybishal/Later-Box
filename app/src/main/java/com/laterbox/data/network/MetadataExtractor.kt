@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URI
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
@@ -15,7 +16,8 @@ data class ExtractedMetadata(
     val thumbnailUrl: String?,
     val sourceDomain: String,
     val contentType: ContentType,
-    val canonicalUrl: String
+    val canonicalUrl: String,
+    val sourceApp: String? = null
 )
 
 object MetadataExtractor {
@@ -31,16 +33,23 @@ object MetadataExtractor {
         Pattern.CASE_INSENSITIVE
     )
 
+    private val YOUTUBE_REGEX = Pattern.compile(
+        """(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})""",
+        Pattern.CASE_INSENSITIVE
+    )
+
     fun extractUrlFromText(text: String): String? {
         val trimmed = text.trim()
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        val raw = if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             val spaceIdx = trimmed.indexOfFirst { it.isWhitespace() }
-            return if (spaceIdx != -1) trimmed.substring(0, spaceIdx) else trimmed
+            if (spaceIdx != -1) trimmed.substring(0, spaceIdx) else trimmed
+        } else {
+            val matcher = URL_REGEX.matcher(text)
+            if (matcher.find()) matcher.group() else null
         }
-        val matcher = URL_REGEX.matcher(text)
-        return if (matcher.find()) {
-            matcher.group()
-        } else null
+
+        // Clean trailing punctuation
+        return raw?.trimEnd('.', ',', ')', ']', '}', ';', '!', '"', '\'')
     }
 
     fun extractDomain(url: String): String {
@@ -53,14 +62,86 @@ object MetadataExtractor {
         }
     }
 
-    suspend fun extractMetadata(rawUrl: String): ExtractedMetadata = withContext(Dispatchers.IO) {
-        val domain = extractDomain(rawUrl)
-        val defaultTitle = if (domain.isNotEmpty()) domain.replaceFirstChar { it.uppercase() } else "Saved Link"
-        val detectedType = ContentType.fromMimeOrUrl(null, rawUrl)
+    fun extractYouTubeVideoId(url: String): String? {
+        val matcher = YOUTUBE_REGEX.matcher(url)
+        return if (matcher.find()) matcher.group(1) else null
+    }
 
+    fun detectSourceApp(domain: String): String {
+        val lower = domain.lowercase()
+        return when {
+            lower.contains("youtube.com") || lower.contains("youtu.be") -> "YouTube"
+            lower.contains("instagram.com") -> "Instagram"
+            lower.contains("tiktok.com") -> "TikTok"
+            lower.contains("twitter.com") || lower.contains("x.com") -> "X (Twitter)"
+            lower.contains("reddit.com") -> "Reddit"
+            lower.contains("facebook.com") || lower.contains("fb.watch") -> "Facebook"
+            lower.contains("medium.com") -> "Medium"
+            lower.contains("substack.com") -> "Substack"
+            lower.contains("github.com") -> "GitHub"
+            else -> if (domain.isNotEmpty()) domain.replaceFirstChar { it.uppercase() } else "Web"
+        }
+    }
+
+    suspend fun extractMetadata(rawUrl: String): ExtractedMetadata = withContext(Dispatchers.IO) {
+        val cleanUrl = extractUrlFromText(rawUrl) ?: rawUrl
+        val domain = extractDomain(cleanUrl)
+        val sourceApp = detectSourceApp(domain)
+        val defaultTitle = sourceApp
+        val detectedType = ContentType.fromMimeOrUrl(null, cleanUrl)
+
+        // 1. Specialized YouTube Handler (zero-scrape reliability)
+        val ytVideoId = extractYouTubeVideoId(cleanUrl)
+        if (ytVideoId != null) {
+            val ytThumbnail = "https://img.youtube.com/vi/$ytVideoId/hqdefault.jpg"
+            val oembedTitle = fetchOEmbedTitle("https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$ytVideoId&format=json")
+            return@withContext ExtractedMetadata(
+                title = oembedTitle ?: "YouTube Video ($ytVideoId)",
+                description = "Watch on YouTube",
+                thumbnailUrl = ytThumbnail,
+                sourceDomain = "youtube.com",
+                contentType = ContentType.VIDEO,
+                canonicalUrl = "https://www.youtube.com/watch?v=$ytVideoId",
+                sourceApp = "YouTube"
+            )
+        }
+
+        // 2. Specialized Twitter / X oEmbed Handler
+        if (domain.contains("twitter.com") || domain.contains("x.com")) {
+            val tweetTitle = fetchOEmbedTitle("https://publish.twitter.com/oembed?url=${URLEncoder.encode(cleanUrl, "UTF-8")}")
+            if (tweetTitle != null) {
+                return@withContext ExtractedMetadata(
+                    title = tweetTitle,
+                    description = "Post on X",
+                    thumbnailUrl = null,
+                    sourceDomain = domain,
+                    contentType = ContentType.LINK,
+                    canonicalUrl = cleanUrl,
+                    sourceApp = "X (Twitter)"
+                )
+            }
+        }
+
+        // 3. Specialized Reddit oEmbed Handler
+        if (domain.contains("reddit.com")) {
+            val redditTitle = fetchOEmbedTitle("https://www.reddit.com/oembed?url=${URLEncoder.encode(cleanUrl, "UTF-8")}")
+            if (redditTitle != null) {
+                return@withContext ExtractedMetadata(
+                    title = redditTitle,
+                    description = "Reddit Discussion",
+                    thumbnailUrl = null,
+                    sourceDomain = domain,
+                    contentType = ContentType.ARTICLE,
+                    canonicalUrl = cleanUrl,
+                    sourceApp = "Reddit"
+                )
+            }
+        }
+
+        // 4. Standard OpenGraph HTML Scraper
         try {
             val request = Request.Builder()
-                .url(rawUrl)
+                .url(cleanUrl)
                 .header(
                     "User-Agent",
                     "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
@@ -77,11 +158,11 @@ object MetadataExtractor {
                         thumbnailUrl = null,
                         sourceDomain = domain,
                         contentType = detectedType,
-                        canonicalUrl = rawUrl
+                        canonicalUrl = cleanUrl,
+                        sourceApp = sourceApp
                     )
                 }
 
-                // Read at most first 256KB to quickly extract head meta tags
                 val html = response.body!!.byteStream().bufferedReader().use { reader ->
                     val buffer = CharArray(262144)
                     val read = reader.read(buffer)
@@ -99,10 +180,10 @@ object MetadataExtractor {
 
                 var imageUrl = findMetaTag(html, "og:image")
                     ?: findMetaTag(html, "twitter:image")
-                    ?: findFavicon(html, rawUrl)
+                    ?: findFavicon(html, cleanUrl)
 
                 if (imageUrl != null && !imageUrl.startsWith("http")) {
-                    imageUrl = resolveUrl(rawUrl, imageUrl)
+                    imageUrl = resolveUrl(cleanUrl, imageUrl)
                 }
 
                 ExtractedMetadata(
@@ -111,19 +192,35 @@ object MetadataExtractor {
                     thumbnailUrl = imageUrl,
                     sourceDomain = domain,
                     contentType = detectedType,
-                    canonicalUrl = rawUrl
+                    canonicalUrl = cleanUrl,
+                    sourceApp = sourceApp
                 )
             }
         } catch (_: Exception) {
-            // Graceful fallback on network timeout, SSL error or blocked requests
             ExtractedMetadata(
                 title = defaultTitle,
                 description = null,
                 thumbnailUrl = null,
                 sourceDomain = domain,
                 contentType = detectedType,
-                canonicalUrl = rawUrl
+                canonicalUrl = cleanUrl,
+                sourceApp = sourceApp
             )
+        }
+    }
+
+    private fun fetchOEmbedTitle(oembedUrl: String): String? {
+        return try {
+            val request = Request.Builder().url(oembedUrl).build()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful || response.body == null) return null
+                val json = response.body!!.string()
+                val titlePattern = Pattern.compile(""""title"\s*:\s*"([^"]+)"""")
+                val matcher = titlePattern.matcher(json)
+                if (matcher.find()) cleanHtmlEntities(matcher.group(1) ?: "") else null
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -176,6 +273,7 @@ object MetadataExtractor {
 
     private fun cleanHtmlEntities(text: String): String {
         return text
+            .replace("\\u0026", "&")
             .replace("&amp;", "&")
             .replace("&quot;", "\"")
             .replace("&#39;", "'")

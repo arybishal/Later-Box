@@ -194,7 +194,7 @@ class ShareReceiverViewModel(
                 contentRepository.saveItem(
                     item = savedItem,
                     playlistIds = playlistIds,
-                    fetchMetadataAsync = item.extractedUrl != null && item.title.isBlank()
+                    fetchMetadataAsync = item.extractedUrl != null && (item.thumbnailUrl == null || item.description == null)
                 )
             }
 

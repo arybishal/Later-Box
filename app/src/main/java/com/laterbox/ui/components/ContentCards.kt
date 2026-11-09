@@ -121,6 +121,27 @@ fun ContentThumbnail(
             )
         }
 
+        // Reading / Watching progress percentage tag
+        if (item.readProgress > 0f) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${(item.readProgress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = extended.amberAccent
+                )
+            }
+        }
+
         // Reading / Watching progress bar if present
         if (item.readProgress > 0f) {
             Box(
