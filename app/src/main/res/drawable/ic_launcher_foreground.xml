@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateX="21.6"
+        android:translateY="21.6">
+        <!-- Box Body -->
+        <path
+            android:fillColor="#E5A93C"
+            android:pathData="M24,40 L84,40 C87.3,40 90,42.7 90,46 L90,82 C90,85.3 87.3,88 84,88 L24,88 C20.7,88 18,85.3 18,82 L18,46 C18,42.7 20.7,40 24,40 Z" />
+        <path
+            android:fillColor="#1C1B1A"
+            android:pathData="M38,48 L70,48 C72,48 74,50 74,52 L74,54 C74,56 72,58 70,58 L38,58 C36,58 34,56 34,54 L34,52 C34,50 36,48 38,48 Z" />
+        <!-- Floating Bookmark / Arrow -->
+        <path
+            android:fillColor="#F6F5F2"
+            android:pathData="M44,20 L64,20 C66.2,20 68,21.8 68,24 L68,44 L54,34 L40,44 L40,24 C40,21.8 41.8,20 44,20 Z" />
+    </group>
+</vector>

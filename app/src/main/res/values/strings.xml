@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Later Box</string>
+    <string name="save_to_later_box">Save to Later Box</string>
+    <string name="share_to_later_box">Later Box</string>
+    <string name="app_tagline">Save Now. Organize Easily. Enjoy Later.</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_library">Library</string>
+    <string name="nav_playlists">Playlists</string>
+    <string name="nav_trash">Trash</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Content Types -->
+    <string name="type_all">All</string>
+    <string name="type_article">Articles</string>
+    <string name="type_video">Videos</string>
+    <string name="type_image">Images</string>
+    <string name="type_audio">Audio</string>
+    <string name="type_document">Documents</string>
+    <string name="type_link">Links</string>
+    <string name="type_note">Notes</string>
+    
+    <!-- Default Collections -->
+    <string name="inbox_title">Inbox</string>
+    <string name="inbox_desc">Default destination for quick saves</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="archive_title">Archive</string>
+    <string name="trash_title">Recently Deleted</string>
+</resources>

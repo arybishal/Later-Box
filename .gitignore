@@ -1,0 +1,21 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+*/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+!/app/build/outputs/apk/**/*.apk
+
+# Keystores & Release Signing Secrets
+*.jks
+*.keystore
+keystore.properties
+release-signing.properties
+
+# Kotlin build cache
+.kotlin/
