@@ -45,7 +45,7 @@ val LocalExtendedColors = staticCompositionLocalOf {
 
 private val LightColorScheme = lightColorScheme(
     primary = WarmCaramelAccent,
-    onPrimary = Color(0xFF1C1A17),
+    onPrimary = WarmTextPrimaryLight,
     primaryContainer = WarmCaramelSubtle,
     onPrimaryContainer = WarmCaramelAccent,
     secondary = WarmTextSecondaryLight,
@@ -66,7 +66,7 @@ private val LightColorScheme = lightColorScheme(
 
 private val DarkColorScheme = darkColorScheme(
     primary = WarmCaramelAccentDark,
-    onPrimary = Color(0xFF161513),
+    onPrimary = CharcoalBackgroundDark,
     primaryContainer = CharcoalSurfaceVariantDark,
     onPrimaryContainer = WarmCaramelAccentDark,
     secondary = WarmTextSecondaryDark,

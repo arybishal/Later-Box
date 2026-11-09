@@ -201,7 +201,7 @@ fun MainAppScaffold() {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Save",
-                                tint = Color(0xFF1C1A17),
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
