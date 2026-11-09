@@ -2,36 +2,58 @@ package com.laterbox.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Mode Exact Palette — Sampled directly from user's reference screenshots:
-// uploaded_media_0_1794250924023.png & uploaded_media_2_1794250924023.png
-val WarmCreamBackground = Color(0xFFF4F0E8)       // Exact main background (51.3% pixels)
-val WarmCardBackground = Color(0xFFFBF8F3)        // Exact card & bottom bar background (35% pixels)
-val WarmBorderDashed = Color(0xFFE2D9CC)          // Exact dashed empty state border & outlines (0.7% pixels)
-val WarmBorderLight = Color(0xFFE2D9CC)           // Exact subtle separator & input border
-val WarmCaramelAccent = Color(0xFF9C6E1E)         // Exact ochre/caramel gold button & badge accent (2.65% pixels)
-val WarmCaramelAccentLight = Color(0xFFAE7C24)    // Slightly lighter caramel for hover/focus states
-val WarmCaramelSubtle = Color(0xFFFDF6EA)         // Soft warm amber tint for subtle highlights
-val PillInactiveBackground = Color(0xFFEFE8DC)    // Exact inactive filter chips (Inbox, Videos, etc.) (2.39% pixels)
-val PillActiveBackground = Color(0xFF1C1915)      // Exact active filter chip ("All") & dark active state (0.87% pixels)
-val GridListActiveBackground = Color(0xFFF3E4C4)  // Exact active toggle pill ("Grid") inside toggle control (0.54% pixels)
-val ScrollThumbColor = Color(0xFF716C64)          // Exact horizontal scroll indicator thumb color
+// Global Palette: White Background, Black Typography, Vibrant Yellow / Golden Accent
+// Strictly NO RED FONT anywhere in the app!
 
-val WarmTextPrimaryLight = Color(0xFF1C1915)      // Exact dark typography for headings & active tabs (0.87% pixels)
-val WarmTextSecondaryLight = Color(0xFF5C564E)    // Exact muted secondary typography for subtitles & inactive tabs (0.16% pixels)
+// Light Mode: Pure White Background, Solid Black, Vibrant Yellow Accent
+val PureWhiteBackground = Color(0xFFFFFFFF)       // Global White BG
+val CleanCardBackground = Color(0xFFFFFFFF)       // Crisp Card surface
+val CleanCardElevated = Color(0xFFF9FAFB)         // Slight surface variation
+val SubtleBorderLight = Color(0xFFE5E7EB)         // Clean light neutral border
+val SubtleBorderStrong = Color(0xFFD1D5DB)        // Input and toggle border
 
-// Aliases for backward-compatibility
-val AmberAccent = WarmCaramelAccent
-val AmberAccentLight = WarmCaramelAccentLight
+val VibrantYellowAccent = Color(0xFFF5BA13)       // Primary Yellow / Gold accent (#F5BA13)
+val VibrantYellowAccentLight = Color(0xFFFDE047)  // Secondary yellow tint
+val VibrantYellowSubtle = Color(0xFFFEF9C3)       // Soft yellow container tint
 
-// Dark Mode Adaptive Palette — Refined charcoal with warm neutral undertones
-val CharcoalBackgroundDark = Color(0xFF161412)
-val CharcoalSurfaceDark = Color(0xFF1E1B18)
-val CharcoalSurfaceVariantDark = Color(0xFF282522)
-val WarmTextPrimaryDark = Color(0xFFF4F0E8)
-val WarmTextSecondaryDark = Color(0xFF9E978D)
-val CharcoalBorderDark = Color(0xFF2C2723)
-val WarmCaramelAccentDark = Color(0xFFB38029)
+val SolidBlackText = Color(0xFF000000)            // Deep Black primary text
+val CharcoalTextSecondary = Color(0xFF4B5563)     // Neutral Charcoal secondary text
+val MutedTextTertiary = Color(0xFF6B7280)         // Tertiary metadata
 
-// Destructive Actions — Earthy terracotta (Zero Crimson)
-val WarmTerracotta = Color(0xFF9E3E2F)
-val WarmTerracottaDark = Color(0xFFCF5E4D)
+val PillInactiveBackground = Color(0xFFF3F4F6)    // Clean light grey inactive pill
+val PillActiveBackground = Color(0xFF000000)      // Solid black active pill
+val GridListActiveBackground = Color(0xFFFEF08A)  // Soft yellow active toggle pill
+
+// Aliases for compatibility
+val WarmCreamBackground = PureWhiteBackground
+val WarmCardBackground = CleanCardBackground
+val WarmBorderDashed = SubtleBorderLight
+val WarmBorderLight = SubtleBorderLight
+val WarmCaramelAccent = VibrantYellowAccent
+val WarmCaramelAccentLight = VibrantYellowAccentLight
+val WarmCaramelSubtle = VibrantYellowSubtle
+val WarmTextPrimaryLight = SolidBlackText
+val WarmTextSecondaryLight = CharcoalTextSecondary
+val AmberAccent = VibrantYellowAccent
+val AmberAccentLight = VibrantYellowAccentLight
+val ScrollThumbColor = Color(0xFF4B5563)
+
+// Dark Mode: Deep Black, Crisp White Text, Golden Yellow Accent
+val DeepBlackBackgroundDark = Color(0xFF09090B)
+val CharcoalSurfaceDark = Color(0xFF141417)
+val CharcoalSurfaceVariantDark = Color(0xFF202024)
+val WhiteTextPrimaryDark = Color(0xFFFFFFFF)
+val NeutralTextSecondaryDark = Color(0xFF9CA3AF)
+val CharcoalBorderDark = Color(0xFF27272A)
+val VibrantYellowAccentDark = Color(0xFFFACC15)
+
+val CharcoalBackgroundDark = DeepBlackBackgroundDark
+val WarmTextPrimaryDark = WhiteTextPrimaryDark
+val WarmTextSecondaryDark = NeutralTextSecondaryDark
+val WarmCaramelAccentDark = VibrantYellowAccentDark
+
+// Non-red destructive & warning colors (Strictly NO RED FONT)
+val SlateDestructive = Color(0xFF374151)
+val SlateDestructiveDark = Color(0xFF4B5563)
+val WarmTerracotta = SlateDestructive
+val WarmTerracottaDark = SlateDestructiveDark

@@ -73,4 +73,25 @@ interface PlaylistDao {
         ORDER BY c.addedAt DESC
     """)
     fun getItemsForPlaylist(playlistId: Long): Flow<List<com.laterbox.data.local.entity.SavedItemEntity>>
+
+    @Query("SELECT * FROM playlists")
+    suspend fun getAllPlaylistsSnapshot(): List<PlaylistEntity>
+
+    @Query("SELECT * FROM item_playlist_cross_ref")
+    suspend fun getAllCrossRefsSnapshot(): List<ItemPlaylistCrossRef>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylists(playlists: List<PlaylistEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertCrossRefs(crossRefs: List<ItemPlaylistCrossRef>)
+
+    @Query("DELETE FROM playlists WHERE isDefaultInbox = 0")
+    suspend fun clearNonInboxPlaylists()
+
+    @Query("DELETE FROM playlists")
+    suspend fun clearAllPlaylists()
+
+    @Query("DELETE FROM item_playlist_cross_ref")
+    suspend fun clearAllCrossRefs()
 }

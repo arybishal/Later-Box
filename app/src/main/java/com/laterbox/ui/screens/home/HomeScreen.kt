@@ -43,11 +43,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
+import com.laterbox.ui.components.CompactSocialFeedCard
 import com.laterbox.ui.components.ContentActionsSheet
-import com.laterbox.ui.components.ContentCardList
+import com.laterbox.ui.components.ContinueWatchingCard
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
 import com.laterbox.ui.components.EmptyDashedCard
@@ -75,6 +78,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
     val recentItems by viewModel.recentItems.collectAsState()
     val continueItems by viewModel.continueItems.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
@@ -162,6 +166,31 @@ fun HomeScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(28.dp))
+            }
+
+            // Section: Continue reading & watching (if any)
+            if (continueItems.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Continue reading & watching",
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    ) {
+                        items(continueItems, key = { it.id }) { item ->
+                            ContinueWatchingCard(
+                                item = item,
+                                onClick = { onOpenItem(item) }
+                            )
+                        }
+                    }
+                }
             }
 
             // Section: Your playlists
@@ -285,11 +314,20 @@ fun HomeScreen(
                     )
                 }
             } else {
-                items(recentItems) { item ->
-                    ContentCardList(
+                items(recentItems, key = { it.id }) { item ->
+                    CompactSocialFeedCard(
                         item = item,
                         onClick = { onOpenItem(item) },
                         onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                        onAddToPlaylist = { selectedItemForPlaylists = item },
+                        onShare = {
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, item.url ?: item.title)
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, "Share via"))
+                        },
                         onMenuClick = { selectedItemForActions = item },
                         modifier = Modifier.padding(vertical = 4.dp)
                     )

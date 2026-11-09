@@ -20,6 +20,7 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
     lateinit var playlistRepository: PlaylistRepository private set
     lateinit var preferencesRepository: UserPreferencesRepository private set
     lateinit var mediaStorageManager: MediaStorageManager private set
+    lateinit var backupManager: com.laterbox.data.backup.BackupManager private set
 
     override fun onCreate() {
         super.onCreate()
@@ -36,6 +37,12 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
         playlistRepository = PlaylistRepository(
             playlistDao = database.playlistDao()
         )
+        backupManager = com.laterbox.data.backup.BackupManager(
+            context = this,
+            database = database,
+            preferencesRepository = preferencesRepository,
+            mediaStorageManager = mediaStorageManager
+        )
     }
 
     override fun newImageLoader(): ImageLoader {
@@ -46,15 +53,17 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
             .memoryCache {
                 MemoryCache.Builder(this)
                     .maxSizePercent(0.25)
+                    .strongReferencesEnabled(true)
                     .build()
             }
             .diskCache {
                 DiskCache.Builder()
                     .directory(cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.05)
+                    .maxSizeBytes(100L * 1024L * 1024L) // 100MB disk cache for instant loads
                     .build()
             }
-            .crossfade(true)
+            .crossfade(200)
+            .respectCacheHeaders(false) // Cache web thumbnails reliably
             .build()
     }
 

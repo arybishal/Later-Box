@@ -18,10 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -413,6 +415,314 @@ fun PlaylistCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = extended.textSecondary
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun CompactSocialFeedCard(
+    item: SavedItemEntity,
+    onClick: () -> Unit,
+    onFavoriteToggle: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onShare: () -> Unit,
+    onMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // 1. Post Header: Favicon/Initial, Domain, Type/Date, Overflow Menu
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(extended.amberAccentSubtle),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (item.sourceDomain?.take(1) ?: item.title.take(1)).uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = extended.amberAccent
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Column {
+                        Text(
+                            text = item.sourceDomain ?: item.sourceApp ?: "Saved Link",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = item.contentType.displayName,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                color = extended.amberAccent,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = " • ${formatRelativeDate(item.savedAt)}",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                color = extended.textSecondary
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = extended.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // 2. Media Preview: Compact aspect ratio, play icon overlay for video
+            val imageModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl
+            if (imageModel != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(imageModel)
+                            .crossfade(200)
+                            .build(),
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Video Play Button Overlay
+                    if (item.contentType == ContentType.VIDEO) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.65f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play Video",
+                                tint = extended.amberAccent,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    // Reading / Watching progress indicator bar
+                    if (item.readProgress > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.4f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(item.readProgress.coerceIn(0f, 1f))
+                                    .height(4.dp)
+                                    .background(extended.amberAccent)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 3. Action Row: Favorite, Playlist, Share, Notes
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onFavoriteToggle,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (item.isFavorite) extended.amberAccent else extended.textSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onAddToPlaylist,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BookmarkBorder,
+                            contentDescription = "Playlist",
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onShare,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                }
+
+                if (!item.notes.isNullOrBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(extended.amberAccentSubtle)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "Note",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = extended.amberAccent
+                        )
+                    }
+                }
+            }
+
+            // 4. Content Information: Title, description
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+            ) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (!item.description.isNullOrBlank() && item.description != item.title) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                        color = extended.textSecondary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                if (!item.notes.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "“${item.notes}”",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = extended.amberAccent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ContinueWatchingCard(
+    item: SavedItemEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    Card(
+        modifier = modifier
+            .width(220.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ContentThumbnail(
+                item = item,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+            )
+
+            Column(modifier = Modifier.padding(10.dp)) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = item.contentType.displayName,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                        color = extended.textSecondary
+                    )
+                    Text(
+                        text = "${(item.readProgress * 100).toInt()}% done",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = extended.amberAccent
+                    )
+                }
             }
         }
     }

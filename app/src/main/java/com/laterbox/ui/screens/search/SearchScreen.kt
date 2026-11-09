@@ -31,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.laterbox.LaterBoxApp
@@ -40,6 +42,7 @@ import com.laterbox.data.model.ViewMode
 import com.laterbox.data.repository.PlaylistRepository
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
+import com.laterbox.ui.components.CompactSocialFeedCard
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardGrid
 import com.laterbox.ui.components.ContentCardList
@@ -58,6 +61,7 @@ fun SearchScreen(
     onOpenItem: (SavedItemEntity) -> Unit
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
     val prefs = LaterBoxApp.instance.preferencesRepository
     val contentRepo = LaterBoxApp.instance.contentRepository
     val playlistRepo = LaterBoxApp.instance.playlistRepository
@@ -185,13 +189,22 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(sortedResults, key = { it.id }) { item ->
-                            ContentCardList(
+                            CompactSocialFeedCard(
                                 item = item,
                                 onClick = { onOpenItem(item) },
                                 onFavoriteToggle = {
                                     scope.launch {
                                         contentRepo.toggleFavorite(item.id, item.isFavorite)
                                     }
+                                },
+                                onAddToPlaylist = { selectedItemForPlaylists = item },
+                                onShare = {
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, item.url ?: item.title)
+                                        type = "text/plain"
+                                    }
+                                    context.startActivity(Intent.createChooser(sendIntent, "Share via"))
                                 },
                                 onMenuClick = { selectedItemForActions = item }
                             )

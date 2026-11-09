@@ -139,4 +139,13 @@ interface SavedItemDao {
 
     @Query("SELECT COUNT(*) FROM saved_items WHERE isDeleted = 0")
     fun getTotalActiveCount(): Flow<Int>
+
+    @Query("SELECT * FROM saved_items")
+    suspend fun getAllItemsSnapshot(): List<SavedItemEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<SavedItemEntity>): List<Long>
+
+    @Query("DELETE FROM saved_items")
+    suspend fun clearAllItems()
 }

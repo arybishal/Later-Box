@@ -1,12 +1,16 @@
 package com.laterbox.ui.screens.settings
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
@@ -41,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,17 +62,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.laterbox.LaterBoxApp
+import com.laterbox.data.backup.BackupManifest
+import com.laterbox.data.backup.BackupSummary
 import com.laterbox.data.model.ThemeMode
+import com.laterbox.ui.components.BackupInspectionDialog
+import com.laterbox.ui.components.BackupProgressDialog
 import com.laterbox.ui.components.ConfirmationDialog
 import com.laterbox.ui.components.LaterBoxHeader
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB")
     val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt()
-    return String.format(java.util.Locale.US, "%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+    return String.format(Locale.US, "%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
 }
 
 @Composable
@@ -78,24 +93,94 @@ fun SettingsScreen(
 
     val prefs = LaterBoxApp.instance.preferencesRepository
     val storageManager = LaterBoxApp.instance.mediaStorageManager
+    val backupManager = LaterBoxApp.instance.backupManager
 
     val themeMode by prefs.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
     val autoFetchMetadata by prefs.autoFetchMetadata.collectAsState(initial = true)
     val directSaveToInbox by prefs.directSaveToInbox.collectAsState(initial = false)
     val inAppViewing by prefs.inAppViewing.collectAsState(initial = true)
+    val lastBackupTimestamp by prefs.lastBackupTimestamp.collectAsState(initial = null)
 
     var storageSize by remember { mutableLongStateOf(0L) }
+    var backupSummary by remember { mutableStateOf<BackupSummary?>(null) }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
+
+    // Backup state
+    var exportInProgress by remember { mutableStateOf(false) }
+    var importInProgress by remember { mutableStateOf(false) }
+    var progressValue by remember { mutableFloatStateOf(0f) }
+    var progressStatus by remember { mutableStateOf("") }
+    var pendingManifest by remember { mutableStateOf<BackupManifest?>(null) }
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
 
     LaunchedEffect(Unit) {
         storageSize = storageManager.getMediaStorageSize()
+        backupSummary = backupManager.getBackupSummary()
+    }
+
+    // Storage Access Framework Export Launcher
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                exportInProgress = true
+                progressValue = 0f
+                progressStatus = "Initializing export…"
+                val outputStream = context.contentResolver.openOutputStream(uri)
+                if (outputStream != null) {
+                    val result = backupManager.exportBackup(outputStream) { p, s ->
+                        progressValue = p
+                        progressStatus = s
+                    }
+                    exportInProgress = false
+                    result.onSuccess { manifest ->
+                        backupSummary = backupManager.getBackupSummary()
+                        Toast.makeText(
+                            context,
+                            "Export completed (${manifest.totalItems} items, ${manifest.totalPlaylists} playlists)",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Export failed: ${err.message}", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    exportInProgress = false
+                    Toast.makeText(context, "Cannot open selected file for writing", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // Storage Access Framework Import Launcher
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    val inspectResult = backupManager.inspectBackup(inputStream)
+                    inspectResult.onSuccess { manifest ->
+                        pendingManifest = manifest
+                        pendingImportUri = uri
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Invalid backup: ${err.message}", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Cannot read selected file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     Scaffold(
         topBar = {
             LaterBoxHeader(
                 greeting = "Settings",
-                subtitle = "Preferences & Storage",
+                subtitle = "Preferences, Data & Storage",
                 showBack = true,
                 onBackClick = onBack
             )
@@ -106,9 +191,130 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // DATA & BACKUP SECTION (High Priority Feature)
+            item {
+                SettingsSection(
+                    title = "Data & Backup",
+                    icon = Icons.Default.Backup
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Summary info
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Last Backup",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = extended.textSecondary
+                                )
+                                Text(
+                                    text = lastBackupTimestamp?.let { dateFormat.format(Date(it)) } ?: "Never backed up",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            backupSummary?.let { sum ->
+                                Text(
+                                    text = "${sum.totalItems} items · ${sum.totalPlaylists} playlists",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = extended.textSecondary
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Export Action
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Export My Data",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Create a portable backup of your saved content, playlists, settings and downloaded media.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            Button(
+                                onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = extended.amberAccent,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudUpload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Export", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Import Action
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Import Backup",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Restore your Later Box library and preferences from a previous backup.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    importLauncher.launch(
+                                        arrayOf("application/zip", "application/octet-stream", "*/*")
+                                    )
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, extended.amberAccent),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = null,
+                                    tint = extended.amberAccent,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Import", fontWeight = FontWeight.Bold, color = extended.amberAccent)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Appearance Section
             item {
                 SettingsSection(
@@ -204,12 +410,12 @@ fun SettingsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Media Cache",
+                                text = "Downloaded Media",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "${formatBytes(storageSize)} used for offline files",
+                                text = "Current usage: ${formatBytes(storageSize)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = extended.textSecondary
                             )
@@ -217,15 +423,17 @@ fun SettingsScreen(
 
                         OutlinedButton(
                             onClick = { showClearCacheConfirm = true },
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CleaningServices,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(16.dp),
+                                tint = extended.textSecondary
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Clear")
+                            Text("Clear", color = extended.textSecondary)
                         }
                     }
 
@@ -255,14 +463,14 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = null,
-                            tint = extended.warmError,
+                            tint = extended.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
 
-            // Privacy & Architecture
+            // Privacy & Local Architecture
             item {
                 SettingsSection(
                     title = "Privacy & Local Storage",
@@ -294,7 +502,7 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Version 1.0.0 (Build 1)",
+                        text = "Version 1.2.0 (Build 4)",
                         style = MaterialTheme.typography.labelSmall,
                         color = extended.textSecondary
                     )
@@ -320,6 +528,61 @@ fun SettingsScreen(
         }
     }
 
+    // Backup Inspection Dialog
+    pendingManifest?.let { manifest ->
+        BackupInspectionDialog(
+            manifest = manifest,
+            onConfirm = { mode ->
+                val uri = pendingImportUri
+                pendingManifest = null
+                pendingImportUri = null
+                if (uri != null) {
+                    scope.launch {
+                        importInProgress = true
+                        progressValue = 0f
+                        progressStatus = "Initializing restore…"
+                        val inputStream = context.contentResolver.openInputStream(uri)
+                        if (inputStream != null) {
+                            val result = backupManager.importBackup(inputStream, mode) { p, s ->
+                                progressValue = p
+                                progressStatus = s
+                            }
+                            importInProgress = false
+                            result.onSuccess { res ->
+                                storageSize = storageManager.getMediaStorageSize()
+                                backupSummary = backupManager.getBackupSummary()
+                                Toast.makeText(
+                                    context,
+                                    "Restored: ${res.itemsRestored} items, ${res.playlistsRestored} playlists (${res.mode.name})",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }.onFailure { err ->
+                                Toast.makeText(context, "Restore failed: ${err.message}", Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            importInProgress = false
+                            Toast.makeText(context, "Cannot read selected file", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            },
+            onDismiss = {
+                pendingManifest = null
+                pendingImportUri = null
+            }
+        )
+    }
+
+    // Backup Progress Dialog
+    if (exportInProgress || importInProgress) {
+        BackupProgressDialog(
+            title = if (exportInProgress) "Exporting Backup…" else "Restoring Backup…",
+            progress = progressValue,
+            statusText = progressStatus
+        )
+    }
+
+    // Clear Media Cache Confirmation Dialog
     if (showClearCacheConfirm) {
         ConfirmationDialog(
             title = "Clear Media Cache",

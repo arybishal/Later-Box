@@ -104,6 +104,19 @@ class MediaStorageManager(private val context: Context) {
         }
     }
 
+    fun getMediaDirectory(): File = mediaDir
+
+    fun getAllMediaFiles(): List<File> = mediaDir.listFiles()?.filter { it.isFile } ?: emptyList()
+
+    suspend fun restoreMediaFile(fileName: String, input: java.io.InputStream): File = withContext(Dispatchers.IO) {
+        val safeName = File(fileName).name
+        val dest = File(mediaDir, safeName)
+        java.io.FileOutputStream(dest).use { output ->
+            input.copyTo(output)
+        }
+        dest
+    }
+
     private fun calculateDirSize(dir: File): Long {
         var size = 0L
         dir.listFiles()?.forEach { file ->

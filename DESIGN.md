@@ -39,12 +39,12 @@ The Later Box aesthetic embodies a warm, editorial, tactile paper-and-ink sensib
 | **`CharcoalBorderDark`** | `#2C2723` | `(44, 39, 35)` | Borders and dividers. |
 | **`WarmCaramelAccentDark`** | `#B38029` | `(179, 128, 41)` | Buttons and badges in dark mode. |
 
-### 1.3 Destructive & Warning
+### 1.3 Destructive & Warning (Zero Red Font Constraint)
 
 | Token Name | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **`WarmTerracotta`** | `#9E3E2F` | Earthy brick red for deletion and destructive confirmations (strictly non-crimson). |
-| **`WarmTerracottaDark`** | `#CF5E4D` | Dark mode destructive accent. |
+| **`SlateDestructive`** | `#374151` | Neutral slate/charcoal for deletion and destructive confirmations (strictly NO red font). |
+| **`SlateDestructiveDark`** | `#4B5563` | Dark mode destructive accent. |
 
 ---
 

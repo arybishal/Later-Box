@@ -75,6 +75,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Request maximum available refresh rate (e.g. 120Hz / 90Hz) for fluid UI performance
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.decorView.post {
+                val currentDisplay = display
+                val modes = currentDisplay?.supportedModes
+                val maxMode = modes?.maxByOrNull { it.refreshRate }
+                if (maxMode != null) {
+                    val params = window.attributes
+                    params.preferredDisplayModeId = maxMode.modeId
+                    window.attributes = params
+                }
+            }
+        }
+
         setContent {
             val themeMode by LaterBoxApp.instance.preferencesRepository.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
 
