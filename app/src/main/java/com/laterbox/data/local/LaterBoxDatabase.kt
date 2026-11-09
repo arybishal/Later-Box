@@ -5,20 +5,32 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.laterbox.data.local.dao.PlaylistDao
+import com.laterbox.data.local.dao.ReminderDao
 import com.laterbox.data.local.dao.SavedItemDao
+import com.laterbox.data.local.dao.SearchHistoryDao
+import com.laterbox.data.local.dao.TagDao
 import com.laterbox.data.local.entity.ItemPlaylistCrossRef
+import com.laterbox.data.local.entity.ItemTagCrossRef
 import com.laterbox.data.local.entity.PlaylistEntity
+import com.laterbox.data.local.entity.ReminderEntity
 import com.laterbox.data.local.entity.SavedItemEntity
+import com.laterbox.data.local.entity.SearchHistoryEntity
+import com.laterbox.data.local.entity.TagEntity
 
 @Database(
     entities = [
         SavedItemEntity::class,
         PlaylistEntity::class,
-        ItemPlaylistCrossRef::class
+        ItemPlaylistCrossRef::class,
+        TagEntity::class,
+        ItemTagCrossRef::class,
+        ReminderEntity::class,
+        SearchHistoryEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -26,10 +38,64 @@ abstract class LaterBoxDatabase : RoomDatabase() {
 
     abstract fun savedItemDao(): SavedItemDao
     abstract fun playlistDao(): PlaylistDao
+    abstract fun tagDao(): TagDao
+    abstract fun reminderDao(): ReminderDao
+    abstract fun searchHistoryDao(): SearchHistoryDao
 
     companion object {
         @Volatile
         private var INSTANCE: LaterBoxDatabase? = null
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS tags (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS item_tag_cross_ref (
+                        contentId INTEGER NOT NULL,
+                        tagId INTEGER NOT NULL,
+                        addedAt INTEGER NOT NULL,
+                        PRIMARY KEY(contentId, tagId),
+                        FOREIGN KEY(contentId) REFERENCES saved_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(tagId) REFERENCES tags(id) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_item_tag_cross_ref_contentId ON item_tag_cross_ref(contentId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_item_tag_cross_ref_tagId ON item_tag_cross_ref(tagId)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS reminders (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        contentId INTEGER NOT NULL,
+                        dueAt INTEGER NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        snoozedUntil INTEGER,
+                        note TEXT,
+                        createdAt INTEGER NOT NULL,
+                        FOREIGN KEY(contentId) REFERENCES saved_items(id) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reminders_contentId ON reminders(contentId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reminders_dueAt ON reminders(dueAt)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reminders_isCompleted ON reminders(isCompleted)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS search_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        query TEXT NOT NULL,
+                        searchedAt INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_search_history_query ON search_history(query)")
+            }
+        }
 
         fun getInstance(context: Context): LaterBoxDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -50,6 +116,7 @@ abstract class LaterBoxDatabase : RoomDatabase() {
                             )
                         }
                     })
+                    .addMigrations(MIGRATION_1_2)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

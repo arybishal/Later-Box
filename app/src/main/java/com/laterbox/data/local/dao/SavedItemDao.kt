@@ -85,6 +85,56 @@ interface SavedItemDao {
     """)
     fun getFavoriteItems(): Flow<List<SavedItemEntity>>
 
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDeleted = 0 AND isFavorite = 1")
+    fun getFavoriteCount(): Flow<Int>
+
+    @Query("""
+        SELECT * FROM saved_items 
+        WHERE isDeleted = 0 AND isArchived = 0 
+          AND contentType IN ('ARTICLE', 'DOCUMENT') 
+          AND readProgress > 0.0 AND readProgress < 1.0
+        ORDER BY COALESCE(lastOpenedAt, savedAt) DESC
+    """)
+    fun getContinueReadingItems(): Flow<List<SavedItemEntity>>
+
+    @Query("""
+        SELECT * FROM saved_items 
+        WHERE isDeleted = 0 AND isArchived = 0 
+          AND contentType = 'VIDEO' 
+          AND (readProgress > 0.0 OR lastOpenedAt IS NOT NULL) 
+          AND readProgress < 1.0
+        ORDER BY COALESCE(lastOpenedAt, savedAt) DESC
+    """)
+    fun getContinueWatchingItems(): Flow<List<SavedItemEntity>>
+
+    @Query("""
+        SELECT s.* FROM saved_items s
+        WHERE s.isDeleted = 0 AND s.isArchived = 0
+          AND s.id NOT IN (
+              SELECT c.contentId FROM item_playlist_cross_ref c
+              INNER JOIN playlists p ON c.playlistId = p.id
+              WHERE p.isDefaultInbox = 0
+          )
+        ORDER BY s.savedAt DESC
+    """)
+    fun getUnsortedItems(): Flow<List<SavedItemEntity>>
+
+    @Query("""
+        SELECT * FROM saved_items 
+        WHERE isDeleted = 0 AND isArchived = 0 
+          AND localMediaPath IS NOT NULL AND localMediaPath != ''
+        ORDER BY savedAt DESC
+    """)
+    fun getDownloadedItems(): Flow<List<SavedItemEntity>>
+
+    @Query("""
+        SELECT * FROM saved_items 
+        WHERE isDeleted = 0 AND isArchived = 0 
+          AND lastOpenedAt IS NOT NULL
+        ORDER BY lastOpenedAt DESC
+    """)
+    fun getRecentlyOpenedItems(): Flow<List<SavedItemEntity>>
+
     @Query("""
         SELECT * FROM saved_items 
         WHERE isDeleted = 0 AND isArchived = 1 

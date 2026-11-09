@@ -60,6 +60,7 @@ import com.laterbox.ui.theme.LaterBoxThemeTokens
 @Composable
 fun LibraryScreen(
     onOpenItem: (SavedItemEntity) -> Unit,
+    initialCategory: String = "All",
     viewModel: LibraryViewModel = viewModel()
 ) {
     val extended = LaterBoxThemeTokens.extended
@@ -70,7 +71,7 @@ fun LibraryScreen(
     val sortOrder by viewModel.sortOrder.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
-    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var selectedItemForActions by remember { mutableStateOf<SavedItemEntity?>(null) }
@@ -83,6 +84,7 @@ fun LibraryScreen(
     val filteredItems = items.filter { item ->
         when (selectedCategory) {
             "All" -> true
+            "Favorites" -> item.isFavorite
             "Inbox" -> true
             "Videos" -> item.contentType == ContentType.VIDEO
             "Articles" -> item.contentType == ContentType.ARTICLE

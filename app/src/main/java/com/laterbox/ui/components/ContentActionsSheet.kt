@@ -110,14 +110,26 @@ fun ContentActionsSheet(
                     }
                 )
 
+                val appDestination = com.laterbox.util.SocialLinkResolver.getPreferredDestinationName(context, item.url)
                 ActionItemRow(
                     icon = Icons.Default.OpenInBrowser,
-                    label = "Open in Original App / Browser",
+                    label = if (appDestination != "Browser") "Open in $appDestination" else "Open in Browser",
                     onClick = {
                         onDismiss()
                         openInExternalApp(context, item.url)
                     }
                 )
+
+                if (appDestination != "Browser") {
+                    ActionItemRow(
+                        icon = Icons.Default.OpenInBrowser,
+                        label = "Open in Browser",
+                        onClick = {
+                            onDismiss()
+                            openInExternalApp(context, item.url, preferBrowser = true)
+                        }
+                    )
+                }
 
                 ActionItemRow(
                     icon = Icons.AutoMirrored.Filled.PlaylistAdd,
@@ -258,13 +270,6 @@ private fun ActionItemRow(
     }
 }
 
-fun openInExternalApp(context: Context, rawUrl: String) {
-    try {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    } catch (_: Exception) {
-        Toast.makeText(context, "Unable to open link in external app", Toast.LENGTH_SHORT).show()
-    }
+fun openInExternalApp(context: Context, rawUrl: String, preferBrowser: Boolean = false) {
+    com.laterbox.util.SocialLinkResolver.openSocialOrWebLink(context, rawUrl, preferBrowser)
 }

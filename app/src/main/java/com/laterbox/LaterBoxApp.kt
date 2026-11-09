@@ -21,6 +21,9 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
     lateinit var preferencesRepository: UserPreferencesRepository private set
     lateinit var mediaStorageManager: MediaStorageManager private set
     lateinit var backupManager: com.laterbox.data.backup.BackupManager private set
+    lateinit var tagRepository: com.laterbox.data.repository.TagRepository private set
+    lateinit var reminderRepository: com.laterbox.data.repository.ReminderRepository private set
+    lateinit var searchHistoryRepository: com.laterbox.data.repository.SearchHistoryRepository private set
 
     override fun onCreate() {
         super.onCreate()
@@ -36,6 +39,15 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
         )
         playlistRepository = PlaylistRepository(
             playlistDao = database.playlistDao()
+        )
+        tagRepository = com.laterbox.data.repository.TagRepository(
+            tagDao = database.tagDao()
+        )
+        reminderRepository = com.laterbox.data.repository.ReminderRepository(
+            reminderDao = database.reminderDao()
+        )
+        searchHistoryRepository = com.laterbox.data.repository.SearchHistoryRepository(
+            searchHistoryDao = database.searchHistoryDao()
         )
         backupManager = com.laterbox.data.backup.BackupManager(
             context = this,

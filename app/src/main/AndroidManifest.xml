@@ -4,6 +4,36 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Package Visibility for Deep Linking to Native Social Media Applications -->
+    <queries>
+        <!-- Generic Web Browsers for fallback -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+
+        <!-- Social Media Apps Packages -->
+        <!-- Instagram -->
+        <package android:name="com.instagram.android" />
+        <!-- Facebook -->
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.lite" />
+        <!-- X / Twitter -->
+        <package android:name="com.twitter.android" />
+        <package android:name="com.twitter.android.lite" />
+        <!-- TikTok -->
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.ss.android.ugc.trill" />
+        <!-- YouTube -->
+        <package android:name="com.google.android.youtube" />
+        <!-- Reddit -->
+        <package android:name="com.reddit.frontpage" />
+    </queries>
+
     <application
         android:name=".LaterBoxApp"
         android:allowBackup="true"

@@ -159,10 +159,11 @@ fun PlaylistDetailScreen(
 
     // Delete Playlist Confirmation Dialog
     if (showDeleteConfirm) {
+        val count = items.size
         ConfirmationDialog(
-            title = "Delete Playlist",
-            message = "Are you sure you want to delete \"${playlist?.name}\"? All saved content will remain safely in your library.",
-            confirmLabel = "Delete Playlist",
+            title = "Delete Playlist and Its Items?",
+            message = "Deleting this playlist will also move all $count saved items inside it to Trash. You can recover deleted items from Trash.",
+            confirmLabel = "Delete Playlist & Items",
             isDestructive = true,
             onConfirm = {
                 viewModel.deletePlaylist { onBack() }

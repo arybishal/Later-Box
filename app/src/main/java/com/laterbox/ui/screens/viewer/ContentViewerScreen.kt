@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.OpenInNew
@@ -84,6 +86,7 @@ fun ContentViewerScreen(
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var isFavorite by remember(item.id, item.isFavorite) { mutableStateOf(item.isFavorite) }
 
     // Record last opened timestamp immediately
     LaunchedEffect(item.id) {
@@ -131,6 +134,19 @@ fun ContentViewerScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        val newFav = !isFavorite
+                        isFavorite = newFav
+                        scope.launch {
+                            LaterBoxApp.instance.contentRepository.toggleFavorite(item.id, !newFav)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isFavorite) "Remove from Favorites" else "Mark as Favorite",
+                            tint = if (isFavorite) extended.amberAccent else MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                     IconButton(onClick = { openInExternalApp(context, item.url) }) {
                         Icon(
                             imageVector = Icons.Default.OpenInBrowser,

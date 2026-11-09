@@ -47,11 +47,15 @@ class PlaylistRepository(
         playlistDao.updatePlaylist(playlist)
     }
 
-    suspend fun deletePlaylist(playlist: PlaylistEntity) {
-        // Only non-inbox playlists can be deleted
-        if (!playlist.isDefaultInbox) {
-            playlistDao.deletePlaylist(playlist)
+    suspend fun deletePlaylistWithItems(playlistId: Long) {
+        val playlist = playlistDao.getPlaylistById(playlistId)
+        if (playlist != null && !playlist.isDefaultInbox) {
+            playlistDao.deletePlaylistAndCascadeSoftDeleteItems(playlistId)
         }
+    }
+
+    suspend fun deletePlaylist(playlist: PlaylistEntity) {
+        deletePlaylistWithItems(playlist.id)
     }
 
     suspend fun addItemToPlaylists(contentId: Long, playlistIds: List<Long>) {

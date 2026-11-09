@@ -45,6 +45,9 @@ class HomeViewModel(
     val playlists: StateFlow<List<PlaylistWithCount>> = playlistRepository.getAllPlaylistsWithCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val favoriteCount: StateFlow<Int> = contentRepository.getFavoriteCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         if (query.isBlank()) {

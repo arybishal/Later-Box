@@ -421,6 +421,67 @@ fun PlaylistCard(
 }
 
 @Composable
+fun FavoritesCollectionCard(
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = extended.cardBackground
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(extended.amberAccentSubtle),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Favorites",
+                    tint = extended.amberAccent,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Column {
+                Text(
+                    text = "Favorites",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "$count ${if (count == 1) "item" else "items"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = extended.textSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun CompactSocialFeedCard(
     item: SavedItemEntity,
     onClick: () -> Unit,

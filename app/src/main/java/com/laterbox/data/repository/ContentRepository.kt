@@ -36,6 +36,8 @@ class ContentRepository(
 
     fun getFavoriteItems(): Flow<List<SavedItemEntity>> = savedItemDao.getFavoriteItems()
 
+    fun getFavoriteCount(): Flow<Int> = savedItemDao.getFavoriteCount()
+
     fun getArchivedItems(): Flow<List<SavedItemEntity>> = savedItemDao.getArchivedItems()
 
     fun getTrashItems(): Flow<List<SavedItemEntity>> = savedItemDao.getTrashItems()

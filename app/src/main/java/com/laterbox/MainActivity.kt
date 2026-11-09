@@ -109,7 +109,7 @@ fun MainAppScaffold() {
 
     var showAddDialog by remember { mutableStateOf(false) }
 
-    val showBottomBar = currentRoute in MAIN_BOTTOM_NAV_ROUTES
+    val showBottomBar = currentRoute in MAIN_BOTTOM_NAV_ROUTES || currentRoute?.startsWith("library") == true
 
     Scaffold(
         bottomBar = {
@@ -165,7 +165,7 @@ fun MainAppScaffold() {
                     )
 
                     // 2. Library
-                    val isLibrary = currentRoute == Screen.Library.route
+                    val isLibrary = currentRoute == Screen.Library.route || currentRoute?.startsWith("library") == true
                     BottomNavTab(
                         label = "Library",
                         isSelected = isLibrary,
@@ -173,7 +173,7 @@ fun MainAppScaffold() {
                         inactiveColor = inactiveColor,
                         onClick = {
                             if (!isLibrary) {
-                                navController.navigate(Screen.Library.route) {
+                                navController.navigate(Screen.Library.createRoute("All")) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -288,6 +288,20 @@ fun MainAppScaffold() {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val handleOpenItem: (SavedItemEntity) -> Unit = { item ->
+            val hasSocialApp = com.laterbox.util.SocialLinkResolver.isSupportedSocialUrl(item.url) &&
+                    com.laterbox.util.SocialLinkResolver.resolveSocialAppIntent(context, item.url) != null
+            if (hasSocialApp) {
+                scope.launch {
+                    LaterBoxApp.instance.contentRepository.updateLastOpened(item.id)
+                }
+                com.laterbox.util.SocialLinkResolver.openSocialOrWebLink(context, item.url)
+            } else {
+                navController.navigate(Screen.ContentViewer.createRoute(item.id))
+            }
+        }
+
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
@@ -296,30 +310,37 @@ fun MainAppScaffold() {
             composable(Screen.Home.route) {
                 HomeScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                    onNavigateToLibrary = { navController.navigate(Screen.Library.route) },
+                    onNavigateToLibrary = { navController.navigate(Screen.Library.createRoute("All")) },
                     onNavigateToSearch = { navController.navigate(Screen.Search.route) },
                     onNavigateToPlaylist = { playlistId ->
                         navController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
                     },
-                    onOpenItem = { item ->
-                        navController.navigate(Screen.ContentViewer.createRoute(item.id))
-                    }
+                    onNavigateToFavorites = {
+                        navController.navigate(Screen.Library.createRoute("Favorites"))
+                    },
+                    onOpenItem = handleOpenItem
                 )
             }
 
-            composable(Screen.Library.route) {
-                LibraryScreen(
-                    onOpenItem = { item ->
-                        navController.navigate(Screen.ContentViewer.createRoute(item.id))
+            composable(
+                route = Screen.Library.route,
+                arguments = listOf(
+                    navArgument("category") {
+                        type = NavType.StringType
+                        defaultValue = "All"
                     }
+                )
+            ) { backStackEntry ->
+                val category = backStackEntry.arguments?.getString("category") ?: "All"
+                LibraryScreen(
+                    initialCategory = category,
+                    onOpenItem = handleOpenItem
                 )
             }
 
             composable(Screen.Search.route) {
                 SearchScreen(
-                    onOpenItem = { item ->
-                        navController.navigate(Screen.ContentViewer.createRoute(item.id))
-                    }
+                    onOpenItem = handleOpenItem
                 )
             }
 
@@ -339,9 +360,7 @@ fun MainAppScaffold() {
                 PlaylistDetailScreen(
                     playlistId = playlistId,
                     onBack = { navController.popBackStack() },
-                    onOpenItem = { item ->
-                        navController.navigate(Screen.ContentViewer.createRoute(item.id))
-                    }
+                    onOpenItem = handleOpenItem
                 )
             }
 

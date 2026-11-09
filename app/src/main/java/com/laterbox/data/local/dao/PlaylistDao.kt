@@ -94,4 +94,32 @@ interface PlaylistDao {
 
     @Query("DELETE FROM item_playlist_cross_ref")
     suspend fun clearAllCrossRefs()
+
+    @Query("SELECT contentId FROM item_playlist_cross_ref WHERE playlistId = :playlistId")
+    suspend fun getContentIdsForPlaylist(playlistId: Long): List<Long>
+
+    @Query("UPDATE saved_items SET isDeleted = 1, deletedAt = :timestamp WHERE id IN (:ids) AND isDeleted = 0")
+    suspend fun softDeleteItemsByIds(ids: List<Long>, timestamp: Long)
+
+    @Query("DELETE FROM item_playlist_cross_ref WHERE playlistId = :playlistId")
+    suspend fun deleteCrossRefsForPlaylist(playlistId: Long)
+
+    @Query("DELETE FROM playlists WHERE id = :playlistId")
+    suspend fun deletePlaylistById(playlistId: Long)
+
+    @Transaction
+    suspend fun deletePlaylistAndCascadeSoftDeleteItems(
+        playlistId: Long,
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        val contentIds = getContentIdsForPlaylist(playlistId)
+        if (contentIds.isNotEmpty()) {
+            softDeleteItemsByIds(contentIds, timestamp)
+            for (cId in contentIds) {
+                deleteAllCrossRefsForContent(cId)
+            }
+        }
+        deleteCrossRefsForPlaylist(playlistId)
+        deletePlaylistById(playlistId)
+    }
 }

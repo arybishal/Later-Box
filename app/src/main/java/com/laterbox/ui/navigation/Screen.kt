@@ -2,7 +2,9 @@ package com.laterbox.ui.navigation
 
 sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Home")
-    object Library : Screen("library", "Library")
+    object Library : Screen("library?category={category}", "Library") {
+        fun createRoute(category: String = "All") = "library?category=$category"
+    }
     object Search : Screen("search", "Search")
     object Settings : Screen("settings", "Settings")
     object Playlists : Screen("playlists", "Playlists")

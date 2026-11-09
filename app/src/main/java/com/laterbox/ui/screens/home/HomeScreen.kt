@@ -54,6 +54,7 @@ import com.laterbox.ui.components.ContinueWatchingCard
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
 import com.laterbox.ui.components.EmptyDashedCard
+import com.laterbox.ui.components.FavoritesCollectionCard
 import com.laterbox.ui.components.PlaylistCard
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import java.util.Calendar
@@ -74,6 +75,7 @@ fun HomeScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToPlaylist: (Long) -> Unit,
+    onNavigateToFavorites: () -> Unit = onNavigateToLibrary,
     onOpenItem: (SavedItemEntity) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -82,6 +84,7 @@ fun HomeScreen(
     val recentItems by viewModel.recentItems.collectAsState()
     val continueItems by viewModel.continueItems.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
+    val favoriteCount by viewModel.favoriteCount.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -250,14 +253,26 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // Playlists list (if more than inbox)
-            if (playlists.isNotEmpty()) {
+            // Collections list (Smart Favorites collection first, then user playlists)
+            val customPlaylists = playlists.filter { !it.isDefaultInbox }
+            if (customPlaylists.isNotEmpty() || favoriteCount > 0) {
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.padding(bottom = 28.dp)
                     ) {
-                        items(playlists) { playlist ->
+                        if (favoriteCount > 0) {
+                            item {
+                                FavoritesCollectionCard(
+                                    count = favoriteCount,
+                                    onClick = onNavigateToFavorites,
+                                    modifier = Modifier
+                                        .width(140.dp)
+                                        .height(115.dp)
+                                )
+                            }
+                        }
+                        items(customPlaylists) { playlist ->
                             PlaylistCard(
                                 playlist = playlist,
                                 onClick = { onNavigateToPlaylist(playlist.id) },
@@ -267,10 +282,6 @@ fun HomeScreen(
                             )
                         }
                     }
-                }
-            } else {
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
