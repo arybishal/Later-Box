@@ -9,10 +9,12 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.laterbox.data.ai.model.GeminiModelInfo
 import com.laterbox.data.ai.model.GeminiModels
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
 
 private val Context.aiDataStore: DataStore<Preferences> by preferencesDataStore(name = "gemini_ai_preferences")
 
@@ -26,6 +28,8 @@ class AiSettingsRepository(private val context: Context) {
         val LAST_TEST_STATUS = stringPreferencesKey("last_api_test_status")
         val LAST_TEST_TIMESTAMP = longPreferencesKey("last_api_test_timestamp")
         val ANALYSIS_COUNT = intPreferencesKey("analysis_count_estimate")
+        val DISCOVERED_MODELS_JSON = stringPreferencesKey("discovered_models_json")
+        val LAST_MODELS_DISCOVERY_TIMESTAMP = longPreferencesKey("last_models_discovery_timestamp")
     }
 
     val isAiEnabled: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
@@ -56,6 +60,28 @@ class AiSettingsRepository(private val context: Context) {
         preferences[PreferencesKeys.ANALYSIS_COUNT] ?: 0
     }
 
+    val discoveredModels: Flow<List<GeminiModelInfo>> = context.aiDataStore.data.map { preferences ->
+        val rawJson = preferences[PreferencesKeys.DISCOVERED_MODELS_JSON]
+        if (!rawJson.isNullOrBlank()) {
+            try {
+                val array = JSONArray(rawJson)
+                val list = mutableListOf<GeminiModelInfo>()
+                for (i in 0 until array.length()) {
+                    list.add(GeminiModelInfo.fromJson(array.getJSONObject(i)))
+                }
+                if (list.isNotEmpty()) list else GeminiModels.FALLBACK_MODELS
+            } catch (_: Exception) {
+                GeminiModels.FALLBACK_MODELS
+            }
+        } else {
+            GeminiModels.FALLBACK_MODELS
+        }
+    }
+
+    val lastModelsDiscoveryTimestamp: Flow<Long> = context.aiDataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_MODELS_DISCOVERY_TIMESTAMP] ?: 0L
+    }
+
     suspend fun setAiEnabled(enabled: Boolean) {
         context.aiDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_AI_ENABLED] = enabled
@@ -74,7 +100,7 @@ class AiSettingsRepository(private val context: Context) {
 
     suspend fun setSelectedModelId(modelId: String) {
         context.aiDataStore.edit { preferences ->
-            preferences[PreferencesKeys.SELECTED_MODEL_ID] = modelId
+            preferences[PreferencesKeys.SELECTED_MODEL_ID] = GeminiModelInfo.normalizeModelId(modelId)
         }
     }
 
@@ -91,6 +117,15 @@ class AiSettingsRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveDiscoveredModels(models: List<GeminiModelInfo>) {
+        context.aiDataStore.edit { preferences ->
+            val array = JSONArray()
+            models.forEach { array.put(it.toJson()) }
+            preferences[PreferencesKeys.DISCOVERED_MODELS_JSON] = array.toString()
+            preferences[PreferencesKeys.LAST_MODELS_DISCOVERY_TIMESTAMP] = System.currentTimeMillis()
+        }
+    }
+
     suspend fun incrementAnalysisCount() {
         context.aiDataStore.edit { preferences ->
             val current = preferences[PreferencesKeys.ANALYSIS_COUNT] ?: 0
@@ -101,4 +136,5 @@ class AiSettingsRepository(private val context: Context) {
     suspend fun isAiEnabledNow(): Boolean = isAiEnabled.first()
     suspend fun isAutoAnalyzeNow(): Boolean = autoAnalyzeNewItems.first()
     suspend fun getSelectedModelIdNow(): String = selectedModelId.first()
+    suspend fun getDiscoveredModelsNow(): List<GeminiModelInfo> = discoveredModels.first()
 }

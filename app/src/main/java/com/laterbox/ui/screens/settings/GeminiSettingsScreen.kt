@@ -5,9 +5,11 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,13 +28,16 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -58,6 +63,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +76,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -78,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.ai.model.AiConnectionState
+import com.laterbox.data.ai.model.GeminiModelInfo
 import com.laterbox.data.ai.model.GeminiModels
 import com.laterbox.data.ai.network.GeminiApiClient
 import com.laterbox.data.ai.network.GeminiApiResult
@@ -106,6 +114,8 @@ fun GeminiSettingsScreen(
     val isAiEnabled by aiSettings.isAiEnabled.collectAsState(initial = false)
     val autoAnalyze by aiSettings.autoAnalyzeNewItems.collectAsState(initial = false)
     val selectedModelId by aiSettings.selectedModelId.collectAsState(initial = GeminiModels.DEFAULT_MODEL_ID)
+    val discoveredModels by aiSettings.discoveredModels.collectAsState(initial = GeminiModels.FALLBACK_MODELS)
+    val lastModelsDiscoveryTimestamp by aiSettings.lastModelsDiscoveryTimestamp.collectAsState(initial = 0L)
     val analysisCount by aiSettings.analysisCountEstimate.collectAsState(initial = 0)
     val lastTestStatus by aiSettings.lastTestStatus.collectAsState(initial = null)
     val lastTestTimestamp by aiSettings.lastTestTimestamp.collectAsState(initial = 0L)
@@ -116,11 +126,61 @@ fun GeminiSettingsScreen(
     var isKeyVisible by remember { mutableStateOf(false) }
     var isEditingKey by remember { mutableStateOf(!hasKey) }
 
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedFamilyTab by remember { mutableStateOf("All") }
+    var isRefreshingModels by remember { mutableStateOf(false) }
+
     var testState by remember { mutableStateOf(AiConnectionState.IDLE) }
     var testMessage by remember { mutableStateOf("") }
     var isTesting by remember { mutableStateOf(false) }
 
     var showDeleteKeyDialog by remember { mutableStateOf(false) }
+
+    val cleanSelectedId = GeminiModelInfo.normalizeModelId(selectedModelId)
+    val currentSelectedModel = GeminiModels.findModel(cleanSelectedId, discoveredModels)
+    val isModelAvailableInProject = discoveredModels.any { it.id.equals(cleanSelectedId, ignoreCase = true) }
+    val recommendedModel = GeminiModels.selectBestDefault(discoveredModels)
+
+    val lastRefreshedText = if (lastModelsDiscoveryTimestamp > 0L) {
+        val formatter = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault())
+        "Updated: ${formatter.format(Date(lastModelsDiscoveryTimestamp))}"
+    } else {
+        "Default model registry (Offline)"
+    }
+
+    val flashCount = discoveredModels.count { it.family == "Flash" }
+    val proCount = discoveredModels.count { it.family == "Pro" }
+    val otherCount = discoveredModels.count { it.family != "Flash" && it.family != "Pro" }
+
+    val filteredModels = remember(discoveredModels, searchQuery, selectedFamilyTab) {
+        discoveredModels.filter { model ->
+            val matchesSearch = searchQuery.isBlank() ||
+                model.displayName.contains(searchQuery, ignoreCase = true) ||
+                model.id.contains(searchQuery, ignoreCase = true) ||
+                model.description.contains(searchQuery, ignoreCase = true)
+
+            val matchesFamily = when (selectedFamilyTab) {
+                "Flash" -> model.family == "Flash"
+                "Pro" -> model.family == "Pro"
+                "Other" -> model.family != "Flash" && model.family != "Pro"
+                else -> true
+            }
+
+            matchesSearch && matchesFamily
+        }
+    }
+
+    LaunchedEffect(hasKey) {
+        if (hasKey) {
+            val key = secureStorage.getApiKey() ?: ""
+            if (key.isNotBlank()) {
+                val res = apiClient.fetchAvailableModels(key)
+                if (res is GeminiApiResult.Success && res.data.isNotEmpty()) {
+                    aiSettings.saveDiscoveredModels(res.data)
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -188,7 +248,7 @@ fun GeminiSettingsScreen(
                             color = extended.primaryBlack
                         )
                         Text(
-                            text = if (isAiEnabled && hasKey) "Model: ${GeminiModels.findModel(selectedModelId).displayName}" else "Configure below to enable smart summaries",
+                            text = if (isAiEnabled && hasKey) "Model: ${currentSelectedModel.displayName}" else "Configure below to enable smart summaries",
                             style = MaterialTheme.typography.bodySmall,
                             color = extended.textSecondary
                         )
@@ -211,10 +271,50 @@ fun GeminiSettingsScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // =========================================================================
+            // 2. SUBSCRIPTION VS DEVELOPER API NOTICE BANNER
+            // =========================================================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(extended.cardBackground)
+                    .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+                    .padding(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = extended.primaryBlack,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .padding(top = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Google AI Pro vs. Developer API",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Your Google AI subscription and Gemini Developer API usage are separate. API access, available models, quotas and charges depend on your Google API project and its configuration.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             // =========================================================================
-            // 2. API KEY MANAGEMENT SECTION
+            // 3. API KEY MANAGEMENT SECTION
             // =========================================================================
             Text(
                 text = "Google Gemini API Key",
@@ -256,7 +356,7 @@ fun GeminiSettingsScreen(
                             Text(
                                 text = maskedKey,
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = extended.primaryBlack,
@@ -277,7 +377,7 @@ fun GeminiSettingsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "Remove key",
-                                    tint = extended.warmError
+                                    tint = extended.textSecondary
                                 )
                             }
                         }
@@ -346,6 +446,16 @@ fun GeminiSettingsScreen(
                                 isEditingKey = false
                                 inputKey = ""
                                 Toast.makeText(context, "API Key saved securely", Toast.LENGTH_SHORT).show()
+
+                                // Auto-discover available models with the newly saved key
+                                scope.launch {
+                                    isRefreshingModels = true
+                                    val res = apiClient.fetchAvailableModels(clean)
+                                    if (res is GeminiApiResult.Success && res.data.isNotEmpty()) {
+                                        aiSettings.saveDiscoveredModels(res.data)
+                                    }
+                                    isRefreshingModels = false
+                                }
                             }
                         },
                         enabled = inputKey.trim().isNotBlank(),
@@ -365,92 +475,314 @@ fun GeminiSettingsScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // =========================================================================
-            // 3. MODEL SELECTION SECTION
+            // 4. MODEL DISCOVERY & SELECTION SECTION
             // =========================================================================
-            Text(
-                text = "Gemini Model",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = extended.primaryBlack
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Gemini Models",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${discoveredModels.size} models available · $lastRefreshedText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+                }
+
+                if (hasKey) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val key = secureStorage.getApiKey() ?: ""
+                                if (key.isNotBlank()) {
+                                    isRefreshingModels = true
+                                    when (val result = apiClient.fetchAvailableModels(key)) {
+                                        is GeminiApiResult.Success -> {
+                                            aiSettings.saveDiscoveredModels(result.data)
+                                            Toast.makeText(context, "Discovered ${result.data.size} models from Google API", Toast.LENGTH_SHORT).show()
+                                        }
+                                        is GeminiApiResult.Error -> {
+                                            Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                    isRefreshingModels = false
+                                }
+                            }
+                        },
+                        enabled = !isRefreshingModels,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        if (isRefreshingModels) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = extended.primaryBlack
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Fetching...", fontSize = 12.sp, color = extended.primaryBlack)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = extended.primaryBlack
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Fetch Models", fontSize = 12.sp, color = extended.primaryBlack)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Search models field
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search models by name or id (e.g. 2.5, flash)...", fontSize = 13.sp) },
+                singleLine = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = extended.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search",
+                                tint = extended.textSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = extended.primaryBlack,
+                    unfocusedBorderColor = extended.border,
+                    cursorColor = extended.primaryBlack
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Select which Gemini model to use for analyzing saved items.",
-                style = MaterialTheme.typography.bodySmall,
-                color = extended.textSecondary
-            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Family Filter Tabs/Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    "All" to discoveredModels.size,
+                    "Flash" to flashCount,
+                    "Pro" to proCount,
+                    "Other" to otherCount
+                ).forEach { (family, count) ->
+                    val isChipSelected = selectedFamilyTab == family
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isChipSelected) extended.primaryBlack else extended.pillInactive)
+                            .border(1.dp, if (isChipSelected) extended.primaryBlack else extended.border, RoundedCornerShape(8.dp))
+                            .clickable { selectedFamilyTab = family }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "$family ($count)",
+                            fontSize = 12.sp,
+                            fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isChipSelected) Color.White else extended.primaryBlack
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            GeminiModels.ALL_MODELS.forEach { model ->
-                val isSelected = model.id == selectedModelId
+            // Warning if selected model is not available in the project
+            if (!isModelAvailableInProject && hasKey) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSelected) extended.pillInactive else extended.cardBackground)
-                        .border(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) extended.primaryBlack else extended.border,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .clickable {
-                            scope.launch {
-                                aiSettings.setSelectedModelId(model.id)
-                            }
-                        }
-                        .padding(14.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(extended.pillInactive)
+                        .border(1.dp, extended.primaryBlack, RoundedCornerShape(10.dp))
+                        .padding(12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = isSelected,
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = extended.primaryBlack,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Selected Model Unavailable in Project",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = extended.primaryBlack
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "'$cleanSelectedId' is not present in your API model list. Tap below to switch to the recommended model or choose from the list.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
                             onClick = {
+                                scope.launch {
+                                    aiSettings.setSelectedModelId(recommendedModel.id)
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Switch to ${recommendedModel.displayName} (${recommendedModel.id})", color = extended.primaryBlack)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            // List of discovered models
+            if (filteredModels.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(extended.cardBackground)
+                        .border(1.dp, extended.border, RoundedCornerShape(10.dp))
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (searchQuery.isNotBlank()) "No models match '$searchQuery'" else "No compatible models found for $selectedFamilyTab",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = extended.textSecondary
+                    )
+                }
+            } else {
+                filteredModels.forEach { model ->
+                    val isSelected = model.id.equals(cleanSelectedId, ignoreCase = true)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) extended.pillInactive else extended.cardBackground)
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) extended.primaryBlack else extended.border,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable {
                                 scope.launch {
                                     aiSettings.setSelectedModelId(model.id)
                                 }
-                            },
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = extended.primaryBlack
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = model.displayName,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = extended.primaryBlack
+                            }
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    scope.launch {
+                                        aiSettings.setSelectedModelId(model.id)
+                                    }
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = extended.primaryBlack
                                 )
+                            )
 
-                                if (model.isRecommended) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(extended.softYellow)
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = model.displayName,
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = extended.primaryBlack
+                                    )
+
+                                    if (model.isRecommended) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(extended.softYellow)
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "RECOMMENDED",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF111111)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = model.id,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = extended.primaryBlack
+                                    )
+
+                                    val tokenLimits = model.formatTokenLimits()
+                                    if (tokenLimits.isNotBlank()) {
                                         Text(
-                                            text = "RECOMMENDED",
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF111111)
+                                            text = "· $tokenLimits",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = extended.textSecondary
                                         )
                                     }
                                 }
-                            }
 
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = model.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = extended.textSecondary
-                            )
+                                if (model.description.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = model.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = extended.textSecondary,
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -461,16 +793,16 @@ fun GeminiSettingsScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // =========================================================================
-            // 4. TEST CONNECTION SECTION
+            // 5. TEST SELECTED MODEL SECTION (6-STEP DIAGNOSTIC)
             // =========================================================================
             Text(
-                text = "Connection Diagnostic",
+                text = "Test Selected Model",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = extended.primaryBlack
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Sends a minimal ping to verify that your API key is authentic, valid, and active for $selectedModelId.",
+                text = "Executes 6 verification steps for '$cleanSelectedId': key format, models.list discovery, model existence in project, generateContent capability, and a real ping request.",
                 style = MaterialTheme.typography.bodySmall,
                 color = extended.textSecondary
             )
@@ -485,11 +817,16 @@ fun GeminiSettingsScreen(
                     .clickable(enabled = hasKey && !isTesting) {
                         isTesting = true
                         testState = AiConnectionState.TESTING
-                        testMessage = "Testing connection to Google Gemini API..."
+                        testMessage = "Testing '$cleanSelectedId' on Google Gemini API..."
 
                         scope.launch {
                             val key = secureStorage.getApiKey() ?: ""
-                            val result = apiClient.testConnection(key, selectedModelId)
+                            val modelsRes = apiClient.fetchAvailableModels(key)
+                            if (modelsRes is GeminiApiResult.Success && modelsRes.data.isNotEmpty()) {
+                                aiSettings.saveDiscoveredModels(modelsRes.data)
+                            }
+
+                            val result = apiClient.testConnection(key, cleanSelectedId)
 
                             when (result) {
                                 is GeminiApiResult.Success -> {
@@ -518,7 +855,7 @@ fun GeminiSettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Testing API connection...",
+                            text = "Testing $cleanSelectedId...",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFF111111)
                         )
@@ -533,7 +870,7 @@ fun GeminiSettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Test API Connection",
+                            text = "Test Selected Model ($cleanSelectedId)",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                             color = Color(0xFF111111)
                         )
@@ -542,37 +879,59 @@ fun GeminiSettingsScreen(
             }
 
             if (testMessage.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                val isSuccess = testState == AiConnectionState.SUCCESS
+                val title = when (testState) {
+                    AiConnectionState.SUCCESS -> "Diagnostic Passed (6/6 Checks)"
+                    AiConnectionState.REGIONAL_RESTRICTION -> "Regional Restriction Reported by Google"
+                    AiConnectionState.API_NOT_ENABLED -> "Generative Language API Disabled"
+                    AiConnectionState.API_KEY_RESTRICTED -> "API Key Permission Denied / Restricted"
+                    AiConnectionState.MODEL_NOT_FOUND -> "Model Not Accessible in Project"
+                    AiConnectionState.MODEL_UNSUPPORTED -> "Model Unsupported for Content Generation"
+                    AiConnectionState.QUOTA_EXCEEDED -> "API Quota Exceeded"
+                    AiConnectionState.RATE_LIMIT -> "Rate Limit Reached"
+                    AiConnectionState.BILLING_RESTRICTION -> "Billing Requirement"
+                    AiConnectionState.INVALID_KEY -> "Invalid API Key"
+                    AiConnectionState.TIMEOUT -> "Request Timed Out"
+                    AiConnectionState.NETWORK_ERROR -> "Network Connection Error"
+                    AiConnectionState.SERVER_ERROR -> "Google Gemini Server Error"
+                    else -> "Diagnostic Issue Detected"
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (testState == AiConnectionState.SUCCESS) extended.pillInactive else extended.pillInactive)
+                        .background(extended.pillInactive)
                         .border(
                             1.dp,
-                            if (testState == AiConnectionState.SUCCESS) extended.primaryBlack else extended.warmError,
+                            if (isSuccess) extended.primaryBlack else extended.border,
                             RoundedCornerShape(10.dp)
                         )
-                        .padding(12.dp)
+                        .padding(14.dp)
                 ) {
                     Row(verticalAlignment = Alignment.Top) {
                         Icon(
-                            imageVector = if (testState == AiConnectionState.SUCCESS) Icons.Default.CheckCircle else Icons.Default.Warning,
+                            imageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Warning,
                             contentDescription = null,
-                            tint = if (testState == AiConnectionState.SUCCESS) extended.primaryBlack else extended.warmError,
-                            modifier = Modifier.size(18.dp)
+                            tint = extended.primaryBlack,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(top = 2.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = if (testState == AiConnectionState.SUCCESS) "Connection Verified" else "Connection Failed",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (testState == AiConnectionState.SUCCESS) extended.primaryBlack else extended.warmError
+                                text = title,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = extended.primaryBlack
                             )
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = testMessage,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = extended.textSecondary
+                                color = extended.textSecondary,
+                                lineHeight = 18.sp
                             )
                         }
                     }
@@ -584,7 +943,7 @@ fun GeminiSettingsScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // =========================================================================
-            // 5. GLOBAL AI CONTROLS SECTION
+            // 6. GLOBAL AI CONTROLS SECTION
             // =========================================================================
             Text(
                 text = "Preferences & Controls",
@@ -682,7 +1041,7 @@ fun GeminiSettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Activity / Count Card
+            // Activity / Cost Estimate Card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

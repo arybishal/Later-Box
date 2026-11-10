@@ -2,6 +2,8 @@ package com.laterbox.data.ai.network
 
 import com.laterbox.data.ai.model.AiAnalysisOutput
 import com.laterbox.data.ai.model.AiConnectionState
+import com.laterbox.data.ai.model.GeminiModelInfo
+import com.laterbox.data.ai.model.GeminiModels
 import com.laterbox.data.ai.model.LocationInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,17 +31,17 @@ class GeminiApiClient(
 ) {
     companion object {
         private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+        private const val HEADER_API_KEY = "x-goog-api-key"
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+        private const val MAX_PAGINATION_PAGES = 10
     }
 
     /**
-     * Executes a lightweight test request against the Gemini API to verify API key validity,
-     * model availability, and account quota without analyzing any user library items.
+     * Dynamically discovers all models accessible to the provided Gemini API key.
+     * Supports full pagination via nextPageToken.
+     * Filters down to models supporting "generateContent".
      */
-    suspend fun testConnection(
-        apiKey: String,
-        modelId: String
-    ): GeminiApiResult<String> = withContext(Dispatchers.IO) {
+    suspend fun fetchAvailableModels(apiKey: String): GeminiApiResult<List<GeminiModelInfo>> = withContext(Dispatchers.IO) {
         val cleanKey = apiKey.trim()
         if (cleanKey.isBlank()) {
             return@withContext GeminiApiResult.Error(
@@ -48,7 +50,125 @@ class GeminiApiClient(
             )
         }
 
-        val url = "$BASE_URL/$modelId:generateContent?key=$cleanKey"
+        val allModels = mutableListOf<GeminiModelInfo>()
+        var nextPageToken: String? = null
+        var pageCount = 0
+
+        try {
+            do {
+                val urlBuilder = StringBuilder(BASE_URL).append("?pageSize=100")
+                if (!nextPageToken.isNullOrBlank()) {
+                    urlBuilder.append("&pageToken=").append(nextPageToken)
+                }
+
+                val request = Request.Builder()
+                    .url(urlBuilder.toString())
+                    .addHeader(HEADER_API_KEY, cleanKey)
+                    .get()
+                    .build()
+
+                httpClient.newCall(request).execute().use { response ->
+                    val bodyString = response.body?.string() ?: ""
+
+                    if (!response.isSuccessful) {
+                        return@withContext mapHttpError(response.code, bodyString, "models.list")
+                    }
+
+                    val pageResult = parseModelsPageJson(bodyString)
+                    allModels.addAll(pageResult.first)
+                    nextPageToken = pageResult.second
+                }
+
+                pageCount++
+            } while (!nextPageToken.isNullOrBlank() && pageCount < MAX_PAGINATION_PAGES)
+
+            if (allModels.isNotEmpty()) {
+                // Determine best default/recommended model among all discovered models
+                val bestModel = GeminiModels.selectBestDefault(allModels)
+                val finalizedList = allModels.map { model ->
+                    model.copy(isRecommended = model.id == bestModel.id)
+                }.sortedWith(
+                    compareByDescending<GeminiModelInfo> { it.isRecommended }
+                        .thenByDescending { it.id.contains("flash", ignoreCase = true) }
+                        .thenByDescending { it.id.contains("pro", ignoreCase = true) }
+                        .thenBy { it.displayName }
+                )
+                GeminiApiResult.Success(finalizedList)
+            } else {
+                GeminiApiResult.Success(GeminiModels.FALLBACK_MODELS)
+            }
+        } catch (e: SocketTimeoutException) {
+            GeminiApiResult.Error(
+                AiConnectionState.TIMEOUT,
+                "Connection timed out while fetching Gemini models. Check your internet connectivity."
+            )
+        } catch (e: IOException) {
+            GeminiApiResult.Error(
+                AiConnectionState.NETWORK_ERROR,
+                "Network connection failed while fetching Gemini models. Verify internet access."
+            )
+        } catch (e: Exception) {
+            GeminiApiResult.Error(
+                AiConnectionState.UNKNOWN_ERROR,
+                "Failed to fetch Gemini models: ${e.localizedMessage ?: e.javaClass.simpleName}"
+            )
+        }
+    }
+
+    /**
+     * Executes a 6-step diagnostic test against the Gemini Developer API:
+     * 1. Validate API key presence/format.
+     * 2. Call models.list to discover accessible models.
+     * 3. Verify selected model exists in project.
+     * 4. Verify selected model supports 'generateContent'.
+     * 5. Send minimal test prompt ('Respond with OK') using header authentication.
+     * 6. Validate candidate output response.
+     */
+    suspend fun testConnection(
+        apiKey: String,
+        modelId: String
+    ): GeminiApiResult<String> = withContext(Dispatchers.IO) {
+        // Step 1: Validate key format
+        val cleanKey = apiKey.trim()
+        if (cleanKey.isBlank()) {
+            return@withContext GeminiApiResult.Error(
+                AiConnectionState.INVALID_KEY,
+                "API key cannot be empty."
+            )
+        }
+
+        val normalizedModelId = GeminiModelInfo.normalizeModelId(modelId)
+
+        // Step 2: Query models.list
+        val modelsResult = fetchAvailableModels(cleanKey)
+        if (modelsResult is GeminiApiResult.Error) {
+            return@withContext modelsResult
+        }
+
+        val availableModels = (modelsResult as GeminiApiResult.Success).data
+
+        // Step 3: Verify model exists in returned list
+        val targetModel = availableModels.firstOrNull { it.id.equals(normalizedModelId, ignoreCase = true) }
+        if (targetModel == null && availableModels.isNotEmpty()) {
+            val availableNames = availableModels.take(4).joinToString(", ") { it.id }
+            return@withContext GeminiApiResult.Error(
+                AiConnectionState.MODEL_NOT_FOUND,
+                "Model '$normalizedModelId' is not accessible on your Google Cloud/AI Studio project. Accessible models include: $availableNames."
+            )
+        }
+
+        // Step 4: Verify generateContent is supported
+        if (targetModel != null && targetModel.supportedGenerationMethods.isNotEmpty() &&
+            !targetModel.supportedGenerationMethods.contains("generateContent")
+        ) {
+            return@withContext GeminiApiResult.Error(
+                AiConnectionState.MODEL_UNSUPPORTED,
+                "Model '$normalizedModelId' does not support content generation ('generateContent')."
+            )
+        }
+
+        // Step 5: Send minimal real ping with header authentication
+        val url = "$BASE_URL/$normalizedModelId:generateContent"
         val requestJson = JSONObject().apply {
             val contentsArray = JSONArray().apply {
                 val contentObj = JSONObject().apply {
@@ -64,6 +184,7 @@ class GeminiApiClient(
 
         val request = Request.Builder()
             .url(url)
+            .addHeader(HEADER_API_KEY, cleanKey)
             .post(requestJson.toString().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
@@ -72,14 +193,15 @@ class GeminiApiClient(
                 val bodyString = response.body?.string() ?: ""
 
                 if (response.isSuccessful) {
+                    // Step 6: Validate usable text response
                     val candidateText = extractCandidateText(bodyString)
                     if (candidateText != null) {
-                        GeminiApiResult.Success("Connected successfully to Google Gemini ($modelId).")
+                        GeminiApiResult.Success("Connected successfully to Google Gemini ($normalizedModelId). All 6 diagnostic steps passed.")
                     } else {
-                        GeminiApiResult.Success("API responded successfully.")
+                        GeminiApiResult.Success("Connected to Google Gemini ($normalizedModelId). API returned 200 OK.")
                     }
                 } else {
-                    mapHttpError(response.code, bodyString, modelId)
+                    mapHttpError(response.code, bodyString, normalizedModelId)
                 }
             }
         } catch (e: SocketTimeoutException) {
@@ -118,7 +240,8 @@ class GeminiApiClient(
             )
         }
 
-        val url = "$BASE_URL/$modelId:generateContent?key=$cleanKey"
+        val normalizedModelId = GeminiModelInfo.normalizeModelId(modelId)
+        val url = "$BASE_URL/$normalizedModelId:generateContent"
 
         // Build parts array: text prompt + optional image part
         val partsArray = JSONArray().apply {
@@ -152,6 +275,7 @@ class GeminiApiClient(
 
         val request = Request.Builder()
             .url(url)
+            .addHeader(HEADER_API_KEY, cleanKey)
             .post(requestJson.toString().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
@@ -171,7 +295,7 @@ class GeminiApiClient(
                     val parsedOutput = parseStructuredJson(rawText)
                     GeminiApiResult.Success(parsedOutput)
                 } else {
-                    mapHttpError(response.code, bodyString, modelId)
+                    mapHttpError(response.code, bodyString, normalizedModelId)
                 }
             }
         } catch (e: SocketTimeoutException) {
@@ -192,6 +316,78 @@ class GeminiApiClient(
         }
     }
 
+    /**
+     * Parses a single page response from models.list endpoint.
+     * Returns a pair of (List of models supporting generateContent, nextPageToken).
+     */
+    fun parseModelsPageJson(responseBody: String): Pair<List<GeminiModelInfo>, String?> {
+        val list = mutableListOf<GeminiModelInfo>()
+        var nextToken: String? = null
+
+        try {
+            val root = JSONObject(responseBody)
+            nextToken = root.optString("nextPageToken").takeIf { it.isNotBlank() }
+
+            val modelsArray = root.optJSONArray("models") ?: return Pair(emptyList(), null)
+
+            for (i in 0 until modelsArray.length()) {
+                val modelObj = modelsArray.getJSONObject(i)
+                val rawName = modelObj.optString("name", "")
+                val cleanId = GeminiModelInfo.normalizeModelId(rawName)
+                if (cleanId.isBlank()) continue
+
+                val supportedMethods = modelObj.optJSONArray("supportedGenerationMethods")?.toStringList() ?: emptyList()
+
+                // Filter to models that support generating content
+                if (supportedMethods.isNotEmpty() && !supportedMethods.contains("generateContent")) {
+                    continue
+                }
+
+                val displayName = modelObj.optString("displayName", cleanId).ifBlank { cleanId }
+                val description = modelObj.optString("description", "")
+                val inputTokenLimit = modelObj.optInt("inputTokenLimit", 0)
+                val outputTokenLimit = modelObj.optInt("outputTokenLimit", 0)
+                val inModalities = modelObj.optJSONArray("supportedInputModalities")?.toStringList() ?: emptyList()
+                val outModalities = modelObj.optJSONArray("supportedOutputModalities")?.toStringList() ?: emptyList()
+
+                val modelInfo = GeminiModelInfo(
+                    id = cleanId,
+                    displayName = displayName,
+                    description = description,
+                    isRecommended = false,
+                    supportsMultimodal = true,
+                    supportedGenerationMethods = supportedMethods,
+                    inputTokenLimit = inputTokenLimit,
+                    outputTokenLimit = outputTokenLimit,
+                    supportedInputModalities = inModalities,
+                    supportedOutputModalities = outModalities,
+                    isDynamicallyDiscovered = true
+                )
+                list.add(modelInfo)
+            }
+        } catch (_: Exception) {
+            return Pair(emptyList(), null)
+        }
+
+        return Pair(list, nextToken)
+    }
+
+    fun parseModelsListJson(responseBody: String): List<GeminiModelInfo> {
+        val page = parseModelsPageJson(responseBody)
+        val list = page.first
+        if (list.isEmpty()) return emptyList()
+
+        val best = GeminiModels.selectBestDefault(list)
+        return list.map { model ->
+            model.copy(isRecommended = model.id == best.id)
+        }.sortedWith(
+            compareByDescending<GeminiModelInfo> { it.isRecommended }
+                .thenByDescending { it.id.contains("flash", ignoreCase = true) }
+                .thenByDescending { it.id.contains("pro", ignoreCase = true) }
+                .thenBy { it.displayName }
+        )
+    }
+
     private fun extractCandidateText(responseBody: String): String? {
         return try {
             val root = JSONObject(responseBody)
@@ -208,31 +404,132 @@ class GeminiApiClient(
         }
     }
 
-    private fun mapHttpError(code: Int, bodyString: String, modelId: String): GeminiApiResult.Error {
-        val extractedMessage = try {
+    /**
+     * Accurate HTTP error mapping parsing Google's JSON error response.
+     * Never falsely reports 404 as a regional restriction.
+     */
+    fun mapHttpError(code: Int, bodyString: String, modelId: String): GeminiApiResult.Error {
+        var extractedMessage = ""
+        var extractedStatus = ""
+        var extractedReason = ""
+
+        try {
             val root = JSONObject(bodyString)
             val err = root.optJSONObject("error")
-            err?.optString("message") ?: ""
-        } catch (_: Exception) {
-            ""
-        }
-
-        return when (code) {
-            400 -> {
-                if (extractedMessage.contains("API_KEY_INVALID", ignoreCase = true) ||
-                    extractedMessage.contains("key not valid", ignoreCase = true)
-                ) {
-                    GeminiApiResult.Error(AiConnectionState.INVALID_KEY, "Invalid Gemini API key. Please check your key in Settings.")
-                } else {
-                    GeminiApiResult.Error(AiConnectionState.INVALID_KEY, "Bad Request: $extractedMessage")
+            if (err != null) {
+                extractedMessage = err.optString("message", "")
+                extractedStatus = err.optString("status", "")
+                val details = err.optJSONArray("details")
+                if (details != null && details.length() > 0) {
+                    val firstDetail = details.getJSONObject(0)
+                    extractedReason = firstDetail.optString("reason", "")
                 }
             }
-            403 -> GeminiApiResult.Error(AiConnectionState.INVALID_KEY, "Permission denied. Check that the Generative Language API is enabled on your Google Cloud Project.")
-            404 -> GeminiApiResult.Error(AiConnectionState.MODEL_UNAVAILABLE, "Model '$modelId' is unavailable or not supported in your region.")
-            429 -> GeminiApiResult.Error(AiConnectionState.QUOTA_EXCEEDED, "Gemini API quota exceeded or rate limit reached. Please wait or check your Google AI Studio plan.")
-            500, 503 -> GeminiApiResult.Error(AiConnectionState.SERVER_ERROR, "Google Gemini service is temporarily unavailable. Please retry later.")
-            else -> GeminiApiResult.Error(AiConnectionState.UNKNOWN_ERROR, "Google API returned code $code: ${extractedMessage.ifEmpty { "Unknown error" }}")
+        } catch (_: Exception) {
+            // body was not JSON
         }
+
+        val combinedText = "$extractedMessage $extractedStatus $extractedReason".lowercase()
+
+        // 1. Check for explicit regional restrictions
+        if (combinedText.contains("location is not supported") ||
+            combinedText.contains("user location is not supported") ||
+            combinedText.contains("geographical region") ||
+            combinedText.contains("not available in your country")
+        ) {
+            return GeminiApiResult.Error(
+                AiConnectionState.REGIONAL_RESTRICTION,
+                "Google Gemini Developer API is not supported in your current region: $extractedMessage"
+            )
+        }
+
+        // 2. Check for invalid API key
+        if (combinedText.contains("api_key_invalid") ||
+            combinedText.contains("key not valid") ||
+            combinedText.contains("api key not valid")
+        ) {
+            return GeminiApiResult.Error(
+                AiConnectionState.INVALID_KEY,
+                "Invalid Gemini API key. Please check your key in Google AI Studio."
+            )
+        }
+
+        // 3. Check for API not enabled
+        if (combinedText.contains("generative language api has not been used") ||
+            combinedText.contains("service_disabled") ||
+            (combinedText.contains("api") && combinedText.contains("not enabled"))
+        ) {
+            return GeminiApiResult.Error(
+                AiConnectionState.API_NOT_ENABLED,
+                "Generative Language API is disabled. Please enable it in your Google Cloud Console."
+            )
+        }
+
+        // 4. Check for key restrictions or authorization issues
+        if (combinedText.contains("ip_restricted") ||
+            combinedText.contains("android_package_restricted") ||
+            combinedText.contains("caller does not have permission") ||
+            combinedText.contains("permission_denied") ||
+            code == 403
+        ) {
+            return GeminiApiResult.Error(
+                AiConnectionState.API_KEY_RESTRICTED,
+                "API key restricted or unauthorized: ${extractedMessage.ifBlank { "Permission denied (403)" }}"
+            )
+        }
+
+        // 5. Check for quota or rate limit issues
+        if (code == 429 || combinedText.contains("resource_exhausted") || combinedText.contains("quota")) {
+            return if (combinedText.contains("rate limit") || combinedText.contains("per minute")) {
+                GeminiApiResult.Error(
+                    AiConnectionState.RATE_LIMIT,
+                    "Gemini API rate limit reached. Please wait a moment before trying again."
+                )
+            } else {
+                GeminiApiResult.Error(
+                    AiConnectionState.QUOTA_EXCEEDED,
+                    "Gemini API quota exceeded: ${extractedMessage.ifBlank { "Please check your Google AI Studio plan." }}"
+                )
+            }
+        }
+
+        // 6. Check for billing restrictions
+        if (combinedText.contains("billing") || combinedText.contains("billable")) {
+            return GeminiApiResult.Error(
+                AiConnectionState.BILLING_RESTRICTION,
+                "Google Cloud billing requirement: ${extractedMessage.ifBlank { "A billing account may be required for this model." }}"
+            )
+        }
+
+        // 7. Check for 404 (Model Not Found)
+        if (code == 404) {
+            val cleanModel = GeminiModelInfo.normalizeModelId(modelId)
+            return GeminiApiResult.Error(
+                AiConnectionState.MODEL_NOT_FOUND,
+                "Model '$cleanModel' was not found on the Gemini API: ${extractedMessage.ifBlank { "Resource not found (404). Verify model availability." }}"
+            )
+        }
+
+        // 8. Server errors
+        if (code in 500..599) {
+            return GeminiApiResult.Error(
+                AiConnectionState.SERVER_ERROR,
+                "Google Gemini service is temporarily unavailable ($code). Please retry later."
+            )
+        }
+
+        // 9. Bad Request
+        if (code == 400) {
+            return GeminiApiResult.Error(
+                AiConnectionState.UNKNOWN_ERROR,
+                "Bad Request (400): ${extractedMessage.ifBlank { "Invalid request structure." }}"
+            )
+        }
+
+        return GeminiApiResult.Error(
+            AiConnectionState.UNKNOWN_ERROR,
+            "Google API returned code $code: ${extractedMessage.ifBlank { "Unknown error" }}"
+        )
     }
 
     fun parseStructuredJson(rawResponseText: String): AiAnalysisOutput {
