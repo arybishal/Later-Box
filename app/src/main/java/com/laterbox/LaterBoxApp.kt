@@ -24,6 +24,7 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
     lateinit var tagRepository: com.laterbox.data.repository.TagRepository private set
     lateinit var reminderRepository: com.laterbox.data.repository.ReminderRepository private set
     lateinit var searchHistoryRepository: com.laterbox.data.repository.SearchHistoryRepository private set
+    lateinit var updateManager: com.laterbox.data.update.UpdateManager private set
 
     override fun onCreate() {
         super.onCreate()
@@ -55,6 +56,13 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
             preferencesRepository = preferencesRepository,
             mediaStorageManager = mediaStorageManager
         )
+        updateManager = com.laterbox.data.update.UpdateManager(
+            context = this,
+            preferencesRepository = preferencesRepository
+        )
+
+        // Schedule periodic update checks
+        com.laterbox.data.update.AppUpdateWorker.schedulePeriodicCheck(this)
     }
 
     override fun newImageLoader(): ImageLoader {

@@ -1,9 +1,13 @@
 package com.laterbox
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.laterbox.data.update.UpdateNotificationHelper
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -106,6 +110,24 @@ fun MainAppScaffold() {
     val currentRoute = navBackStackEntry?.destination?.route
     val extended = LaterBoxThemeTokens.extended
     val scope = rememberCoroutineScope()
+    val activity = LocalContext.current as? Activity
+
+    LaunchedEffect(activity?.intent) {
+        val navigateToUpdates = activity?.intent?.getBooleanExtra(
+            UpdateNotificationHelper.EXTRA_NAVIGATE_TO_UPDATES,
+            false
+        ) ?: false
+        if (navigateToUpdates) {
+            activity?.intent?.removeExtra(UpdateNotificationHelper.EXTRA_NAVIGATE_TO_UPDATES)
+            navController.navigate(Screen.Settings.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     var showAddDialog by remember { mutableStateOf(false) }
 

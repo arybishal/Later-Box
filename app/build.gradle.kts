@@ -13,8 +13,8 @@ android {
         applicationId = "com.laterbox"
         minSdk = 24
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.3.1"
+        versionCode = 7
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -101,12 +101,16 @@ dependencies {
     // Networking (for OpenGraph & Metadata extraction)
     implementation(libs.okhttp)
 
+    // WorkManager (Background Update Checks)
+    implementation(libs.androidx.work)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

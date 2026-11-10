@@ -27,6 +27,21 @@ class UserPreferencesRepository(private val context: Context) {
         val DIRECT_SAVE_TO_INBOX = booleanPreferencesKey("direct_save_to_inbox")
         val IN_APP_VIEWING = booleanPreferencesKey("in_app_viewing")
         val LAST_BACKUP_TIMESTAMP = longPreferencesKey("last_backup_timestamp")
+        val AUTO_UPDATE_CHECK = booleanPreferencesKey("auto_update_check")
+        val LAST_UPDATE_CHECK_TIMESTAMP = longPreferencesKey("last_update_check_timestamp")
+        val LAST_DISMISSED_UPDATE_TAG = stringPreferencesKey("last_dismissed_update_tag")
+    }
+
+    val autoUpdateCheck: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_UPDATE_CHECK] ?: true
+    }
+
+    val lastUpdateCheckTimestamp: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_UPDATE_CHECK_TIMESTAMP] ?: 0L
+    }
+
+    val lastDismissedUpdateTag: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_DISMISSED_UPDATE_TAG]
     }
 
     val lastBackupTimestamp: Flow<Long?> = context.dataStore.data.map { preferences ->
@@ -108,6 +123,24 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setLastBackupTimestamp(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.LAST_BACKUP_TIMESTAMP] = timestamp
+        }
+    }
+
+    suspend fun setAutoUpdateCheck(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_UPDATE_CHECK] = enabled
+        }
+    }
+
+    suspend fun setLastUpdateCheckTimestamp(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_UPDATE_CHECK_TIMESTAMP] = timestamp
+        }
+    }
+
+    suspend fun setLastDismissedUpdateTag(tag: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_DISMISSED_UPDATE_TAG] = tag
         }
     }
 

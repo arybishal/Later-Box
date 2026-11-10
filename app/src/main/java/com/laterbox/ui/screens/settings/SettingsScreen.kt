@@ -48,6 +48,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.laterbox.data.update.AppUpdateWorker
+import com.laterbox.data.update.UpdateInfo
+import com.laterbox.ui.components.AppUpdateSection
+import com.laterbox.ui.components.UpdateDetailsDialog
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -94,16 +98,20 @@ fun SettingsScreen(
     val prefs = LaterBoxApp.instance.preferencesRepository
     val storageManager = LaterBoxApp.instance.mediaStorageManager
     val backupManager = LaterBoxApp.instance.backupManager
+    val updateManager = LaterBoxApp.instance.updateManager
 
     val themeMode by prefs.themeMode.collectAsState(initial = ThemeMode.SYSTEM)
     val autoFetchMetadata by prefs.autoFetchMetadata.collectAsState(initial = true)
     val directSaveToInbox by prefs.directSaveToInbox.collectAsState(initial = false)
     val inAppViewing by prefs.inAppViewing.collectAsState(initial = true)
     val lastBackupTimestamp by prefs.lastBackupTimestamp.collectAsState(initial = null)
+    val autoUpdateCheck by prefs.autoUpdateCheck.collectAsState(initial = true)
+    val updateState by updateManager.updateState.collectAsState()
 
     var storageSize by remember { mutableLongStateOf(0L) }
     var backupSummary by remember { mutableStateOf<BackupSummary?>(null) }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
+    var activeUpdateForDetails by remember { mutableStateOf<UpdateInfo?>(null) }
 
     // Backup state
     var exportInProgress by remember { mutableStateOf(false) }
@@ -490,7 +498,7 @@ fun SettingsScreen(
                 }
             }
 
-            // About App
+            // About App & App Updates
             item {
                 SettingsSection(
                     title = "About",
@@ -502,7 +510,7 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Version 1.2.0 (Build 4)",
+                        text = "Version ${updateManager.currentVersionName} (Build ${updateManager.currentVersionCode})",
                         style = MaterialTheme.typography.labelSmall,
                         color = extended.textSecondary
                     )
@@ -518,6 +526,28 @@ fun SettingsScreen(
                         text = "Open Source under the MIT License.\nhttps://github.com/arybishal/Later-Box",
                         style = MaterialTheme.typography.bodyMedium,
                         color = extended.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Dedicated In-App Update System Section
+                    AppUpdateSection(
+                        updateState = updateState,
+                        updateManager = updateManager,
+                        autoCheckEnabled = autoUpdateCheck,
+                        onToggleAutoCheck = { enabled ->
+                            scope.launch {
+                                prefs.setAutoUpdateCheck(enabled)
+                                if (enabled) {
+                                    AppUpdateWorker.schedulePeriodicCheck(context)
+                                } else {
+                                    AppUpdateWorker.cancelPeriodicCheck(context)
+                                }
+                            }
+                        },
+                        onShowDetails = { info ->
+                            activeUpdateForDetails = info
+                        }
                     )
                 }
             }
@@ -598,6 +628,24 @@ fun SettingsScreen(
                 showClearCacheConfirm = false
             },
             onDismiss = { showClearCacheConfirm = false }
+        )
+    }
+
+    // Update Details Modal Dialog
+    activeUpdateForDetails?.let { updateInfo ->
+        UpdateDetailsDialog(
+            updateInfo = updateInfo,
+            currentVersionName = updateManager.currentVersionName,
+            currentVersionCode = updateManager.currentVersionCode,
+            onDismiss = {
+                scope.launch {
+                    prefs.setLastDismissedUpdateTag(updateInfo.tag)
+                }
+                activeUpdateForDetails = null
+            },
+            onStartDownload = {
+                updateManager.startDownload(updateInfo)
+            }
         )
     }
 }
