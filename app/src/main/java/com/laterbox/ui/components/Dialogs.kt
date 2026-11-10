@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.laterbox.data.local.entity.PlaylistEntity
@@ -469,7 +470,7 @@ fun ConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDestructive) extended.warmError else extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    contentColor = if (isDestructive) Color.White else MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(confirmLabel)
