@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +35,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
@@ -129,6 +132,7 @@ fun GeminiSettingsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFamilyTab by remember { mutableStateOf("All") }
     var isRefreshingModels by remember { mutableStateOf(false) }
+    var isModelDropdownExpanded by remember { mutableStateOf(false) }
 
     var testState by remember { mutableStateOf(AiConnectionState.IDLE) }
     var testMessage by remember { mutableStateOf("") }
@@ -544,79 +548,9 @@ fun GeminiSettingsScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Search models field
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search models by name or id (e.g. 2.5, flash)...", fontSize = 13.sp) },
-                singleLine = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = extended.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear search",
-                                tint = extended.textSecondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = extended.primaryBlack,
-                    unfocusedBorderColor = extended.border,
-                    cursorColor = extended.primaryBlack
-                ),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Family Filter Tabs/Chips
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    "All" to discoveredModels.size,
-                    "Flash" to flashCount,
-                    "Pro" to proCount,
-                    "Other" to otherCount
-                ).forEach { (family, count) ->
-                    val isChipSelected = selectedFamilyTab == family
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isChipSelected) extended.primaryBlack else extended.pillInactive)
-                            .border(1.dp, if (isChipSelected) extended.primaryBlack else extended.border, RoundedCornerShape(8.dp))
-                            .clickable { selectedFamilyTab = family }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "$family ($count)",
-                            fontSize = 12.sp,
-                            fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isChipSelected) Color.White else extended.primaryBlack
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             // Warning if selected model is not available in the project
             if (!isModelAvailableInProject && hasKey) {
+                Spacer(modifier = Modifier.height(10.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -642,7 +576,7 @@ fun GeminiSettingsScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "'$cleanSelectedId' is not present in your API model list. Tap below to switch to the recommended model or choose from the list.",
+                            text = "'$cleanSelectedId' is not present in your API model list. Tap below to switch to the recommended model.",
                             style = MaterialTheme.typography.bodySmall,
                             color = extended.textSecondary
                         )
@@ -659,128 +593,282 @@ fun GeminiSettingsScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
             }
 
-            // List of discovered models
-            if (filteredModels.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // =========================================================================
+            // MINIMAL MODEL DROPDOWN SELECTOR
+            // =========================================================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(extended.cardBackground)
+                    .border(
+                        width = if (isModelDropdownExpanded) 1.5.dp else 1.dp,
+                        color = if (isModelDropdownExpanded) extended.primaryBlack else extended.border,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable { isModelDropdownExpanded = !isModelDropdownExpanded }
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = currentSelectedModel.displayName,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = extended.primaryBlack
+                            )
+                            if (currentSelectedModel.isRecommended) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(extended.softYellow)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "RECOMMENDED",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF111111)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = currentSelectedModel.id,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = extended.primaryBlack
+                            )
+
+                            val tokenLimits = currentSelectedModel.formatTokenLimits()
+                            if (tokenLimits.isNotBlank()) {
+                                Text(
+                                    text = "· $tokenLimits",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = extended.textSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    Icon(
+                        imageVector = if (isModelDropdownExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isModelDropdownExpanded) "Collapse models" else "Expand models",
+                        tint = extended.primaryBlack,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            // Expanded Dropdown List Panel
+            if (isModelDropdownExpanded) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(extended.cardBackground)
-                        .border(1.dp, extended.border, RoundedCornerShape(10.dp))
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
+                        .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+                        .padding(12.dp)
                 ) {
-                    Text(
-                        text = if (searchQuery.isNotBlank()) "No models match '$searchQuery'" else "No compatible models found for $selectedFamilyTab",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = extended.textSecondary
-                    )
-                }
-            } else {
-                filteredModels.forEach { model ->
-                    val isSelected = model.id.equals(cleanSelectedId, ignoreCase = true)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) extended.pillInactive else extended.cardBackground)
-                            .border(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) extended.primaryBlack else extended.border,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable {
-                                scope.launch {
-                                    aiSettings.setSelectedModelId(model.id)
-                                }
-                            }
-                            .padding(14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = {
-                                    scope.launch {
-                                        aiSettings.setSelectedModelId(model.id)
-                                    }
-                                },
-                                colors = RadioButtonDefaults.colors(
-                                    selectedColor = extended.primaryBlack
+                    Column {
+                        // Search Filter Field
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Filter models (e.g. 2.5, flash, pro)...", fontSize = 13.sp) },
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = extended.textSecondary,
+                                    modifier = Modifier.size(16.dp)
                                 )
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = model.displayName,
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = extended.primaryBlack
-                                    )
-
-                                    if (model.isRecommended) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(extended.softYellow)
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = "RECOMMENDED",
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF111111)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(2.dp))
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = model.id,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontFamily = FontFamily.Monospace,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = extended.primaryBlack
-                                    )
-
-                                    val tokenLimits = model.formatTokenLimits()
-                                    if (tokenLimits.isNotBlank()) {
-                                        Text(
-                                            text = "· $tokenLimits",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = extended.textSecondary
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear search",
+                                            tint = extended.textSecondary,
+                                            modifier = Modifier.size(14.dp)
                                         )
                                     }
                                 }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = extended.primaryBlack,
+                                unfocusedBorderColor = extended.border,
+                                cursorColor = extended.primaryBlack
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                                if (model.description.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Family Filter Chips inside Dropdown
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                "All" to discoveredModels.size,
+                                "Flash" to flashCount,
+                                "Pro" to proCount,
+                                "Other" to otherCount
+                            ).forEach { (family, count) ->
+                                val isChipSelected = selectedFamilyTab == family
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isChipSelected) extended.primaryBlack else extended.pillInactive)
+                                        .border(1.dp, if (isChipSelected) extended.primaryBlack else extended.border, RoundedCornerShape(6.dp))
+                                        .clickable { selectedFamilyTab = family }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
                                     Text(
-                                        text = model.description,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = extended.textSecondary,
-                                        maxLines = 3,
-                                        overflow = TextOverflow.Ellipsis
+                                        text = "$family ($count)",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isChipSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isChipSelected) Color.White else extended.primaryBlack
                                     )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        HorizontalDivider(color = extended.border)
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Scrollable List of Models with max height
+                        if (filteredModels.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isNotBlank()) "No models match '$searchQuery'" else "No models found for $selectedFamilyTab",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = extended.textSecondary
+                                )
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 280.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                filteredModels.forEach { model ->
+                                    val isSelected = model.id.equals(cleanSelectedId, ignoreCase = true)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isSelected) extended.pillInactive else Color.Transparent)
+                                            .clickable {
+                                                scope.launch {
+                                                    aiSettings.setSelectedModelId(model.id)
+                                                }
+                                                isModelDropdownExpanded = false
+                                            }
+                                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = {
+                                                scope.launch {
+                                                    aiSettings.setSelectedModelId(model.id)
+                                                }
+                                                isModelDropdownExpanded = false
+                                            },
+                                            colors = RadioButtonDefaults.colors(
+                                                selectedColor = extended.primaryBlack
+                                            ),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = model.displayName,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    color = extended.primaryBlack
+                                                )
+
+                                                if (model.isRecommended) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(4.dp))
+                                                            .background(extended.softYellow)
+                                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "RECOMMENDED",
+                                                            fontSize = 8.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFF111111)
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(
+                                                    text = model.id,
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        fontFamily = FontFamily.Monospace,
+                                                        fontSize = 11.sp
+                                                    ),
+                                                    color = extended.textSecondary
+                                                )
+
+                                                val tokenLimits = model.formatTokenLimits()
+                                                if (tokenLimits.isNotBlank()) {
+                                                    Text(
+                                                        text = "· $tokenLimits",
+                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                                        color = extended.textSecondary
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
