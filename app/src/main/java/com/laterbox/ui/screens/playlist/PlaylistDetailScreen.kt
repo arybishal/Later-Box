@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,15 +42,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.ui.components.ConfirmationDialog
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardList
+import com.laterbox.ui.components.ContextualEmptyState
+import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EmptyStateView
 import com.laterbox.ui.components.LaterBoxHeader
 import com.laterbox.ui.components.LaterBoxSearchBar
+import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.ZeroSearchResultsState
 import com.laterbox.ui.components.getIconForName
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,8 +75,10 @@ fun PlaylistDetailScreen(
     val playlist by viewModel.playlist.collectAsState()
     val items by viewModel.filteredItems.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val scope = rememberCoroutineScope()
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var selectedItemForActions by remember { mutableStateOf<SavedItemEntity?>(null) }
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -81,6 +91,13 @@ fun PlaylistDetailScreen(
                 onBackClick = onBack,
                 actions = {
                     if (playlist?.isDefaultInbox == false) {
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Playlist",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                         IconButton(onClick = { showDeleteConfirm = true }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -104,19 +121,32 @@ fun PlaylistDetailScreen(
                 query = searchQuery,
                 onQueryChange = { viewModel.setSearchQuery(it) },
                 placeholder = "Search in ${playlist?.name ?: "playlist"}…",
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 12.dp)
             )
 
             if (items.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    EmptyStateView(
-                        icon = Icons.Default.BookmarkBorder,
-                        title = "No items in this playlist",
-                        description = "Add saved content to this playlist from your library or share menu."
-                    )
+                    if (searchQuery.isNotBlank()) {
+                        ZeroSearchResultsState(
+                            query = searchQuery,
+                            onClearSearch = { viewModel.setSearchQuery("") }
+                        )
+                    } else {
+                        ContextualEmptyState(
+                            icon = Icons.Default.FolderOpen,
+                            title = "This collection is empty",
+                            description = "Add saved links, articles, or videos to this collection from your library or share menu.",
+                            primaryActionLabel = "Back to Library",
+                            onPrimaryAction = onBack
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
@@ -128,7 +158,12 @@ fun PlaylistDetailScreen(
                         ContentCardList(
                             item = item,
                             onClick = { onOpenItem(item) },
-                            onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                            onFavoriteToggle = {
+                                viewModel.toggleFavorite(item)
+                                LaterBoxSnackbarController.showMessage(
+                                    if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                                )
+                            },
                             onMenuClick = { selectedItemForActions = item }
                         )
                     }
@@ -145,14 +180,47 @@ fun PlaylistDetailScreen(
             onDismiss = { selectedItemForActions = null },
             onOpenInApp = { onOpenItem(item) },
             onAddToPlaylist = {},
-            onToggleFavorite = { viewModel.toggleFavorite(item) },
+            onToggleFavorite = {
+                viewModel.toggleFavorite(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                )
+            },
             onToggleArchive = {},
             onEditNotes = {},
             onRemoveFromPlaylist = {
                 viewModel.removeItemFromPlaylist(item.id)
+                LaterBoxSnackbarController.showMessage("Removed from \"${playlist?.name}\"")
             },
             onMoveToTrash = {
                 viewModel.moveToTrash(item.id)
+                LaterBoxSnackbarController.showMessage(
+                    message = "Moved to Trash",
+                    actionLabel = "Undo",
+                    onAction = {
+                        scope.launch {
+                            LaterBoxApp.instance.contentRepository.restoreFromTrash(item.id)
+                        }
+                    }
+                )
+            }
+        )
+    }
+
+    // Edit Playlist Dialog
+    if (showEditDialog && playlist != null) {
+        val currentPlaylist = playlist!!
+        CreatePlaylistDialog(
+            onDismiss = { showEditDialog = false },
+            initialName = currentPlaylist.name,
+            initialDescription = currentPlaylist.description ?: "",
+            initialIcon = currentPlaylist.iconName ?: "bookmark",
+            dialogTitle = "Edit Collection",
+            confirmButtonLabel = "Save Changes",
+            onConfirm = { newName, newDesc, _ ->
+                viewModel.renamePlaylist(newName, newDesc)
+                LaterBoxSnackbarController.showMessage("Updated collection details")
+                showEditDialog = false
             }
         )
     }
@@ -166,7 +234,10 @@ fun PlaylistDetailScreen(
             confirmLabel = "Delete Playlist & Items",
             isDestructive = true,
             onConfirm = {
-                viewModel.deletePlaylist { onBack() }
+                viewModel.deletePlaylist {
+                    LaterBoxSnackbarController.showMessage("Deleted playlist and moved items to Trash")
+                    onBack()
+                }
                 showDeleteConfirm = false
             },
             onDismiss = { showDeleteConfirm = false }

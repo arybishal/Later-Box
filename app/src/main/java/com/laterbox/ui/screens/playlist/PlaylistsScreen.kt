@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.laterbox.LaterBoxApp
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.LaterBoxHeader
+import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.PlaylistCard
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import kotlinx.coroutines.CoroutineScope
@@ -126,9 +127,11 @@ fun PlaylistsScreen(
     if (showCreateDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreateDialog = false },
+            existingNames = playlists.map { it.name },
             onConfirm = { name, desc, icon ->
                 scope.launch {
                     LaterBoxApp.instance.playlistRepository.createPlaylist(name, desc, icon)
+                    LaterBoxSnackbarController.showMessage("Created collection \"$name\"")
                 }
                 showCreateDialog = false
             }

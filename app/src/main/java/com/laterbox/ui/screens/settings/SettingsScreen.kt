@@ -1,9 +1,16 @@
 package com.laterbox.ui.screens.settings
 
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.PermissionNoticeCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -134,6 +141,11 @@ fun SettingsScreen(
 
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
 
+    val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    } else true
+    var dismissNotificationNotice by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         storageSize = storageManager.getMediaStorageSize()
         backupSummary = backupManager.getBackupSummary()
@@ -158,17 +170,15 @@ fun SettingsScreen(
                     exportInProgress = false
                     result.onSuccess { manifest ->
                         backupSummary = backupManager.getBackupSummary()
-                        Toast.makeText(
-                            context,
-                            "Export completed (${manifest.totalItems} items, ${manifest.totalPlaylists} playlists)",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        LaterBoxSnackbarController.showMessage(
+                            "Export completed (${manifest.totalItems} items, ${manifest.totalPlaylists} collections)"
+                        )
                     }.onFailure { err ->
-                        Toast.makeText(context, "Export failed: ${err.message}", Toast.LENGTH_LONG).show()
+                        LaterBoxSnackbarController.showMessage("Export failed: ${err.message ?: "Unknown error"}")
                     }
                 } else {
                     exportInProgress = false
-                    Toast.makeText(context, "Cannot open selected file for writing", Toast.LENGTH_SHORT).show()
+                    LaterBoxSnackbarController.showMessage("Cannot open selected file for writing")
                 }
             }
         }
@@ -187,10 +197,10 @@ fun SettingsScreen(
                         pendingManifest = manifest
                         pendingImportUri = uri
                     }.onFailure { err ->
-                        Toast.makeText(context, "Invalid backup: ${err.message}", Toast.LENGTH_LONG).show()
+                        LaterBoxSnackbarController.showMessage("Invalid backup archive: ${err.message ?: "Malformed JSON"}")
                     }
                 } else {
-                    Toast.makeText(context, "Cannot read selected file", Toast.LENGTH_SHORT).show()
+                    LaterBoxSnackbarController.showMessage("Cannot read selected file")
                 }
             }
         }
@@ -619,6 +629,22 @@ fun SettingsScreen(
                             activeUpdateForDetails = info
                         }
                     )
+
+                    if (!hasNotificationPermission && autoUpdateCheck && !dismissNotificationNotice) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        PermissionNoticeCard(
+                            title = "Notifications are disabled",
+                            description = "Enable notification access to receive alerts when app updates and scheduled reminders are ready.",
+                            actionLabel = "Open Settings",
+                            onOpenSettings = {
+                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                }
+                                context.startActivity(intent)
+                            },
+                            onDismiss = { dismissNotificationNotice = true }
+                        )
+                    }
                 }
             }
 
@@ -651,17 +677,15 @@ fun SettingsScreen(
                             result.onSuccess { res ->
                                 storageSize = storageManager.getMediaStorageSize()
                                 backupSummary = backupManager.getBackupSummary()
-                                Toast.makeText(
-                                    context,
-                                    "Restored: ${res.itemsRestored} items, ${res.playlistsRestored} playlists (${res.mode.name})",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                LaterBoxSnackbarController.showMessage(
+                                    "Restored: ${res.itemsRestored} items, ${res.playlistsRestored} collections (${res.mode.name})"
+                                )
                             }.onFailure { err ->
-                                Toast.makeText(context, "Restore failed: ${err.message}", Toast.LENGTH_LONG).show()
+                                LaterBoxSnackbarController.showMessage("Restore failed: ${err.message ?: "Unknown error"}")
                             }
                         } else {
                             importInProgress = false
-                            Toast.makeText(context, "Cannot read selected file", Toast.LENGTH_SHORT).show()
+                            LaterBoxSnackbarController.showMessage("Cannot read selected file")
                         }
                     }
                 }

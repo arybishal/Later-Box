@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -46,6 +47,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -72,6 +75,9 @@ import coil.request.ImageRequest
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ContentType
+import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.OfflineNoticeBanner
+import com.laterbox.ui.components.StateErrorView
 import com.laterbox.ui.components.openInExternalApp
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import kotlinx.coroutines.launch
@@ -251,13 +257,15 @@ fun InAppWebReader(
     onProgressUpdate: (Float) -> Unit
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
+    var webError by remember { mutableStateOf<String?>(null) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
     var hasRestoredScroll by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (isLoading && progress < 1f) {
+        if (isLoading && progress < 1f && webError == null) {
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
@@ -268,70 +276,103 @@ fun InAppWebReader(
             )
         }
 
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    settings.apply {
-                        javaScriptEnabled = true
-                        domStorageEnabled = true
-                        loadWithOverviewMode = true
-                        useWideViewPort = true
-                        builtInZoomControls = true
-                        displayZoomControls = false
-                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                    }
-
-                    webChromeClient = object : WebChromeClient() {
-                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                            progress = newProgress / 100f
-                            if (newProgress == 100) isLoading = false
+        if (webError != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                StateErrorView(
+                    title = "Webpage Unavailable",
+                    message = "Could not display this webpage in the in-app reader. Check your internet connection or open in your browser.",
+                    technicalDetails = webError,
+                    onRetry = {
+                        webError = null
+                        webViewInstance?.reload()
+                    },
+                    secondaryActionLabel = "Open in Browser",
+                    onSecondaryAction = { openInExternalApp(context, url) }
+                )
+            }
+        } else {
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        settings.apply {
+                            javaScriptEnabled = true
+                            domStorageEnabled = true
+                            loadWithOverviewMode = true
+                            useWideViewPort = true
+                            builtInZoomControls = true
+                            displayZoomControls = false
+                            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                         }
-                    }
 
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                            isLoading = true
-                        }
-
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            isLoading = false
-                            if (!hasRestoredScroll && initialProgress > 0f) {
-                                postDelayed({
-                                    val maxScroll = (contentHeight * scale - height).toInt()
-                                    if (maxScroll > 0) {
-                                        scrollTo(0, (initialProgress * maxScroll).toInt())
-                                    }
-                                    hasRestoredScroll = true
-                                }, 300)
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                progress = newProgress / 100f
+                                if (newProgress == 100) isLoading = false
                             }
                         }
 
-                        override fun shouldOverrideUrlLoading(
-                            view: WebView?,
-                            request: WebResourceRequest?
-                        ): Boolean {
-                            return false
-                        }
-                    }
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                isLoading = true
+                                webError = null
+                            }
 
-                    setOnScrollChangeListener { _, _, scrollY, _, _ ->
-                        val maxScroll = (contentHeight * scale - height).toInt()
-                        if (maxScroll > 0) {
-                            val currentProgress = (scrollY.toFloat() / maxScroll).coerceIn(0f, 1f)
-                            onProgressUpdate(currentProgress)
-                        }
-                    }
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                isLoading = false
+                                if (!hasRestoredScroll && initialProgress > 0f) {
+                                    postDelayed({
+                                        val maxScroll = (contentHeight * scale - height).toInt()
+                                        if (maxScroll > 0) {
+                                            scrollTo(0, (initialProgress * maxScroll).toInt())
+                                        }
+                                        hasRestoredScroll = true
+                                    }, 300)
+                                }
+                            }
 
-                    loadUrl(url)
-                    webViewInstance = this
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+                            override fun onReceivedError(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                                error: WebResourceError?
+                            ) {
+                                if (request?.isForMainFrame == true) {
+                                    webError = error?.description?.toString() ?: "Failed to load webpage"
+                                    isLoading = false
+                                }
+                            }
+
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView?,
+                                request: WebResourceRequest?
+                            ): Boolean {
+                                return false
+                            }
+                        }
+
+                        setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                            val maxScroll = (contentHeight * scale - height).toInt()
+                            if (maxScroll > 0) {
+                                val currentProgress = (scrollY.toFloat() / maxScroll).coerceIn(0f, 1f)
+                                onProgressUpdate(currentProgress)
+                            }
+                        }
+
+                        loadUrl(url)
+                        webViewInstance = this
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 
     DisposableEffect(Unit) {
@@ -351,6 +392,7 @@ fun VideoPlayerView(
 ) {
     val context = LocalContext.current
     var hasRestoredSeek by remember { mutableStateOf(false) }
+    var playbackError by remember { mutableStateOf<String?>(null) }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
@@ -368,6 +410,10 @@ fun VideoPlayerView(
                         }
                         hasRestoredSeek = true
                     }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    playbackError = error.localizedMessage ?: "Video playback failed"
                 }
             })
         }
@@ -391,34 +437,67 @@ fun VideoPlayerView(
             .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center
     ) {
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = true
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+        if (playbackError != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                StateErrorView(
+                    title = "Playback Error",
+                    message = "Could not play this video. It may be encoded in an unsupported format or currently unavailable.",
+                    technicalDetails = playbackError,
+                    onRetry = {
+                        playbackError = null
+                        exoPlayer.prepare()
+                        exoPlayer.play()
+                    },
+                    secondaryActionLabel = "Open Externally",
+                    onSecondaryAction = { openInExternalApp(context, mediaUri) }
+                )
+            }
+        } else {
+            AndroidView(
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        player = exoPlayer
+                        useController = true
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
 @Composable
 fun ImageViewerView(model: Any) {
+    var hasError by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(model)
-                .crossfade(true)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
+        if (hasError) {
+            StateErrorView(
+                title = "Image Unavailable",
+                message = "The image could not be loaded from storage or network.",
+                onRetry = { hasError = false }
+            )
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(model)
+                    .crossfade(true)
+                    .listener(onError = { _, _ -> hasError = true })
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

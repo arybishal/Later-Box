@@ -32,8 +32,10 @@ import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.ui.components.ConfirmationDialog
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardList
+import com.laterbox.ui.components.ContextualEmptyState
 import com.laterbox.ui.components.EmptyStateView
 import com.laterbox.ui.components.LaterBoxHeader
+import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,10 +84,12 @@ fun TrashScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                EmptyStateView(
+                ContextualEmptyState(
                     icon = Icons.Default.DeleteForever,
                     title = "Trash is empty",
-                    description = "Items you delete will be kept here before permanent deletion."
+                    description = "Items you delete will be kept here before permanent deletion.",
+                    primaryActionLabel = "Back to Settings",
+                    onPrimaryAction = onBack
                 )
             }
         } else {
@@ -123,6 +127,7 @@ fun TrashScreen(
             onRestore = {
                 scope.launch {
                     LaterBoxApp.instance.contentRepository.restoreFromTrash(item.id)
+                    LaterBoxSnackbarController.showMessage("Restored \"${item.title}\"")
                 }
                 selectedItemForActions = null
             },
@@ -135,14 +140,16 @@ fun TrashScreen(
 
     // Confirm Empty Trash Dialog
     if (showEmptyTrashConfirm) {
+        val totalToDelete = trashItems.size
         ConfirmationDialog(
             title = "Empty Trash",
-            message = "Permanently delete all ${trashItems.size} items? This cannot be undone.",
+            message = "Permanently delete all $totalToDelete items? This cannot be undone.",
             confirmLabel = "Empty All",
             isDestructive = true,
             onConfirm = {
                 scope.launch {
                     LaterBoxApp.instance.contentRepository.emptyTrash()
+                    LaterBoxSnackbarController.showMessage("Emptied trash ($totalToDelete items permanently deleted)")
                 }
                 showEmptyTrashConfirm = false
             },
@@ -160,6 +167,7 @@ fun TrashScreen(
             onConfirm = {
                 scope.launch {
                     LaterBoxApp.instance.contentRepository.permanentDelete(item.id)
+                    LaterBoxSnackbarController.showMessage("Permanently deleted \"${item.title}\"")
                 }
                 itemForPermanentDelete = null
             },

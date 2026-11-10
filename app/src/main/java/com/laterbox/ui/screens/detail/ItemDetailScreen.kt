@@ -104,8 +104,13 @@ import com.laterbox.data.model.ContentType
 import com.laterbox.ui.components.AddTagDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
 import com.laterbox.ui.components.ConfirmationDialog
+import com.laterbox.ui.components.ContextualEmptyState
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
+import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.SkeletonDetailView
+import com.laterbox.ui.components.SlowNetworkProgressView
+import com.laterbox.ui.components.StateErrorView
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.util.SocialLinkResolver
 import kotlinx.coroutines.launch
@@ -149,14 +154,9 @@ fun ItemDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            CircularProgressIndicator(
-                color = extended.primaryBlack,
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(36.dp)
-            )
+            SkeletonDetailView()
         }
         return
     }
@@ -166,28 +166,16 @@ fun ItemDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(24.dp),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Item not found",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "This saved item could not be loaded or has been deleted.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = extended.textSecondary,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = onBack) {
-                    Text("Go Back", color = extended.primaryBlack)
-                }
-            }
+            ContextualEmptyState(
+                icon = Icons.Default.Description,
+                title = "Item Not Found",
+                description = "This saved item could not be loaded or has been permanently deleted.",
+                primaryActionLabel = "Back to Library",
+                onPrimaryAction = onBack
+            )
         }
         return
     }
@@ -1454,92 +1442,23 @@ private fun Phase2AiExtensionSlot(
 
             // State 3: Analysis in Progress / Loading
             isAiLoading || aiAnalysis?.status == "PENDING" -> {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.5.dp,
-                        color = extended.primaryBlack
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = "Analyzing with Gemini AI…",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = extended.primaryBlack
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Extracting summary, takeaways, and entities…",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = extended.textSecondary
-                        )
-                    }
-                }
+                SlowNetworkProgressView(
+                    stageDescription = "Analyzing saved content with Gemini AI…",
+                    progress = null
+                )
             }
 
             // State 4: Analysis Failed / Error
             aiActionError != null || aiAnalysis?.status == "FAILED" -> {
                 val errorMsg = aiActionError ?: aiAnalysis?.errorMessage ?: "Analysis failed. Please check network or API quota."
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(extended.pillInactive),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = extended.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Analysis Unavailable",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = extended.primaryBlack
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = errorMsg,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = extended.textSecondary
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-                Button(
-                    onClick = onAnalyze,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = extended.primaryBlack,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Retry Analysis",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                }
+                StateErrorView(
+                    title = "AI Analysis Unavailable",
+                    message = errorMsg,
+                    technicalDetails = "Model: ${aiAnalysis?.modelUsed ?: "Gemini"}\nStatus: ${aiAnalysis?.status ?: "FAILED"}",
+                    onRetry = onAnalyze,
+                    secondaryActionLabel = "AI Settings",
+                    onSecondaryAction = onNavigateToSettings
+                )
             }
 
             // State 5: Not Analyzed Yet

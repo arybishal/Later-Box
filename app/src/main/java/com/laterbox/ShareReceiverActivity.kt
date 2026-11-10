@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.laterbox.ui.components.CreatePlaylistDialog
+import com.laterbox.ui.components.StateErrorView
 import com.laterbox.ui.components.getIconForName
 import com.laterbox.ui.screens.share.ShareReceiverViewModel
 import com.laterbox.ui.theme.LaterBoxTheme
@@ -213,8 +214,15 @@ fun ShareReceiverScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Content Preview Card
-                if (items.isNotEmpty()) {
+                if (items.isEmpty()) {
+                    StateErrorView(
+                        title = "No Shareable Content",
+                        message = "Later Box could not detect a valid URL, text, or supported file in this shared intent.",
+                        secondaryActionLabel = "Dismiss",
+                        onSecondaryAction = onDismiss
+                    )
+                } else {
+                    // Content Preview Card
                     val firstItem = items.first()
                     Row(
                         modifier = Modifier
@@ -270,7 +278,6 @@ fun ShareReceiverScreen(
                             }
                         }
                     }
-                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -394,10 +401,12 @@ fun ShareReceiverScreen(
             }
         }
     }
+}
 
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
+            existingNames = playlists.map { it.name },
             onConfirm = { name, desc, icon ->
                 viewModel.createPlaylist(name, desc, icon)
                 showCreatePlaylistDialog = false

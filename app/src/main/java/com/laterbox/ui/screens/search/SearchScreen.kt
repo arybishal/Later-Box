@@ -40,18 +40,23 @@ import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.SortOrder
 import com.laterbox.data.model.ViewMode
 import com.laterbox.data.repository.PlaylistRepository
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
 import com.laterbox.ui.components.CompactSocialFeedCard
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardGrid
 import com.laterbox.ui.components.ContentCardList
+import com.laterbox.ui.components.ContextualEmptyState
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
 import com.laterbox.ui.components.EmptyDashedCard
 import com.laterbox.ui.components.GridListTogglePill
 import com.laterbox.ui.components.LaterBoxSearchBar
+import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.SortDropdownSelector
+import com.laterbox.ui.components.ZeroSearchResultsState
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import kotlinx.coroutines.launch
@@ -153,14 +158,23 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Main Content: Empty State Card vs Grid / List
+            // Main Content: Empty State Card vs Zero Results vs Grid / List
             if (sortedResults.isEmpty()) {
-                EmptyDashedCard(
-                    title = "Search everything you saved",
-                    description = "Type a word from a title, a site, or a note.",
-                    buttonLabel = "Save something",
-                    onButtonClick = { showAddDialog = true }
-                )
+                if (searchQuery.isNotBlank()) {
+                    ZeroSearchResultsState(
+                        query = searchQuery,
+                        hasActiveFilters = false,
+                        onClearSearch = { searchQuery = "" }
+                    )
+                } else {
+                    ContextualEmptyState(
+                        icon = Icons.Default.Search,
+                        title = "Search everything you saved",
+                        description = "Type words from a title, web address, or your personal notes to find saved content.",
+                        primaryActionLabel = "Save something",
+                        onPrimaryAction = { showAddDialog = true }
+                    )
+                }
             } else {
                 if (viewMode == ViewMode.GRID) {
                     LazyVerticalGrid(
@@ -177,6 +191,9 @@ fun SearchScreen(
                                 onFavoriteToggle = {
                                     scope.launch {
                                         contentRepo.toggleFavorite(item.id, item.isFavorite)
+                                        LaterBoxSnackbarController.showMessage(
+                                            if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                                        )
                                     }
                                 },
                                 onMenuClick = { selectedItemForActions = item }
@@ -196,13 +213,16 @@ fun SearchScreen(
                                 onFavoriteToggle = {
                                     scope.launch {
                                         contentRepo.toggleFavorite(item.id, item.isFavorite)
+                                        LaterBoxSnackbarController.showMessage(
+                                            if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                                        )
                                     }
                                 },
                                 onAddToPlaylist = { selectedItemForPlaylists = item },
                                 onShare = {
                                     val sendIntent = Intent().apply {
                                         action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, item.url ?: item.title)
+                                        putExtra(Intent.EXTRA_TEXT, item.url.ifEmpty { item.title })
                                         type = "text/plain"
                                     }
                                     context.startActivity(Intent.createChooser(sendIntent, "Share via"))
@@ -227,17 +247,32 @@ fun SearchScreen(
             onToggleFavorite = {
                 scope.launch {
                     contentRepo.toggleFavorite(item.id, item.isFavorite)
+                    LaterBoxSnackbarController.showMessage(
+                        if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                    )
                 }
             },
             onToggleArchive = {
                 scope.launch {
                     contentRepo.toggleArchive(item.id, item.isArchived)
+                    LaterBoxSnackbarController.showMessage(
+                        if (!item.isArchived) "Item archived" else "Item unarchived"
+                    )
                 }
             },
             onEditNotes = { selectedItemForNotes = item },
             onMoveToTrash = {
                 scope.launch {
                     contentRepo.softDelete(item.id)
+                    LaterBoxSnackbarController.showMessage(
+                        message = "Moved to Trash",
+                        actionLabel = "Undo",
+                        onAction = {
+                            scope.launch {
+                                contentRepo.restoreFromTrash(item.id)
+                            }
+                        }
+                    )
                 }
             }
         )
@@ -254,6 +289,7 @@ fun SearchScreen(
                         title = title,
                         notes = notes
                     )
+                    LaterBoxSnackbarController.showMessage("Saved to Later Box")
                 }
                 showAddDialog = false
             }
@@ -284,13 +320,17 @@ fun SearchScreen(
         )
     }
 
+    val allSearchPlaylists by playlistRepo.getAllPlaylists().collectAsState(initial = emptyList())
+
     // Create Playlist Dialog
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
+            existingNames = allSearchPlaylists.map { it.name },
             onConfirm = { name, desc, icon ->
                 scope.launch {
                     playlistRepo.createPlaylist(name, desc, icon)
+                    LaterBoxSnackbarController.showMessage("Created collection \"$name\"")
                 }
                 showCreatePlaylistDialog = false
             }

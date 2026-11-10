@@ -47,13 +47,19 @@ import com.laterbox.ui.components.CompactSocialFeedCard
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardGrid
 import com.laterbox.ui.components.ContentCardList
+import com.laterbox.ui.components.ContextualEmptyState
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
 import com.laterbox.ui.components.EmptyDashedCard
 import com.laterbox.ui.components.GridListTogglePill
 import com.laterbox.ui.components.LaterBoxSearchBar
+import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.PillFilterRow
 import com.laterbox.ui.components.SortDropdownSelector
+import com.laterbox.ui.components.ZeroSearchResultsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.FavoriteBorder
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.ui.theme.SerifHeadlineFontFamily
 
@@ -162,14 +168,41 @@ fun LibraryScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Main Content: Empty State Card vs Grid / List
+            // Main Content: Empty State Card vs Zero Search vs Grid / List
             if (filteredItems.isEmpty()) {
-                EmptyDashedCard(
-                    title = "Your library is empty",
-                    description = "Anything you save shows up here, in a grid or a list.",
-                    buttonLabel = "Save something",
-                    onButtonClick = { showAddDialog = true }
-                )
+                if (searchQuery.isNotBlank()) {
+                    ZeroSearchResultsState(
+                        query = searchQuery,
+                        hasActiveFilters = selectedCategory != "All",
+                        onClearSearch = { viewModel.setSearchQuery("") },
+                        onResetFilters = { selectedCategory = "All" }
+                    )
+                } else if (selectedCategory != "All") {
+                    if (selectedCategory == "Favorites") {
+                        ContextualEmptyState(
+                            icon = Icons.Default.FavoriteBorder,
+                            title = "No favorites yet",
+                            description = "Tap the heart icon on any item to keep it in your favorites collection.",
+                            primaryActionLabel = "View all items",
+                            onPrimaryAction = { selectedCategory = "All" }
+                        )
+                    } else {
+                        ZeroSearchResultsState(
+                            query = "",
+                            hasActiveFilters = true,
+                            onClearSearch = {},
+                            onResetFilters = { selectedCategory = "All" }
+                        )
+                    }
+                } else {
+                    ContextualEmptyState(
+                        icon = Icons.Default.BookmarkBorder,
+                        title = "Your library is empty",
+                        description = "Anything you save from apps or browsers shows up here, organized automatically.",
+                        primaryActionLabel = "Save something",
+                        onPrimaryAction = { showAddDialog = true }
+                    )
+                }
             } else {
                 if (viewMode == ViewMode.GRID) {
                     LazyVerticalGrid(
@@ -183,7 +216,12 @@ fun LibraryScreen(
                             ContentCardGrid(
                                 item = item,
                                 onClick = { onOpenItem(item) },
-                                onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                                onFavoriteToggle = {
+                                    viewModel.toggleFavorite(item)
+                                    LaterBoxSnackbarController.showMessage(
+                                        if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                                    )
+                                },
                                 onMenuClick = { selectedItemForActions = item }
                             )
                         }
@@ -198,12 +236,17 @@ fun LibraryScreen(
                             CompactSocialFeedCard(
                                 item = item,
                                 onClick = { onOpenItem(item) },
-                                onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                                onFavoriteToggle = {
+                                    viewModel.toggleFavorite(item)
+                                    LaterBoxSnackbarController.showMessage(
+                                        if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                                    )
+                                },
                                 onAddToPlaylist = { selectedItemForPlaylists = item },
                                 onShare = {
                                     val sendIntent = Intent().apply {
                                         action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, item.url ?: item.title)
+                                        putExtra(Intent.EXTRA_TEXT, item.url.ifEmpty { item.title })
                                         type = "text/plain"
                                     }
                                     context.startActivity(Intent.createChooser(sendIntent, "Share via"))
@@ -225,10 +268,31 @@ fun LibraryScreen(
             onDismiss = { selectedItemForActions = null },
             onOpenInApp = { onOpenItem(item) },
             onAddToPlaylist = { selectedItemForPlaylists = item },
-            onToggleFavorite = { viewModel.toggleFavorite(item) },
-            onToggleArchive = { viewModel.toggleArchive(item) },
+            onToggleFavorite = {
+                viewModel.toggleFavorite(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                )
+            },
+            onToggleArchive = {
+                viewModel.toggleArchive(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isArchived) "Item archived" else "Item unarchived"
+                )
+            },
             onEditNotes = { selectedItemForNotes = item },
-            onMoveToTrash = { viewModel.moveToTrash(item.id) }
+            onMoveToTrash = {
+                viewModel.moveToTrash(item.id)
+                LaterBoxSnackbarController.showMessage(
+                    message = "Moved to Trash",
+                    actionLabel = "Undo",
+                    onAction = {
+                        scope.launch {
+                            LaterBoxApp.instance.contentRepository.restoreFromTrash(item.id)
+                        }
+                    }
+                )
+            }
         )
     }
 
@@ -254,12 +318,16 @@ fun LibraryScreen(
         )
     }
 
+    val allPlaylistsList by viewModel.allPlaylists.collectAsState()
+
     // Create Playlist Dialog
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
+            existingNames = allPlaylistsList.map { it.name },
             onConfirm = { name, desc, icon ->
                 viewModel.createPlaylist(name, desc, icon)
+                LaterBoxSnackbarController.showMessage("Created collection \"$name\"")
                 showCreatePlaylistDialog = false
             }
         )
@@ -276,6 +344,7 @@ fun LibraryScreen(
                         title = title,
                         notes = notes
                     )
+                    LaterBoxSnackbarController.showMessage("Saved to Later Box")
                 }
                 showAddDialog = false
             }

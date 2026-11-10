@@ -27,10 +27,13 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
     lateinit var updateManager: com.laterbox.data.update.UpdateManager private set
     lateinit var aiSettingsRepository: com.laterbox.data.ai.AiSettingsRepository private set
     lateinit var geminiAnalysisService: com.laterbox.data.ai.GeminiAnalysisService private set
+    lateinit var networkMonitor: com.laterbox.util.NetworkConnectivityMonitor private set
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        networkMonitor = com.laterbox.util.NetworkConnectivityMonitor.getInstance(this)
 
         database = LaterBoxDatabase.getInstance(this)
         mediaStorageManager = MediaStorageManager(this)

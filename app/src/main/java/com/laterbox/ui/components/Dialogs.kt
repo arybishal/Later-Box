@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.laterbox.data.local.entity.PlaylistEntity
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 
@@ -76,18 +78,32 @@ fun getIconForName(name: String?): ImageVector {
 @Composable
 fun CreatePlaylistDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, description: String?, iconName: String) -> Unit
+    onConfirm: (name: String, description: String?, iconName: String) -> Unit,
+    existingNames: List<String> = emptyList(),
+    initialName: String = "",
+    initialDescription: String = "",
+    initialIcon: String = "bookmark",
+    dialogTitle: String = "New Playlist",
+    confirmButtonLabel: String = "Create"
 ) {
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedIcon by remember { mutableStateOf("bookmark") }
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var description by rememberSaveable { mutableStateOf(initialDescription) }
+    var selectedIcon by rememberSaveable { mutableStateOf(initialIcon) }
     val extended = LaterBoxThemeTokens.extended
+
+    val trimmedName = name.trim()
+    val isDuplicate = remember(trimmedName, existingNames) {
+        trimmedName.isNotEmpty() &&
+                existingNames.any { it.trim().equals(trimmedName, ignoreCase = true) && !it.trim().equals(initialName.trim(), ignoreCase = true) }
+    }
+    val isTooLong = name.length > 40
+    val isValid = trimmedName.isNotEmpty() && !isDuplicate && !isTooLong
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "New Playlist",
+                text = dialogTitle,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -99,13 +115,29 @@ fun CreatePlaylistDialog(
                     onValueChange = { name = it },
                     label = { Text("Playlist Name") },
                     singleLine = true,
+                    isError = isDuplicate || isTooLong,
+                    supportingText = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (isDuplicate) {
+                                Text("A collection with this name already exists", color = extended.warmError, fontSize = 11.sp)
+                            } else if (isTooLong) {
+                                Text("Name exceeds 40 characters limit", color = extended.warmError, fontSize = 11.sp)
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            Text("${name.length}/40", style = MaterialTheme.typography.labelSmall, color = extended.textSecondary)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = extended.amberAccent,
                         cursorColor = extended.amberAccent
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
@@ -117,7 +149,7 @@ fun CreatePlaylistDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "Select Icon",
                     style = MaterialTheme.typography.labelLarge,
@@ -152,17 +184,17 @@ fun CreatePlaylistDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
-                        onConfirm(name.trim(), description.trim().ifEmpty { null }, selectedIcon)
+                    if (isValid) {
+                        onConfirm(trimmedName, description.trim().ifEmpty { null }, selectedIcon)
                     }
                 },
-                enabled = name.isNotBlank(),
+                enabled = isValid,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = extended.amberAccent,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text("Create")
+                Text(confirmButtonLabel)
             }
         },
         dismissButton = {
@@ -300,10 +332,18 @@ fun AddManualItemDialog(
     onDismiss: () -> Unit,
     onSave: (url: String, title: String, notes: String?) -> Unit
 ) {
-    var urlOrText by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
+    var urlOrText by rememberSaveable { mutableStateOf("") }
+    var title by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
     val extended = LaterBoxThemeTokens.extended
+
+    val trimmedInput = urlOrText.trim()
+    val isLikelyWebDomain = remember(trimmedInput) {
+        trimmedInput.contains(".") &&
+                !trimmedInput.contains(" ") &&
+                !trimmedInput.startsWith("http://") &&
+                !trimmedInput.startsWith("https://")
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -329,6 +369,15 @@ fun AddManualItemDialog(
                     },
                     label = { Text("URL or Note") },
                     placeholder = { Text("https://example.com/article") },
+                    supportingText = {
+                        if (isLikelyWebDomain) {
+                            Text(
+                                text = "Tip: Will be saved as https://$trimmedInput",
+                                fontSize = 11.sp,
+                                color = extended.textSecondary
+                            )
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = extended.amberAccent,
                         cursorColor = extended.amberAccent
@@ -353,6 +402,14 @@ fun AddManualItemDialog(
                     onValueChange = { notes = it },
                     label = { Text("Notes (Optional)") },
                     maxLines = 3,
+                    supportingText = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Text("${notes.length}/2000", style = MaterialTheme.typography.labelSmall, color = extended.textSecondary)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = extended.amberAccent,
                         cursorColor = extended.amberAccent
@@ -365,8 +422,9 @@ fun AddManualItemDialog(
             Button(
                 onClick = {
                     if (urlOrText.isNotBlank()) {
-                        val finalTitle = title.trim().ifEmpty { urlOrText.trim() }
-                        onSave(urlOrText.trim(), finalTitle, notes.trim().ifEmpty { null })
+                        val formattedUrl = if (isLikelyWebDomain) "https://$trimmedInput" else trimmedInput
+                        val finalTitle = title.trim().ifEmpty { formattedUrl }
+                        onSave(formattedUrl, finalTitle, notes.trim().ifEmpty { null })
                     }
                 },
                 enabled = urlOrText.isNotBlank(),
@@ -392,8 +450,9 @@ fun EditNotesDialog(
     onDismiss: () -> Unit,
     onSave: (String?) -> Unit
 ) {
-    var notes by remember { mutableStateOf(initialNotes ?: "") }
+    var notes by rememberSaveable { mutableStateOf(initialNotes ?: "") }
     val extended = LaterBoxThemeTokens.extended
+    val isTooLong = notes.length > 2000
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -405,23 +464,40 @@ fun EditNotesDialog(
             )
         },
         text = {
-            OutlinedTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                label = { Text("Your Notes") },
-                maxLines = 6,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = extended.amberAccent,
-                    cursorColor = extended.amberAccent
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Your Notes") },
+                    maxLines = 6,
+                    isError = isTooLong,
+                    supportingText = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (isTooLong) {
+                                Text("Exceeds 2000 characters limit", color = extended.warmError, fontSize = 11.sp)
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            Text("${notes.length}/2000", style = MaterialTheme.typography.labelSmall, color = extended.textSecondary)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = extended.amberAccent,
+                        cursorColor = extended.amberAccent
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                )
+            }
         },
         confirmButton = {
             Button(
-                onClick = { onSave(notes.trim().ifEmpty { null }) },
+                onClick = { if (!isTooLong) onSave(notes.trim().ifEmpty { null }) },
+                enabled = !isTooLong,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = extended.amberAccent,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -443,8 +519,11 @@ fun AddTagDialog(
     onDismiss: () -> Unit,
     onConfirm: (tagName: String) -> Unit
 ) {
-    var tag by remember { mutableStateOf("") }
+    var tag by rememberSaveable { mutableStateOf("") }
     val extended = LaterBoxThemeTokens.extended
+    val cleanTag = tag.trim().removePrefix("#")
+    val isTooLong = cleanTag.length > 30
+    val isValid = cleanTag.isNotBlank() && !isTooLong
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -456,27 +535,43 @@ fun AddTagDialog(
             )
         },
         text = {
-            OutlinedTextField(
-                value = tag,
-                onValueChange = { tag = it },
-                label = { Text("Tag Name") },
-                placeholder = { Text("e.g. design, tech, inspiration") },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = extended.amberAccent,
-                    cursorColor = extended.amberAccent
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = tag,
+                    onValueChange = { tag = it },
+                    label = { Text("Tag Name") },
+                    placeholder = { Text("e.g. design, tech, inspiration") },
+                    singleLine = true,
+                    isError = isTooLong,
+                    supportingText = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (isTooLong) {
+                                Text("Tag exceeds 30 characters", color = extended.warmError, fontSize = 11.sp)
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            Text("${cleanTag.length}/30", style = MaterialTheme.typography.labelSmall, color = extended.textSecondary)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = extended.amberAccent,
+                        cursorColor = extended.amberAccent
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (tag.isNotBlank()) {
-                        onConfirm(tag.trim().removePrefix("#"))
+                    if (isValid) {
+                        onConfirm(cleanTag)
                     }
                 },
-                enabled = tag.isNotBlank(),
+                enabled = isValid,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = extended.amberAccent,
                     contentColor = MaterialTheme.colorScheme.onPrimary

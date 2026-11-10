@@ -37,6 +37,7 @@ import com.laterbox.ui.components.AddToPlaylistDialog
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
+import com.laterbox.ui.components.LaterBoxSnackbarController
 import kotlinx.coroutines.launch
 
 /**
@@ -198,7 +199,12 @@ fun HomeScreen(
                     RecentSavedItemCard(
                         item = item,
                         onClick = { onOpenItem(item) },
-                        onFavoriteToggle = { viewModel.toggleFavorite(item) },
+                        onFavoriteToggle = {
+                            viewModel.toggleFavorite(item)
+                            LaterBoxSnackbarController.showMessage(
+                                if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                            )
+                        },
                         onAddToPlaylist = { selectedItemForPlaylists = item },
                         onShare = {
                             val sendIntent = Intent().apply {
@@ -222,6 +228,7 @@ fun HomeScreen(
             onDismiss = { showAddDialog = false },
             onSave = { url, title, notes ->
                 viewModel.saveManualItem(url, title, notes)
+                LaterBoxSnackbarController.showMessage("Saved to Later Box")
                 showAddDialog = false
             }
         )
@@ -230,8 +237,10 @@ fun HomeScreen(
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
+            existingNames = playlists.map { it.name },
             onConfirm = { name, desc, icon ->
                 viewModel.createPlaylist(name, desc, icon)
+                LaterBoxSnackbarController.showMessage("Created collection \"$name\"")
                 showCreatePlaylistDialog = false
             }
         )
@@ -252,10 +261,16 @@ fun HomeScreen(
             },
             onToggleFavorite = {
                 viewModel.toggleFavorite(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
+                )
                 selectedItemForActions = null
             },
             onToggleArchive = {
                 viewModel.toggleArchive(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isArchived) "Item archived" else "Item unarchived"
+                )
                 selectedItemForActions = null
             },
             onEditNotes = {
@@ -264,6 +279,15 @@ fun HomeScreen(
             },
             onMoveToTrash = {
                 viewModel.moveToTrash(item.id)
+                LaterBoxSnackbarController.showMessage(
+                    message = "Moved to Trash",
+                    actionLabel = "Undo",
+                    onAction = {
+                        scope.launch {
+                            LaterBoxApp.instance.contentRepository.restoreFromTrash(item.id)
+                        }
+                    }
+                )
                 selectedItemForActions = null
             }
         )

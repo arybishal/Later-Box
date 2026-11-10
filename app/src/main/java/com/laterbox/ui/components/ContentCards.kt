@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
@@ -31,6 +32,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,17 +80,19 @@ fun ContentThumbnail(
 ) {
     val extended = LaterBoxThemeTokens.extended
     val imageModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl
+    var hasLoadError by remember(imageModel) { mutableStateOf(false) }
 
     Box(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        if (imageModel != null) {
+        if (imageModel != null && !hasLoadError) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(imageModel)
                     .crossfade(true)
+                    .listener(onError = { _, _ -> hasLoadError = true })
                     .build(),
                 contentDescription = item.title,
                 contentScale = ContentScale.Crop,
@@ -95,8 +102,10 @@ fun ContentThumbnail(
             Icon(
                 imageVector = when (item.contentType) {
                     ContentType.VIDEO -> Icons.Default.PlayArrow
-                    ContentType.ARTICLE -> Icons.Default.MoreVert
-                    else -> Icons.Default.FavoriteBorder
+                    ContentType.ARTICLE -> Icons.Default.Description
+                    ContentType.IMAGE -> Icons.Default.FavoriteBorder
+                    ContentType.AUDIO -> Icons.Default.PlayArrow
+                    else -> Icons.Default.BookmarkBorder
                 },
                 contentDescription = null,
                 tint = extended.textSecondary.copy(alpha = 0.5f),

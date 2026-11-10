@@ -11,6 +11,7 @@ import com.laterbox.data.update.UpdateNotificationHelper
 import com.laterbox.ui.screens.detail.ItemDetailScreen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -34,8 +35,12 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +66,8 @@ import androidx.navigation.navArgument
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ThemeMode
 import com.laterbox.ui.components.AddManualItemDialog
+import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.OfflineNoticeBanner
 import com.laterbox.ui.navigation.MAIN_BOTTOM_NAV_ROUTES
 import com.laterbox.ui.navigation.Screen
 import com.laterbox.ui.screens.home.HomeScreen
@@ -133,10 +140,31 @@ fun MainAppScaffold() {
     }
 
     var showAddDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val isOnline by LaterBoxApp.instance.networkMonitor.isOnline.collectAsState()
+    var dismissOfflineBanner by remember { mutableStateOf(false) }
+
+    LaunchedEffect(snackbarHostState) {
+        LaterBoxSnackbarController.observeAndShow(snackbarHostState, scope)
+    }
 
     val showBottomBar = currentRoute in MAIN_BOTTOM_NAV_ROUTES || currentRoute?.startsWith("library") == true
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = extended.cardBackground,
+                    contentColor = MaterialTheme.colorScheme.onBackground,
+                    actionColor = extended.amberAccent,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+                )
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 val borderColor = extended.border
@@ -323,11 +351,23 @@ fun MainAppScaffold() {
             navController.navigate(Screen.ItemDetail.createRoute(item.id))
         }
 
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Home.route,
-            modifier = Modifier.padding(paddingValues)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
+            if (!isOnline && !dismissOfflineBanner) {
+                OfflineNoticeBanner(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    onDismiss = { dismissOfflineBanner = true }
+                )
+            }
+
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = Modifier.fillMaxSize()
+            ) {
             composable(Screen.Home.route) {
                 HomeScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
@@ -444,6 +484,7 @@ fun MainAppScaffold() {
             }
         }
     }
+}
 
     if (showAddDialog) {
         AddManualItemDialog(
