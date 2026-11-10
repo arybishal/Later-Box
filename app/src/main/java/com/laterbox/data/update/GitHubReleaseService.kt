@@ -267,7 +267,7 @@ class GitHubReleaseService(
         val matcher = sha256Pattern.matcher(releaseNotes)
         if (matcher.find()) {
             val candidate = matcher.group(1)
-            if (candidate.length == 64) return candidate
+            if (candidate?.length == 64) return candidate
         }
 
         return null

@@ -31,6 +31,7 @@ data class SemanticVersion(
     val major: Int,
     val minor: Int,
     val patch: Int,
+    val build: Int = 0,
     val suffix: String? = null
 ) : Comparable<SemanticVersion> {
 
@@ -38,6 +39,7 @@ data class SemanticVersion(
         if (major != other.major) return major.compareTo(other.major)
         if (minor != other.minor) return minor.compareTo(other.minor)
         if (patch != other.patch) return patch.compareTo(other.patch)
+        if (build != other.build) return build.compareTo(other.build)
         // Versions without suffix are newer than versions with suffix (e.g. 1.0.0 > 1.0.0-rc1)
         if (suffix == null && other.suffix != null) return 1
         if (suffix != null && other.suffix == null) return -1
@@ -54,8 +56,9 @@ data class SemanticVersion(
             val major = numbers.getOrNull(0)?.toIntOrNull() ?: return null
             val minor = numbers.getOrNull(1)?.toIntOrNull() ?: 0
             val patch = numbers.getOrNull(2)?.toIntOrNull() ?: 0
+            val build = numbers.getOrNull(3)?.toIntOrNull() ?: 0
 
-            return SemanticVersion(major, minor, patch, suffix)
+            return SemanticVersion(major, minor, patch, build, suffix)
         }
 
         fun isVersionNewer(remoteTag: String, localVersionName: String): Boolean {

@@ -61,4 +61,17 @@ class SemanticVersionTest {
         val beta = SemanticVersion.parse("1.3.0-rc1")!!
         assertTrue("Stable release must be newer than pre-release with same base", stable > beta)
     }
+
+    @Test
+    fun testPointZeroZeroOneIncrements() {
+        // Padded 3-segment format: 2.0.001, 2.0.002
+        assertTrue(SemanticVersion.isVersionNewer("v2.0.001", "2.0.0"))
+        assertTrue(SemanticVersion.isVersionNewer("2.0.002", "2.0.001"))
+        assertFalse(SemanticVersion.isVersionNewer("2.0.001", "2.0.002"))
+
+        // 4-segment dot format: 2.0.0.1, 2.0.0.2
+        assertTrue(SemanticVersion.isVersionNewer("v2.0.0.1", "2.0.0"))
+        assertTrue(SemanticVersion.isVersionNewer("2.0.0.2", "2.0.0.1"))
+        assertFalse(SemanticVersion.isVersionNewer("2.0.0.1", "2.0.0.2"))
+    }
 }
