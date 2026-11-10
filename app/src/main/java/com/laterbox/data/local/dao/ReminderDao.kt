@@ -61,6 +61,39 @@ interface ReminderDao {
     """)
     fun getAllItemsWithPendingReminders(): Flow<List<SavedItemEntity>>
 
+    @Query("""
+        SELECT * FROM reminders 
+        WHERE isCompleted = 0 
+        ORDER BY dueAt ASC
+    """)
+    fun getAllUpcomingReminders(): Flow<List<ReminderEntity>>
+
+    @Query("""
+        SELECT * FROM reminders 
+        WHERE isCompleted = 0 AND eventType = :eventType
+        ORDER BY dueAt ASC
+    """)
+    fun getRemindersByType(eventType: String): Flow<List<ReminderEntity>>
+
+    @Query("""
+        SELECT * FROM reminders 
+        WHERE isCompleted = 0 AND eventType IN ('BIRTHDAY', 'ANNIVERSARY')
+        ORDER BY dueAt ASC
+    """)
+    fun getSpecialOccasions(): Flow<List<ReminderEntity>>
+
+    @Query("""
+        SELECT * FROM reminders 
+        WHERE isCompleted = 0 
+          AND (
+            eventTitle LIKE '%' || :query || '%'
+            OR personName LIKE '%' || :query || '%'
+            OR eventType LIKE '%' || :query || '%'
+          )
+        ORDER BY dueAt ASC
+    """)
+    fun searchReminders(query: String): Flow<List<ReminderEntity>>
+
     @Query("SELECT * FROM reminders")
     suspend fun getAllRemindersSnapshot(): List<ReminderEntity>
 

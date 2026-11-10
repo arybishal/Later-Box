@@ -384,6 +384,71 @@ class GeminiApiClient(
     }
 
     /**
+     * Generates a 768-dimensional semantic embedding vector using Google's text-embedding-004 model.
+     */
+    suspend fun generateEmbedding(
+        apiKey: String,
+        text: String
+    ): GeminiApiResult<List<Float>> = withContext(Dispatchers.IO) {
+        val cleanKey = apiKey.trim()
+        if (cleanKey.isBlank()) {
+            return@withContext GeminiApiResult.Error(
+                AiConnectionState.INVALID_KEY,
+                "API key is missing or not configured."
+            )
+        }
+
+        val url = "$BASE_URL/text-embedding-004:embedContent"
+
+        val requestJson = JSONObject().apply {
+            put("model", "models/text-embedding-004")
+            put("content", JSONObject().apply {
+                put("parts", JSONArray().apply {
+                    put(JSONObject().apply { put("text", text.take(2000)) })
+                })
+            })
+        }
+
+        val requestBody = requestJson.toString().toRequestBody(JSON_MEDIA_TYPE)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader(HEADER_API_KEY, cleanKey)
+            .post(requestBody)
+            .build()
+
+        try {
+            httpClient.newCall(request).execute().use { response ->
+                val bodyString = response.body?.string() ?: ""
+                if (!response.isSuccessful) {
+                    return@withContext mapHttpError(response.code, bodyString, "text-embedding-004")
+                }
+
+                val root = JSONObject(bodyString)
+                val embeddingObj = root.optJSONObject("embedding")
+                val valuesArray = embeddingObj?.optJSONArray("values")
+                if (valuesArray != null && valuesArray.length() > 0) {
+                    val vector = ArrayList<Float>(valuesArray.length())
+                    for (i in 0 until valuesArray.length()) {
+                        vector.add(valuesArray.getDouble(i).toFloat())
+                    }
+                    GeminiApiResult.Success(vector)
+                } else {
+                    GeminiApiResult.Error(
+                        AiConnectionState.SERVER_ERROR,
+                        "No embedding vector returned."
+                    )
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            GeminiApiResult.Error(AiConnectionState.TIMEOUT, "Embedding request timed out.")
+        } catch (e: IOException) {
+            GeminiApiResult.Error(AiConnectionState.NETWORK_ERROR, "Network error: ${e.message}")
+        } catch (e: Exception) {
+            GeminiApiResult.Error(AiConnectionState.UNKNOWN_ERROR, "Embedding error: ${e.message}")
+        }
+    }
+
+    /**
      * Parses a single page response from models.list endpoint.
      * Returns a pair of (List of models supporting generateContent, nextPageToken).
      */

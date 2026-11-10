@@ -6,4 +6,8 @@
     <external-cache-path name="ext_update_cache" path="updates/" />
     <!-- App-specific external files dir -->
     <external-files-path name="ext_update_files" path="updates/" />
+    <!-- Camera and captured media paths -->
+    <cache-path name="camera_cache" path="camera/" />
+    <files-path name="internal_files" path="." />
+    <cache-path name="internal_cache" path="." />
 </paths>

@@ -95,7 +95,7 @@ fun PillFilterRow(
     modifier: Modifier = Modifier
 ) {
     val extended = LaterBoxThemeTokens.extended
-    val categories = listOf("All", "Favorites", "Inbox", "Videos", "Articles", "Images", "Documents", "Audio", "Notes")
+    val categories = listOf("All", "Snap ⚡", "Favorites", "Inbox", "Videos", "Articles", "Images", "Documents", "Audio", "Notes")
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Column(modifier = modifier.fillMaxWidth()) {

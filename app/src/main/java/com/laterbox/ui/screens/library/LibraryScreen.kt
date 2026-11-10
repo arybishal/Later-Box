@@ -91,6 +91,7 @@ fun LibraryScreen(
     val filteredItems = items.filter { item ->
         when (selectedCategory) {
             "All" -> true
+            "Snap ⚡", "Snap" -> item.isSnap
             "Favorites" -> item.isFavorite
             "Inbox" -> true
             "Videos" -> item.contentType == ContentType.VIDEO

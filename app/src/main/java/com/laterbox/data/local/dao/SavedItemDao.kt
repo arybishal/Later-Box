@@ -151,13 +151,30 @@ interface SavedItemDao {
 
     @Query("""
         SELECT * FROM saved_items 
+        WHERE isDeleted = 0 AND isArchived = 0 AND isSnap = 1
+        ORDER BY savedAt DESC
+    """)
+    fun getSnapItems(): Flow<List<SavedItemEntity>>
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDeleted = 0 AND isSnap = 1")
+    fun getSnapCount(): Flow<Int>
+
+    @Query("UPDATE saved_items SET isSnap = :isSnap WHERE id = :id")
+    suspend fun setSnapStatus(id: Long, isSnap: Boolean)
+
+    @Query("""
+        SELECT * FROM saved_items 
         WHERE isDeleted = 0 
           AND (
             title LIKE '%' || :query || '%' 
+            OR aiTitle LIKE '%' || :query || '%'
             OR description LIKE '%' || :query || '%' 
+            OR aiDescription LIKE '%' || :query || '%'
             OR url LIKE '%' || :query || '%' 
             OR sourceDomain LIKE '%' || :query || '%'
             OR notes LIKE '%' || :query || '%'
+            OR extractedText LIKE '%' || :query || '%'
+            OR transcript LIKE '%' || :query || '%'
           )
         ORDER BY savedAt DESC
     """)

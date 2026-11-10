@@ -95,6 +95,14 @@ class GeminiAnalysisService(
         when (apiResult) {
             is GeminiApiResult.Success -> {
                 val output = apiResult.data
+
+                // Generate semantic search embedding
+                val textForEmbedding = "${item.title} | ${output.shortDescription ?: ""} | ${output.whatItsAbout ?: ""} | ${item.notes ?: ""}"
+                val embeddingResult = apiClient.generateEmbedding(apiKey, textForEmbedding)
+                val embeddingJson = if (embeddingResult is GeminiApiResult.Success) {
+                    JSONArray(embeddingResult.data).toString()
+                } else null
+
                 val successEntity = AiAnalysisEntity(
                     itemId = itemId,
                     shortDescription = output.shortDescription,
@@ -111,11 +119,22 @@ class GeminiAnalysisService(
                     analyzedAt = System.currentTimeMillis(),
                     status = "SUCCESS",
                     contentFingerprint = fingerprint,
-                    errorMessage = null
+                    errorMessage = null,
+                    embeddingVectorJson = embeddingJson
                 )
 
                 aiAnalysisDao.insertOrUpdate(successEntity)
                 aiSettingsRepository.incrementAnalysisCount()
+
+                // Preserve original title/description while saving AI-enriched versions
+                try {
+                    val updatedItem = item.copy(
+                        aiTitle = item.aiTitle ?: output.shortDescription?.take(60),
+                        aiDescription = output.shortDescription
+                    )
+                    savedItemDao.updateItem(updatedItem)
+                } catch (_: Exception) {}
+
                 Result.success(successEntity)
             }
 

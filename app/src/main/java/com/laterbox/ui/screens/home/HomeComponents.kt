@@ -31,7 +31,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkBorder
+import com.laterbox.data.local.entity.ReminderEntity
+import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Share
@@ -363,6 +367,110 @@ private fun ActivityMetricColumn(
 }
 
 /**
+ * Upcoming Events Preview Card for Home screen.
+ */
+@Composable
+fun HomeUpcomingEventsCard(
+    upcomingReminders: List<ReminderEntity>,
+    onNavigateToEvents: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (upcomingReminders.isEmpty()) return
+
+    val extended = LaterBoxThemeTokens.extended
+    val firstEvent = upcomingReminders.first()
+    val eventIcon = when (firstEvent.eventType) {
+        "BIRTHDAY" -> Icons.Default.Cake
+        "ANNIVERSARY" -> Icons.Default.Favorite
+        "EVENT" -> Icons.Default.Event
+        else -> Icons.Default.Notifications
+    }
+
+    val emojiLabel = when (firstEvent.eventType) {
+        "BIRTHDAY" -> "Birthday"
+        "ANNIVERSARY" -> "Anniversary"
+        "EVENT" -> "Event"
+        else -> "Reminder"
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .clickable(onClick = onNavigateToEvents),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(extended.surfaceSecondary)
+                        .border(1.dp, extended.border, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = eventIcon,
+                        contentDescription = null,
+                        tint = extended.primaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = emojiLabel.uppercase(),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = extended.interactiveAccent,
+                            letterSpacing = 0.5.sp
+                        )
+                        if (upcomingReminders.size > 1) {
+                            Text(
+                                text = " · +${upcomingReminders.size - 1} more",
+                                fontSize = 10.sp,
+                                color = extended.tertiaryText
+                            )
+                        }
+                    }
+                    Text(
+                        text = firstEvent.eventTitle ?: "Upcoming Reminder",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        ),
+                        color = extended.primaryBlack,
+                        maxLines = 1
+                    )
+                }
+            }
+
+            Text(
+                text = "View →",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = extended.primaryText
+            )
+        }
+    }
+}
+
+/**
  * 3.3 Collections Section: Horizontal scrolling collections carousel.
  * White rounded 24dp cards, live counts, icons, subtle elevation.
  */
@@ -581,18 +689,20 @@ fun HomeFilterChipsRow(
     videosCount: Int,
     imagesCount: Int,
     notesCount: Int,
+    snapCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    val filters = listOf(
-        "All" to totalCount,
-        "Favorites" to favoriteCount,
-        "Articles" to articlesCount,
-        "Videos" to videosCount,
-        "Images" to imagesCount,
-        "Notes" to notesCount
-    )
+    val filters = buildList {
+        add("All" to totalCount)
+        if (snapCount > 0) add("Snap ⚡" to snapCount)
+        add("Favorites" to favoriteCount)
+        add("Articles" to articlesCount)
+        add("Videos" to videosCount)
+        add("Images" to imagesCount)
+        add("Notes" to notesCount)
+    }
 
     LazyRow(
         modifier = modifier.fillMaxWidth(),

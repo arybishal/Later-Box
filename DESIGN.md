@@ -160,14 +160,56 @@ The Saved Item Detail screen serves as a premium, distraction-free reading, medi
    - **Context Requirement**: When opened from an item, the AI assistant receives the specific item's ID, title, URL, description, personal notes, and existing AI analysis.
    - Launches an interactive Gemini assistant bottom sheet with quick-query chips ("Summarize in 3 bullets", "What is the key takeaway?", "Explain this simply") and freeform Q&A.
 
-### 4.4 Library & Playlists Screens
-- Soft `#F0F1F3` background, white elevated cards (`24.dp`), compact grid/list toggle, responsive sorting selector, and unified search bar.
+### 4.4 Navigation Architecture (5-Tab Structure)
 
-### 4.5 In-App Content Viewer
+The primary navigation adopts a 5-tab layout engineered for rapid memory access:
+
+```
+[ Home ]   [ Library ]   ( + Snap )   [ Events ]   [ Settings ]
+```
+
+1. **Home**: Editorial overview, dynamic activity summary, collections carousel, memories feed, and floating Gemini memory assistant.
+2. **Library**: Complete content repository with categorized views, grid/list toggle, sorting, and direct access to the **Snap Collection**.
+3. **Snap (Center Action)**: Prominent elevated circular button (`48dp`, `#171717` Light / `#FFFFFF` Dark) launching the **Snap Quick Capture** interface:
+   - **Take Photo**: Instant camera preview, capture, retake, and AI image understanding.
+   - **Record Voice**: Instant audio recording with elapsed duration timer, waveform indicator, and auto-transcription + AI summary.
+   - **Record Video**: Quick video recording with thumbnail generation and asynchronous analysis.
+   - **Quick Note**: Minimal draft-safe markdown note creation with instant save.
+   - **Save Link**: Rapid URL input with immediate OpenGraph metadata parsing.
+   - **Import Media**: System visual media picker preserving original quality and metadata.
+4. **Events & Reminders**: Dedicated calendar-oriented hub for Birthdays, Anniversaries, and Reminders:
+   - Filter chips: `All`, `Birthdays 🎂`, `Anniversaries 💍`, `Reminders ⏰`.
+   - Event cards (`24dp` radius) with relative countdown badges (`Today`, `Tomorrow`, `In 5 days`).
+   - Create Reminder modal supporting annual recurrence for birthdays/anniversaries and custom advance alerts (Day of, 1 day before, 1 week before).
+5. **Settings**: Central management for Theme, Gemini AI Automation, Battery & Reminder Reliability, Backup & Restore, and Data Controls.
+
+### 4.5 Snap Collection Architecture
+- All memories created via Snap automatically receive the `isSnap = 1` attribute.
+- A dedicated **Snap** smart collection appears pinned at the top of Library and Collections.
+- Removing an item from the Snap collection clears `isSnap` without deleting the underlying memory, ensuring safe non-destructive organization.
+
+### 4.6 Events & Reminders Interface
+- **Upcoming Timeline**: Grouped chronologically: `Today`, `This Week`, `This Month`, and `Later`.
+- **Card Anatomy**:
+  - Event icon / badge with distinct event type icon.
+  - Event title and linked person/relationship.
+  - Due date and recurring frequency (`Repeats Annually`).
+  - Action buttons: Snooze, Mark as Completed, and Open Linked Memory.
+- **Battery Reliability Panel**:
+  - Direct status checklist in Settings showing Notification permission, Exact Alarm permission, and Battery Optimization exemption status with one-tap system request actions.
+
+### 4.7 Semantic Search & Memory Assistant
+- **Natural Language Search**: Accessible from Home Header, Library, and Search screen.
+- Combines semantic vector similarity (`text-embedding-004`) with offline SQLite keyword matching.
+- **Context-Aware Assistance**:
+  - Global Assistant: Synthesizes saved knowledge across authorized library memories.
+  - Item Detail Assistant: Strictly isolated to the viewed item's ID, title, URL, description, notes, and analysis.
+
+### 4.8 In-App Content Viewer
 - Immersive reader mode and media player with full-screen controls, soft canvas, and clean monochrome action bar.
 
-### 4.6 Settings & Maintenance
-- Clean grouped cards (`24.dp`), clear toggle switches, intact GitHub release update checker and SHA-256 validation.
+### 4.9 Settings & Maintenance
+- Clean grouped cards (`24dp`), clear toggle switches, intact GitHub release update checker and SHA-256 validation.
 
 ---
 

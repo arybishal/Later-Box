@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 
 enum class LibraryStatusFilter(val label: String) {
     ALL("All"),
+    SNAP("Snap"),
     FAVORITES("Favorites"),
     ARCHIVE("Archive")
 }
@@ -61,6 +62,7 @@ class LibraryViewModel(
                 if (params.query.isNotBlank()) contentRepository.searchItems(params.query)
                 else contentRepository.getItems(params.sort)
             }
+            LibraryStatusFilter.SNAP -> contentRepository.getSnapItems()
             LibraryStatusFilter.FAVORITES -> contentRepository.getFavoriteItems()
             LibraryStatusFilter.ARCHIVE -> contentRepository.getArchivedItems()
         }

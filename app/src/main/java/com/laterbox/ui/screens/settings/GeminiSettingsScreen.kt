@@ -116,6 +116,10 @@ fun GeminiSettingsScreen(
 
     val isAiEnabled by aiSettings.isAiEnabled.collectAsState(initial = false)
     val autoAnalyze by aiSettings.autoAnalyzeNewItems.collectAsState(initial = false)
+    val autoTitle by aiSettings.autoGenerateTitle.collectAsState(initial = true)
+    val autoSummary by aiSettings.autoGenerateSummary.collectAsState(initial = true)
+    val autoTags by aiSettings.autoGenerateTags.collectAsState(initial = true)
+    val requireWifi by aiSettings.requireWifiForAi.collectAsState(initial = false)
     val selectedModelId by aiSettings.selectedModelId.collectAsState(initial = GeminiModels.DEFAULT_MODEL_ID)
     val discoveredModels by aiSettings.discoveredModels.collectAsState(initial = GeminiModels.FALLBACK_MODELS)
     val lastModelsDiscoveryTimestamp by aiSettings.lastModelsDiscoveryTimestamp.collectAsState(initial = 0L)
@@ -1118,6 +1122,154 @@ fun GeminiSettingsScreen(
                         } else {
                             Toast.makeText(context, "Please enable Gemini AI first.", Toast.LENGTH_SHORT).show()
                         }
+                    },
+                    enabled = isAiEnabled && hasKey,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = extended.primaryBlack,
+                        uncheckedThumbColor = extended.textSecondary,
+                        uncheckedTrackColor = extended.pillInactive
+                    )
+                )
+            }
+
+            // Auto-Generate Title Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-Generate AI Titles",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Text(
+                        text = "Suggests clean, concise titles for quick voice notes, photos, and snips.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+                }
+
+                Switch(
+                    checked = autoTitle && isAiEnabled && hasKey,
+                    onCheckedChange = { checked ->
+                        scope.launch { aiSettings.setAutoGenerateTitle(checked) }
+                    },
+                    enabled = isAiEnabled && hasKey,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = extended.primaryBlack,
+                        uncheckedThumbColor = extended.textSecondary,
+                        uncheckedTrackColor = extended.pillInactive
+                    )
+                )
+            }
+
+            // Auto-Generate Summary Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-Generate AI Summaries",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Text(
+                        text = "Creates 2-3 sentence executive summaries and bulleted key takeaways.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+                }
+
+                Switch(
+                    checked = autoSummary && isAiEnabled && hasKey,
+                    onCheckedChange = { checked ->
+                        scope.launch { aiSettings.setAutoGenerateSummary(checked) }
+                    },
+                    enabled = isAiEnabled && hasKey,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = extended.primaryBlack,
+                        uncheckedThumbColor = extended.textSecondary,
+                        uncheckedTrackColor = extended.pillInactive
+                    )
+                )
+            }
+
+            // Auto-Generate Tags Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-Suggest Category Tags",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Text(
+                        text = "Identifies relevant topic tags for quick library filtering.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+                }
+
+                Switch(
+                    checked = autoTags && isAiEnabled && hasKey,
+                    onCheckedChange = { checked ->
+                        scope.launch { aiSettings.setAutoGenerateTags(checked) }
+                    },
+                    enabled = isAiEnabled && hasKey,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = extended.primaryBlack,
+                        uncheckedThumbColor = extended.textSecondary,
+                        uncheckedTrackColor = extended.pillInactive
+                    )
+                )
+            }
+
+            // Wi-Fi Only Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Wi-Fi Only for AI Analysis",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Text(
+                        text = "Conserves mobile data by deferring media uploads to Wi-Fi connections.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+                }
+
+                Switch(
+                    checked = requireWifi && isAiEnabled && hasKey,
+                    onCheckedChange = { checked ->
+                        scope.launch { aiSettings.setRequireWifiForAi(checked) }
                     },
                     enabled = isAiEnabled && hasKey,
                     colors = SwitchDefaults.colors(

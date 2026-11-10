@@ -65,6 +65,7 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToPlaylist: (Long) -> Unit,
     onNavigateToFavorites: () -> Unit = onNavigateToLibrary,
+    onNavigateToEvents: () -> Unit = {},
     onOpenItem: (SavedItemEntity) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -77,6 +78,7 @@ fun HomeScreen(
     val playlists by viewModel.playlists.collectAsState()
     val favoriteCount by viewModel.favoriteCount.collectAsState()
     val totalCount by viewModel.totalCount.collectAsState()
+    val upcomingReminders by LaterBoxApp.instance.database.reminderDao().getAllUpcomingReminders().collectAsState(emptyList())
 
     val isAiEnabled by viewModel.isAiEnabled.collectAsState()
     val isAiQuerying by viewModel.isAiQuerying.collectAsState()
@@ -96,6 +98,7 @@ fun HomeScreen(
     val aiSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Compute dynamic filter counts from all items
+    val snapCount = remember(allItems) { allItems.count { it.isSnap } }
     val articlesCount = remember(allItems) { allItems.count { it.contentType == ContentType.ARTICLE } }
     val videosCount = remember(allItems) { allItems.count { it.contentType == ContentType.VIDEO } }
     val imagesCount = remember(allItems) { allItems.count { it.contentType == ContentType.IMAGE } }
@@ -105,6 +108,7 @@ fun HomeScreen(
     val feedItems = remember(allItems, selectedFilter) {
         when (selectedFilter) {
             "All" -> allItems.take(25)
+            "Snap ⚡", "Snap" -> allItems.filter { it.isSnap }
             "Favorites" -> allItems.filter { it.isFavorite }
             "Articles" -> allItems.filter { it.contentType == ContentType.ARTICLE }
             "Videos" -> allItems.filter { it.contentType == ContentType.VIDEO }
@@ -143,7 +147,18 @@ fun HomeScreen(
                         latestItem = recentItems.firstOrNull(),
                         onOpenLatest = recentItems.firstOrNull()?.let { { onOpenItem(it) } }
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+
+                // 3.2.1 Upcoming Events Preview (if any)
+                if (upcomingReminders.isNotEmpty()) {
+                    item {
+                        HomeUpcomingEventsCard(
+                            upcomingReminders = upcomingReminders,
+                            onNavigateToEvents = onNavigateToEvents
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
                 }
 
                 // 3.3 Collections Section
@@ -196,7 +211,8 @@ fun HomeScreen(
                         articlesCount = articlesCount,
                         videosCount = videosCount,
                         imagesCount = imagesCount,
-                        notesCount = notesCount
+                        notesCount = notesCount,
+                        snapCount = snapCount
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))

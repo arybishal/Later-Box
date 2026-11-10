@@ -29,9 +29,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import com.laterbox.ui.screens.events.EventsScreen
+import com.laterbox.ui.screens.snap.SnapQuickCaptureSheet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -122,6 +126,9 @@ fun MainAppScaffold() {
     val scope = rememberCoroutineScope()
     val activity = LocalContext.current as? Activity
 
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showSnapSheet by remember { mutableStateOf(false) }
+
     LaunchedEffect(activity?.intent) {
         val navigateToUpdates = activity?.intent?.getBooleanExtra(
             UpdateNotificationHelper.EXTRA_NAVIGATE_TO_UPDATES,
@@ -137,9 +144,22 @@ fun MainAppScaffold() {
                 restoreState = true
             }
         }
-    }
 
-    var showAddDialog by remember { mutableStateOf(false) }
+        val openSnap = activity?.intent?.getBooleanExtra(
+            com.laterbox.service.SnapTileService.EXTRA_OPEN_SNAP,
+            false
+        ) ?: false
+        if (openSnap) {
+            activity?.intent?.removeExtra(com.laterbox.service.SnapTileService.EXTRA_OPEN_SNAP)
+            showSnapSheet = true
+        }
+
+        val openItemId = activity?.intent?.getLongExtra("open_item_id", -1L) ?: -1L
+        if (openItemId != -1L) {
+            activity?.intent?.removeExtra("open_item_id")
+            navController.navigate(Screen.ItemDetail.createRoute(openItemId))
+        }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val isOnline by LaterBoxApp.instance.networkMonitor.isOnline.collectAsState()
     var dismissOfflineBanner by remember { mutableStateOf(false) }
@@ -251,50 +271,50 @@ fun MainAppScaffold() {
                         }
                     )
 
-                    // 3. Save
+                    // 3. Snap (Prominent Center Action)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
-                            ) { showAddDialog = true }
+                            ) { showSnapSheet = true }
                             .padding(horizontal = 8.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
-                                .background(extended.primaryBlack),
+                                .background(extended.buttonPrimary),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "Save",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
+                                contentDescription = "Snap",
+                                tint = extended.buttonPrimaryText,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Save",
+                            text = "Snap",
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.Bold,
                             color = activeColor
                         )
                     }
 
-                    // 4. Search
-                    val isSearch = currentRoute == Screen.Search.route
+                    // 4. Events
+                    val isEvents = currentRoute == Screen.Events.route
                     BottomNavTab(
-                        label = "Search",
-                        isSelected = isSearch,
+                        label = "Events",
+                        isSelected = isEvents,
                         activeColor = activeColor,
                         inactiveColor = inactiveColor,
                         highlightColor = highlightColor,
                         onClick = {
-                            if (!isSearch) {
-                                navController.navigate(Screen.Search.route) {
+                            if (!isEvents) {
+                                navController.navigate(Screen.Events.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -305,8 +325,8 @@ fun MainAppScaffold() {
                         },
                         icon = { tint ->
                             Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = "Search",
+                                imageVector = if (isEvents) Icons.Default.Event else Icons.Outlined.Event,
+                                contentDescription = "Events",
                                 tint = tint,
                                 modifier = Modifier.size(22.dp)
                             )
@@ -378,6 +398,9 @@ fun MainAppScaffold() {
                     },
                     onNavigateToFavorites = {
                         navController.navigate(Screen.Library.createRoute("Favorites"))
+                    },
+                    onNavigateToEvents = {
+                        navController.navigate(Screen.Events.route)
                     },
                     onOpenItem = handleOpenItem
                 )
@@ -469,6 +492,14 @@ fun MainAppScaffold() {
                 )
             }
 
+            composable(Screen.Events.route) {
+                EventsScreen(
+                    onOpenItem = { itemId ->
+                        navController.navigate(Screen.ItemDetail.createRoute(itemId))
+                    }
+                )
+            }
+
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
@@ -485,6 +516,15 @@ fun MainAppScaffold() {
         }
     }
 }
+
+    if (showSnapSheet) {
+        SnapQuickCaptureSheet(
+            onDismiss = { showSnapSheet = false },
+            onItemCaptured = { item ->
+                navController.navigate(Screen.ItemDetail.createRoute(item.id))
+            }
+        )
+    }
 
     if (showAddDialog) {
         AddManualItemDialog(

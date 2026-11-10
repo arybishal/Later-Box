@@ -19,11 +19,12 @@ sealed class Screen(val route: String, val title: String) {
     }
     object GeminiSettings : Screen("settings/gemini", "Gemini AI")
     object Trash : Screen("trash", "Trash")
+    object Events : Screen("events", "Events")
 }
 
 val MAIN_BOTTOM_NAV_ROUTES = listOf(
     Screen.Home.route,
     Screen.Library.route,
-    Screen.Search.route,
+    Screen.Events.route,
     Screen.Settings.route
 )

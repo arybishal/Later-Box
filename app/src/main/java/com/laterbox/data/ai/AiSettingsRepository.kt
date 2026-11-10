@@ -23,6 +23,10 @@ class AiSettingsRepository(private val context: Context) {
     private object PreferencesKeys {
         val IS_AI_ENABLED = booleanPreferencesKey("is_gemini_ai_enabled")
         val AUTO_ANALYZE = booleanPreferencesKey("auto_analyze_new_items")
+        val AUTO_GENERATE_TITLE = booleanPreferencesKey("auto_generate_title")
+        val AUTO_GENERATE_SUMMARY = booleanPreferencesKey("auto_generate_summary")
+        val AUTO_GENERATE_TAGS = booleanPreferencesKey("auto_generate_tags")
+        val REQUIRE_WIFI_FOR_AI = booleanPreferencesKey("require_wifi_for_ai")
         val SELECTED_MODEL_ID = stringPreferencesKey("selected_gemini_model_id")
         val HAS_CONSENTED_PRIVACY = booleanPreferencesKey("has_consented_to_ai_privacy")
         val LAST_TEST_STATUS = stringPreferencesKey("last_api_test_status")
@@ -38,6 +42,22 @@ class AiSettingsRepository(private val context: Context) {
 
     val autoAnalyzeNewItems: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
         preferences[PreferencesKeys.AUTO_ANALYZE] ?: false
+    }
+
+    val autoGenerateTitle: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_GENERATE_TITLE] ?: true
+    }
+
+    val autoGenerateSummary: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_GENERATE_SUMMARY] ?: true
+    }
+
+    val autoGenerateTags: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_GENERATE_TAGS] ?: true
+    }
+
+    val requireWifiForAi: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REQUIRE_WIFI_FOR_AI] ?: false
     }
 
     val selectedModelId: Flow<String> = context.aiDataStore.data.map { preferences ->
@@ -95,6 +115,30 @@ class AiSettingsRepository(private val context: Context) {
     suspend fun setAutoAnalyzeNewItems(enabled: Boolean) {
         context.aiDataStore.edit { preferences ->
             preferences[PreferencesKeys.AUTO_ANALYZE] = enabled
+        }
+    }
+
+    suspend fun setAutoGenerateTitle(enabled: Boolean) {
+        context.aiDataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_GENERATE_TITLE] = enabled
+        }
+    }
+
+    suspend fun setAutoGenerateSummary(enabled: Boolean) {
+        context.aiDataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_GENERATE_SUMMARY] = enabled
+        }
+    }
+
+    suspend fun setAutoGenerateTags(enabled: Boolean) {
+        context.aiDataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_GENERATE_TAGS] = enabled
+        }
+    }
+
+    suspend fun setRequireWifiForAi(enabled: Boolean) {
+        context.aiDataStore.edit { preferences ->
+            preferences[PreferencesKeys.REQUIRE_WIFI_FOR_AI] = enabled
         }
     }
 

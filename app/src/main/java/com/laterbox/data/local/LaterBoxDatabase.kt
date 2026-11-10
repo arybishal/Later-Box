@@ -33,7 +33,7 @@ import com.laterbox.data.local.entity.TagEntity
         SearchHistoryEntity::class,
         AiAnalysisEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -129,6 +129,31 @@ abstract class LaterBoxDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // saved_items columns for Unified Memory Assistant
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN isSnap INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN aiTitle TEXT")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN aiDescription TEXT")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN captureMethod TEXT")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN extractedText TEXT")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN transcript TEXT")
+                db.execSQL("ALTER TABLE saved_items ADD COLUMN sourcePackage TEXT")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_saved_items_isSnap ON saved_items(isSnap)")
+
+                // reminders columns for Events & Birthdays
+                db.execSQL("ALTER TABLE reminders ADD COLUMN eventTitle TEXT")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN eventType TEXT NOT NULL DEFAULT 'REMINDER'")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN personName TEXT")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN recurrenceRule TEXT")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN notifyBeforeMinutes INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reminders_eventType ON reminders(eventType)")
+
+                // ai_analyses column for Semantic Search Embeddings
+                db.execSQL("ALTER TABLE ai_analyses ADD COLUMN embeddingVectorJson TEXT")
+            }
+        }
+
         fun getInstance(context: Context): LaterBoxDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -148,7 +173,7 @@ abstract class LaterBoxDatabase : RoomDatabase() {
                             )
                         }
                     })
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

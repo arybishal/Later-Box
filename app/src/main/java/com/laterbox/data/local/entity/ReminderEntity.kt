@@ -18,7 +18,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["contentId"]),
         Index(value = ["dueAt"]),
-        Index(value = ["isCompleted"])
+        Index(value = ["isCompleted"]),
+        Index(value = ["eventType"])
     ]
 )
 data class ReminderEntity(
@@ -29,5 +30,10 @@ data class ReminderEntity(
     val isCompleted: Boolean = false,
     val snoozedUntil: Long? = null,
     val note: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val eventTitle: String? = null,
+    val eventType: String = "REMINDER",
+    val personName: String? = null,
+    val recurrenceRule: String? = null,
+    val notifyBeforeMinutes: Int = 0
 )

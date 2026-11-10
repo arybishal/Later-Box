@@ -117,6 +117,39 @@ class MediaStorageManager(private val context: Context) {
         dest
     }
 
+    fun createCameraImageFile(): File {
+        return File(mediaDir, "snap_photo_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.jpg")
+    }
+
+    fun createCameraVideoFile(): File {
+        return File(mediaDir, "snap_video_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.mp4")
+    }
+
+    fun createAudioRecordingFile(): File {
+        return File(mediaDir, "snap_voice_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.m4a")
+    }
+
+    suspend fun generateVideoThumbnail(videoPath: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.setDataSource(videoPath)
+            val bitmap = retriever.getFrameAtTime(1000000) // 1 second
+            retriever.release()
+
+            if (bitmap != null) {
+                val thumbFile = File(mediaDir, "thumb_${UUID.randomUUID().toString().take(8)}.jpg")
+                FileOutputStream(thumbFile).use { out ->
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+                }
+                thumbFile.absolutePath
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun calculateDirSize(dir: File): Long {
         var size = 0L
         dir.listFiles()?.forEach { file ->

@@ -38,8 +38,18 @@ data class AiAnalysisEntity(
     val analyzedAt: Long = System.currentTimeMillis(),
     val status: String = "SUCCESS",
     val contentFingerprint: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val embeddingVectorJson: String? = null
 ) {
+    fun getEmbeddingVector(): List<Float> = try {
+        if (embeddingVectorJson.isNullOrBlank()) emptyList()
+        else {
+            val arr = JSONArray(embeddingVectorJson)
+            (0 until arr.length()).map { arr.getDouble(it).toFloat() }
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
     fun getPeopleAndEntities(): List<String> = try {
         val arr = JSONArray(peopleAndEntitiesJson)
         (0 until arr.length()).map { arr.getString(it) }

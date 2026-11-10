@@ -5,6 +5,14 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- Package Visibility for Deep Linking to Native Social Media Applications -->
     <queries>
@@ -99,6 +107,38 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Memory Reminders and Events Broadcast Receivers -->
+        <receiver
+            android:name=".data.reminder.ReminderAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.laterbox.reminder.MARK_DONE" />
+                <action android:name="com.laterbox.reminder.SNOOZE_1H" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".data.reminder.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Quick Settings Tile for Universal Quick Capture -->
+        <service
+            android:name=".service.SnapTileService"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/snap_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

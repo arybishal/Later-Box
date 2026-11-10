@@ -39,6 +39,12 @@ class ContentRepository(
 
     fun getFavoriteCount(): Flow<Int> = savedItemDao.getFavoriteCount()
 
+    fun getSnapItems(): Flow<List<SavedItemEntity>> = savedItemDao.getSnapItems()
+
+    fun getSnapCount(): Flow<Int> = savedItemDao.getSnapCount()
+
+    suspend fun setSnapStatus(id: Long, isSnap: Boolean) = savedItemDao.setSnapStatus(id, isSnap)
+
     fun getTotalActiveCount(): Flow<Int> = savedItemDao.getTotalActiveCount()
 
     fun getArchivedItems(): Flow<List<SavedItemEntity>> = savedItemDao.getArchivedItems()

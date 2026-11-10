@@ -1,9 +1,12 @@
 package com.laterbox.ui.screens.settings
 
+import android.app.AlarmManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,18 +34,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -148,10 +155,35 @@ fun SettingsScreen(
     } else true
     var dismissNotificationNotice by remember { mutableStateOf(false) }
 
+    val alarmManager = remember(context) { context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager }
+    val powerManager = remember(context) { context.getSystemService(Context.POWER_SERVICE) as? PowerManager }
+
+    var canScheduleExactAlarms by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                alarmManager?.canScheduleExactAlarms() ?: true
+            } else true
+        )
+    }
+
+    var isIgnoringBatteryOptimizations by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+            } else true
+        )
+    }
+
     LaunchedEffect(Unit) {
         storageSize = storageManager.getMediaStorageSize()
         backupSummary = backupManager.getBackupSummary()
         hasApiKey = secureStorage.hasApiKey()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            canScheduleExactAlarms = alarmManager?.canScheduleExactAlarms() ?: true
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            isIgnoringBatteryOptimizations = powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+        }
     }
 
     // Storage Access Framework Export Launcher
@@ -482,6 +514,200 @@ fun SettingsScreen(
                             onClick = onNavigateToGeminiSettings,
                             text = "Manage"
                         )
+                    }
+                }
+            }
+
+            // Reminders & Reliability (Alarms & Battery Optimization)
+            item {
+                SettingsSection(
+                    title = "Reminders & Reliability",
+                    icon = Icons.Default.Alarm
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Ensure timely alerts for birthdays, anniversaries, and reminders on battery-saving systems.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = extended.textSecondary
+                        )
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // 1. Notification Permission
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Notifications",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(extended.surfaceSecondary)
+                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (hasNotificationPermission) "GRANTED" else "REQUIRED",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (hasNotificationPermission) extended.primaryText else extended.secondaryText
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (hasNotificationPermission) "Alerts for upcoming reminders are enabled" else "Required to show notifications when reminders trigger",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            if (!hasNotificationPermission) {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                            }
+                                            context.startActivity(intent)
+                                        } else {
+                                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                data = Uri.parse("package:${context.packageName}")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
+                                ) {
+                                    Text("Grant", color = extended.primaryBlack)
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // 2. Exact Alarms Permission (Android 12+)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Exact Alarms",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(extended.surfaceSecondary)
+                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (canScheduleExactAlarms) "ACTIVE" else "RESTRICTED",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (canScheduleExactAlarms) extended.primaryText else extended.secondaryText
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (canScheduleExactAlarms) "Alarms trigger at the exact scheduled minute" else "Required on Android 12+ for exact alarm precision",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            if (!canScheduleExactAlarms) {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                                data = Uri.parse("package:${context.packageName}")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
+                                ) {
+                                    Text("Enable", color = extended.primaryBlack)
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // 3. Battery Optimization Exemption
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Battery Optimization",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(extended.surfaceSecondary)
+                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isIgnoringBatteryOptimizations) "UNRESTRICTED" else "OPTIMIZED",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isIgnoringBatteryOptimizations) extended.primaryText else extended.secondaryText
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (isIgnoringBatteryOptimizations) "Background alarms are protected from OS sleep killing" else "Recommended: exclude app from sleep optimization for 100% reliable alarms",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            if (!isIgnoringBatteryOptimizations) {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                            try {
+                                                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                                    data = Uri.parse("package:${context.packageName}")
+                                                }
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) {
+                                                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                                context.startActivity(intent)
+                                            }
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
+                                ) {
+                                    Text("Fix", color = extended.primaryBlack)
+                                }
+                            }
+                        }
                     }
                 }
             }
