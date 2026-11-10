@@ -28,6 +28,4 @@
     <string name="archive_title">Archive</string>
     <string name="trash_title">Recently Deleted</string>
     <string name="snap_tile_label">Snap</string>
-    <string name="accessibility_service_label">Later Box Snap Gesture Service</string>
-    <string name="accessibility_service_description">Detects three-finger horizontal swipe gestures to instantly capture and save content to your Later Box Snaps collection.</string>
 </resources>

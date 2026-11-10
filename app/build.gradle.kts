@@ -13,8 +13,8 @@ android {
         applicationId = "com.laterbox"
         minSdk = 24
         targetSdk = 35
-        versionCode = 17
-        versionName = "2.0.002"
+        versionCode = 18
+        versionName = "2.0.003"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

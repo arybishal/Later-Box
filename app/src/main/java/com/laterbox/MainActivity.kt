@@ -69,16 +69,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ThemeMode
-import com.laterbox.data.model.ContentType
-import com.laterbox.ui.gesture.WindowCaptureHelper
-import com.laterbox.ui.gesture.threeFingerSwipeDetector
-import android.graphics.Bitmap
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.OfflineNoticeBanner
@@ -381,58 +371,11 @@ fun MainAppScaffold() {
             navController.navigate(Screen.ItemDetail.createRoute(item.id))
         }
 
-        val threeFingerSwipeEnabled by LaterBoxApp.instance.preferencesRepository.threeFingerSwipeEnabled.collectAsState(initial = true)
-
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .threeFingerSwipeDetector(
-                    enabled = threeFingerSwipeEnabled,
-                    onSwipe = { direction ->
-                        scope.launch {
-                            val activity = context as? Activity ?: return@launch
-                            val bitmap = WindowCaptureHelper.captureWindow(activity)
-                            if (bitmap != null) {
-                                val file = LaterBoxApp.instance.mediaStorageManager.createCameraImageFile()
-                                withContext(Dispatchers.IO) {
-                                    FileOutputStream(file).use { out ->
-                                        bitmap.compress(Bitmap.CompressFormat.PNG, 95, out)
-                                    }
-                                }
-                                val timestamp = System.currentTimeMillis()
-                                val dateFormat = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault())
-                                val formattedDate = dateFormat.format(Date(timestamp))
-                                val item = SavedItemEntity(
-                                    url = "laterbox://snap/$timestamp",
-                                    title = "Snap Capture · $formattedDate",
-                                    description = "Captured via 3-finger horizontal swipe",
-                                    contentType = ContentType.IMAGE,
-                                    localMediaPath = file.absolutePath,
-                                    isSnap = true,
-                                    captureMethod = "THREE_FINGER_SWIPE",
-                                    sourcePackage = "com.laterbox",
-                                    savedAt = timestamp
-                                )
-                                val id = LaterBoxApp.instance.contentRepository.saveItem(item)
-                                try {
-                                    val app = LaterBoxApp.instance
-                                    if (app.aiSettingsRepository.isAiEnabledNow() && app.aiSettingsRepository.isAutoAnalyzeNow()) {
-                                        com.laterbox.data.ai.AiAnalysisWorker.enqueue(app, id)
-                                    }
-                                } catch (_: Exception) {}
-                                LaterBoxSnackbarController.showMessage("Snap Captured (3-finger swipe)")
-                            } else {
-                                showSnapSheet = true
-                            }
-                        }
-                    }
-                )
+                .padding(paddingValues)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
             if (!isOnline && !dismissOfflineBanner) {
                 OfflineNoticeBanner(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -572,7 +515,6 @@ fun MainAppScaffold() {
             }
         }
     }
-}
 }
 
     if (showSnapSheet) {
