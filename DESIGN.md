@@ -6,38 +6,36 @@ This document details the official design system, exact color palette, typograph
 
 ## 1. Exact Color Palette
 
-The Later Box aesthetic embodies a clean, modern, high-contrast visual system:
-**Core Scheme**: Pure White Background (`#FFFFFF`), Primary Black Typography (`#111111`), and Soft Butter Yellow Highlight (`#FFF1A6`).
-**Strict Constraints**: Strictly ZERO brown/ochre (`#9E6F21` or `#9C6E1E`), zero red fonts, zero crimson, and zero multicolors.
+The Later Box aesthetic embodies a clean, minimalist monochrome visual system:
+**Core Scheme**: Pure White Background (`#FFFFFF`) and Solid Black (`#000000`).
+**Strict Constraints**: Strictly ZERO yellow, ZERO amber, ZERO brown/ochre (`#9E6F21` or `#9C6E1E`), zero red fonts, zero crimson, and zero multicolors.
 
 ### 1.1 Light Mode Specification
 
-| Token Name | Hex Code | RGB | Usage & Screenshot Element |
+| Token Name | Hex Code | RGB | Usage & Element |
 | :--- | :--- | :--- | :--- |
 | **`PureWhiteBackground`** | `#FFFFFF` | `(255, 255, 255)` | Main screen backdrop across Home, Library, Search, and Settings. |
 | **`CleanCardBackground`** | `#FFFFFF` | `(255, 255, 255)` | Card surfaces, empty state dashed cards, and bottom navigation bar. |
-| **`SoftButterYellow`** | `#FFF1A6` | `(255, 241, 166)` | Primary highlight color: `ARCHIVE` tag, `Favorites` shortcut, `Save (+)` tab button, progress bars. |
-| **`SoftButterYellowSubtle`**| `#FFFBEA` | `(255, 251, 234)` | Soft yellow tint for containers and badges. |
-| **`PrimaryBlackText`** | `#111111` | `(17, 17, 17)` | High-contrast titles (`Your saved world.`, `Later Box`), headings, and active navigation tab icons. |
-| **`NeutralGreySecondary`** | `#6B7280` | `(107, 114, 128)` | Subtitles (`Everything worth keeping...`), inactive navigation icons, and timestamps. |
-| **`MutedTextTertiary`** | `#9CA3AF` | `(156, 163, 175)` | Input placeholders, dividers, and inactive icons. |
+| **`PrimaryBlackText`** | `#000000` | `(0, 0, 0)` | High-contrast titles (`Your saved world.`, `Later Box`), headings, active navigation icons, and center `Save (+)` tab. |
+| **`NeutralGreySecondary`** | `#555555` | `(85, 85, 85)` | Subtitles (`Everything worth keeping...`), inactive navigation icons, and timestamps. |
+| **`MutedTextTertiary`** | `#888888` | `(136, 136, 136)` | Input placeholders, dividers, and subtle metadata. |
 | **`SubtleBorderLight`** | `#E5E7EB` | `(229, 231, 235)` | Dashed and solid borders surrounding cards, dividers, and search bar. |
-| **`PillInactiveBackground`**| `#F4F4F5` | `(244, 244, 245)` | Inactive category filter pills and shortcuts. |
-| **`PillActiveBackground`** | `#111111` | `(17, 17, 17)` | Active category filter pill (`All`) with white text. |
-| **`GridListActiveBackground`**| `#FFF1A6` | `(255, 241, 166)` | Active pill indicator inside the `[ Grid \| List ]` toggle control. |
-| **`ScrollThumbColor`** | `#6B7280` | `(107, 114, 128)` | Horizontal scroll track indicator thumb below filter pills. |
+| **`PillInactiveBackground`**| `#F4F4F5` | `(244, 244, 245)` | Inactive category filter pills, badges, and icon containers. |
+| **`PillActiveBackground`** | `#000000` | `(0, 0, 0)` | Active category filter pill (`All`) with white text. |
+| **`GridListActiveBackground`**| `#000000` | `(0, 0, 0)` | Active pill indicator inside the `[ Grid \| List ]` toggle control with white text. |
+| **`ScrollThumbColor`** | `#555555` | `(85, 85, 85)` | Horizontal scroll track indicator thumb below filter pills. |
 
-### 1.2 Dark Mode (Adaptive Charcoal Palette)
+### 1.2 Dark Mode (Adaptive Monochrome Palette)
 
 | Token Name | Hex Code | RGB | Usage |
 | :--- | :--- | :--- | :--- |
-| **`CharcoalBackgroundDark`**| `#0D0D0E` | `(13, 13, 14)` | Deep charcoal canvas with modern dark mode contrast. |
-| **`CharcoalSurfaceDark`** | `#17171A` | `(23, 23, 26)` | Card surfaces, modals, and bottom bar. |
-| **`CharcoalSurfaceVariant`**| `#222226` | `(34, 34, 38)` | Inactive pills and input fill. |
-| **`WarmTextPrimaryDark`** | `#EDEDED` | `(237, 237, 237)` | Headings and primary text in dark mode. |
-| **`WarmTextSecondaryDark`** | `#A1A1AA` | `(161, 161, 170)` | Secondary body and metadata text. |
-| **`CharcoalBorderDark`** | `#27272A` | `(39, 39, 42)` | Borders and dividers. |
-| **`WarmCaramelAccentDark`** | `#FFF1A6` | `(255, 241, 166)` | Subtle butter-yellow highlight in dark mode. |
+| **`CharcoalBackgroundDark`**| `#000000` | `(0, 0, 0)` | Pure black main canvas. |
+| **`CharcoalSurfaceDark`** | `#121212` | `(18, 18, 18)` | Card surfaces, modals, and bottom bar. |
+| **`CharcoalSurfaceVariant`**| `#1E1E1E` | `(30, 30, 30)` | Inactive pills and input fill. |
+| **`WarmTextPrimaryDark`** | `#FFFFFF` | `(255, 255, 255)` | Headings and primary text in dark mode. |
+| **`WarmTextSecondaryDark`** | `#AAAAAA` | `(170, 170, 170)` | Secondary body and metadata text. |
+| **`CharcoalBorderDark`** | `#2E2E2E` | `(46, 46, 46)` | Borders and dividers. |
+| **`WarmCaramelAccentDark`** | `#FFFFFF` | `(255, 255, 255)` | Monochrome white highlight in dark mode. |
 
 ### 1.3 Destructive & Warning (Zero Red Font Constraint)
 
@@ -84,38 +82,37 @@ The Later Box typography balances **literary elegance** with **functional modern
 - **Navigation Tabs**:
   1. **Home**: Outlined House icon + `"Home"`.
   2. **Library**: Custom 4-book spine icon (`|||\`) + `"Library"`.
-  3. **Save (+)**: Elevated circular badge (`42.dp`) with `SoftButterYellow` (`#FFF1A6`) background, dark plus icon (`#111111`), and `"Save"` label below.
+  3. **Save (+)**: Elevated circular badge (`42.dp`) with solid black (`#000000`) background, white plus icon (`#FFFFFF`), and `"Save"` label below.
   4. **Search**: Outlined Search icon + `"Search"`.
   5. **Settings**: Outlined Settings gear icon + `"Settings"`.
-- **States**: Active tab tint is `#111111` (Light) / `#EDEDED` (Dark) with a delicate `SoftButterYellow` (`#FFF1A6`) highlight pill behind the active tab icon; inactive is `#6B7280` (Light) / `#A1A1AA` (Dark).
+- **States**: Active tab tint is `#000000` (Light) / `#FFFFFF` (Dark) with a delicate neutral grey (`#F4F4F5`) highlight pill behind the active tab icon; inactive is `#555555` (Light) / `#AAAAAA` (Dark).
 
 ### 3.2 Redesigned Home Screen Architecture
-- **`HomeHeader`**: Premium title "Later Box" in high-contrast Serif, accompanied by a soft butter-yellow "ARCHIVE" pill tag, and a minimal circular settings entry.
+- **`HomeHeader`**: Premium title "Later Box" in high-contrast Serif, accompanied by a monochrome black-bordered "ARCHIVE" pill tag, and a minimal circular settings entry.
 - **`HomeIntroSection`**: Distinctive editorial headline "Your saved world." with supporting microcopy "Everything worth keeping, all in one place."
 - **`HomeSearchEntry`**: Full-width rounded search entry with black search icon, neutral background, and keyboard hint pill.
-- **`ContinueContentCard`**: Compact (230×100dp) horizontal carousel cards showing media thumbnail, source, 2-line title, and progress bar with soft yellow indicator.
-- **`CollectionShortcutTile`**: Refined compact tiles (120×92dp) for Favorites (highlighted with soft yellow badge), Inbox, and custom playlists.
-- **`RecentSavedItemCard`**: Sleek modern feed card with domain icon, relative time, 2-line title, content type tag in soft butter-yellow, thumbnail with video overlay, and inline favorite/share/playlist actions.
-- **`HomeEmptyState`**: Minimalist empty state card with soft yellow icon badge and high-contrast black action button.
-- **`HomeQuickSaveFAB`**: Floating action button (54dp) in solid black with soft butter-yellow plus icon.
+- **`ContinueContentCard`**: Compact (230×100dp) horizontal carousel cards showing media thumbnail, source, 2-line title, and progress bar with high-contrast black indicator.
+- **`CollectionShortcutTile`**: Refined compact tiles (120×92dp) for Favorites (highlighted with solid black circle badge and white heart), Inbox, and custom playlists.
+- **`RecentSavedItemCard`**: Sleek modern feed card with domain icon, relative time, 2-line title, content type tag in subtle neutral grey (`#F4F4F5`), thumbnail with high-contrast video overlay, and inline favorite/share/playlist actions.
+- **`HomeEmptyState`**: Minimalist empty state card with neutral icon badge and high-contrast black action button.
 
-### 3.2 Dashed Empty State Card (`EmptyDashedCard`)
+### 3.3 Dashed Empty State Card (`EmptyDashedCard`)
 - **Dimensions**: Full width, `16.dp` corner radius, `24.dp` horizontal padding, `36.dp` vertical padding.
 - **Border**: Custom stroke (`3px`), dashed effect (`16px` dash, `12px` gap) in `#E5E7EB`.
 - **Background**: `#FFFFFF`.
 - **Content Alignment**: Vertically and horizontally centered.
-- **Button**: Rounded rectangle (`12.dp` radius), `#F5BA13` background with `#000000` bold text.
+- **Button**: Rounded rectangle (`12.dp` radius), `#000000` background with `#FFFFFF` bold text.
 
-### 3.3 View Toggle Pill (`GridListTogglePill`)
+### 3.4 View Toggle Pill (`GridListTogglePill`)
 - **Container**: Rounded capsule (`12.dp`), `#FFFFFF` background, `#E5E7EB` border.
-- **Active Pill**: `#FEF08A` background with `#000000` bold text.
-- **Inactive Pill**: Transparent background with `#4B5563` normal text.
+- **Active Pill**: `#000000` background with `#FFFFFF` bold text.
+- **Inactive Pill**: Transparent background with `#555555` normal text.
 
-### 3.4 Filter Pills Row (`PillFilterRow`)
+### 3.5 Filter Pills Row (`PillFilterRow`)
 - **Items**: `All`, `Inbox`, `Videos`, `Articles`, `Images`, `Documents`, `Audio`, `Notes`.
 - **Active Pill**: `#000000` background with `#FFFFFF` bold text.
-- **Inactive Pill**: `#F3F4F6` background with `#000000` medium text.
-- **Scroll Track**: Located beneath chips with left arrow (`◀`), centered track, thumb indicator (`#4B5563`), and right arrow (`▶`).
+- **Inactive Pill**: `#F4F4F5` background with `#000000` medium text.
+- **Scroll Track**: Located beneath chips with left arrow (`◀`), centered track, thumb indicator (`#555555`), and right arrow (`▶`).
 
-### 3.5 Sort Selector (`SortDropdownSelector`)
-- Compact dropdown with `"Sort"` label in `#5C564E`, followed by a rounded pill showing current sort order (`Newest first`) and a chevron dropdown indicator.
+### 3.6 Sort Selector (`SortDropdownSelector`)
+- Compact dropdown with `"Sort"` label in `#555555`, followed by a rounded pill showing current sort order (`Newest first`) and a chevron dropdown indicator.

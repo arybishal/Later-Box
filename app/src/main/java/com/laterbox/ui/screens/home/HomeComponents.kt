@@ -99,18 +99,18 @@ fun HomeHeader(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Subtle archive indicator pill in soft butter yellow
+            // Archive indicator pill in monochrome black with white text
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(extended.softYellow)
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .background(extended.primaryBlack)
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = "ARCHIVE",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = extended.primaryBlack,
+                    color = MaterialTheme.colorScheme.background,
                     letterSpacing = 0.5.sp
                 )
             }
@@ -265,7 +265,7 @@ fun HomeSectionHeader(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .background(extended.softYellow)
+                        .background(extended.pillInactive)
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
@@ -364,7 +364,7 @@ fun ContinueContentCard(
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Play",
-                            tint = extended.softYellow,
+                            tint = Color.White,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -383,7 +383,7 @@ fun ContinueContentCard(
                             modifier = Modifier
                                 .fillMaxWidth(item.readProgress.coerceIn(0f, 1f))
                                 .height(3.dp)
-                                .background(extended.softYellow)
+                                .background(extended.primaryBlack)
                         )
                     }
                 }
@@ -422,7 +422,7 @@ fun ContinueContentCard(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(extended.softYellow)
+                            .background(extended.primaryBlack)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
@@ -478,13 +478,13 @@ fun CollectionShortcutTile(
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(if (isHighlight) extended.softYellow else extended.pillInactive),
+                        .background(if (isHighlight) extended.primaryBlack else extended.pillInactive),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = name,
-                        tint = extended.primaryBlack,
+                        tint = if (isHighlight) Color.White else extended.primaryBlack,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -541,7 +541,7 @@ fun HomeNewPlaylistTile(
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)
-                    .background(extended.softYellow),
+                    .background(extended.pillInactive),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -606,7 +606,7 @@ fun RecentSavedItemCard(
                     modifier = Modifier
                         .size(22.dp)
                         .clip(CircleShape)
-                        .background(extended.softYellow),
+                        .background(extended.pillInactive),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -683,11 +683,11 @@ fun RecentSavedItemCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Pill tag in soft butter yellow
+                    // Pill tag in light neutral grey with bold black text
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(extended.softYellow)
+                            .background(extended.pillInactive)
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
@@ -730,7 +730,7 @@ fun RecentSavedItemCard(
                                 Icon(
                                     imageVector = Icons.Default.PlayArrow,
                                     contentDescription = "Video",
-                                    tint = extended.softYellow,
+                                    tint = Color.White,
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -822,7 +822,7 @@ fun HomeEmptyState(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(extended.softYellow),
+                    .background(extended.pillInactive),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -869,7 +869,7 @@ fun HomeEmptyState(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        tint = extended.softYellow,
+                        tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -912,7 +912,7 @@ fun HomeQuickSaveFAB(
         Icon(
             imageVector = Icons.Default.Add,
             contentDescription = "Save something",
-            tint = extended.softYellow,
+            tint = Color.White,
             modifier = Modifier.size(26.dp)
         )
     }

@@ -9,19 +9,24 @@ import org.junit.Test
 class ThemePaletteTest {
 
     @Test
-    fun verifyWhiteBlackAndSoftYellowScheme() {
+    fun verifyMonochromeWhiteAndBlackScheme() {
         assertEquals(0xFFFFFFFF.toInt(), PureWhiteBackground.toArgb())
-        assertEquals(0xFF111111.toInt(), PrimaryBlackText.toArgb())
-        assertEquals(0xFFFFF1A6.toInt(), SoftButterYellow.toArgb())
+        assertEquals(0xFF000000.toInt(), PrimaryBlackText.toArgb())
+        assertEquals(0xFF000000.toInt(), SolidBlackText.toArgb())
 
         // Ensure brown / ochre (#9E6F21 and #9C6E1E) is NOT used
-        assertNotEquals(0xFF9E6F21.toInt(), SoftButterYellow.toArgb())
-        assertNotEquals(0xFF9C6E1E.toInt(), SoftButterYellow.toArgb())
+        assertNotEquals(0xFF9E6F21.toInt(), PrimaryBlackText.toArgb())
+        assertNotEquals(0xFF9C6E1E.toInt(), PrimaryBlackText.toArgb())
 
-        // Soft butter yellow has high red and green, subtle cream blue
-        assertTrue("Yellow highlight is bright", SoftButterYellow.red > 0.9f)
-        assertTrue("Yellow highlight has butter green", SoftButterYellow.green > 0.9f)
-        assertTrue("Yellow highlight is delicate butter", SoftButterYellow.blue in 0.5f..0.75f)
+        // Black typography is pure high-contrast black
+        assertEquals(0f, PrimaryBlackText.red, 0.01f)
+        assertEquals(0f, PrimaryBlackText.green, 0.01f)
+        assertEquals(0f, PrimaryBlackText.blue, 0.01f)
+
+        // White background is pure white
+        assertEquals(1f, PureWhiteBackground.red, 0.01f)
+        assertEquals(1f, PureWhiteBackground.green, 0.01f)
+        assertEquals(1f, PureWhiteBackground.blue, 0.01f)
     }
 
     @Test

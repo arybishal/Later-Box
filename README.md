@@ -41,18 +41,18 @@ Later Box is a personal content-saving, bookmarking, playlist management, and re
   - 100% on-device storage using Android Jetpack Room and DataStore.
   - Zero cloud lock-in, zero tracking, zero mandatory account creation.
 - **Design System & Theme**:
-  - Clean, high-contrast visual identity with soft butter yellow highlighting:
+  - Pure monochrome high-contrast visual identity (White Background & Solid Black):
     - **Background**: Pure White (`#FFFFFF`)
     - **Cards & Surfaces**: Clean Pure White (`#FFFFFF`)
-    - **Primary Highlight**: Soft Butter Yellow (`#FFF1A6`)
-    - **Primary Typography**: Deep Black (`#111111`)
-    - **Secondary Typography**: Neutral Grey (`#6B7280`)
+    - **Primary Typography & Actions**: Solid Black (`#000000`)
+    - **Secondary Typography**: Neutral Grey (`#555555`)
+    - **Tertiary Metadata**: Muted Grey (`#888888`)
     - **Borders & Dividers**: Light Neutral Outline (`#E5E7EB`)
-    - **Inactive Filter Pills**: Light Grey (`#F4F4F5`)
-    - **Active View Toggle**: Soft Yellow Highlight (`#FFF1A6`)
-    - **Dark Theme Adaptive**: Deep Charcoal (`#0D0D0E`) & Dark Surface (`#17171A`)
+    - **Inactive Filter Pills**: Subtle Light Grey (`#F4F4F5`)
+    - **Active View & Filter Toggle**: Solid Black (`#000000`) with White text (`#FFFFFF`)
+    - **Dark Theme Adaptive**: Deep Black (`#000000`) & Dark Surfaces (`#121212` / `#1E1E1E`)
   - Typography: High-contrast editorial Serif headings paired with clean modern Inter/Poppins body and microcopy.
-  - Zero brown/ochre (`#9E6F21` / `#9C6E1E`), strictly zero red font anywhere in the app.
+  - Strictly ZERO yellow, zero amber, zero brown/ochre (`#9E6F21` / `#9C6E1E`), strictly zero red font anywhere in the app.
   - Full support for Dynamic System Theme, Light Mode, and Dark Mode.
 
 ---

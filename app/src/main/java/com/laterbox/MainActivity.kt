@@ -141,7 +141,7 @@ fun MainAppScaffold() {
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 val activeColor = extended.primaryBlack
                 val inactiveColor = extended.textSecondary
-                val highlightColor = extended.softYellow
+                val highlightColor = extended.pillInactive
 
                 Row(
                     modifier = Modifier
@@ -235,13 +235,13 @@ fun MainAppScaffold() {
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(CircleShape)
-                                .background(extended.softYellow),
+                                .background(extended.primaryBlack),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Save",
-                                tint = extended.primaryBlack,
+                                tint = Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
                         }

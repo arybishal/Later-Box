@@ -2,54 +2,54 @@ package com.laterbox.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Global Palette: Pure White (#FFFFFF), Deep Black (#111111), and Soft Butter Yellow (#FFF1A6)
-// Strictly ZERO brown/ochre (#9E6F21 / #9C6E1E) and strictly ZERO red font anywhere!
+// Global Palette: Pure White (#FFFFFF) & Solid Black (#000000)
+// Minimalist Monochrome Aesthetic — ZERO Yellow, ZERO Amber, ZERO Brown, ZERO Red font!
 
-// Light Mode: Pure White Background, Solid Black Typography, Soft Yellow Accent
-val PureWhiteBackground = Color(0xFFFFFFFF)       // Pure White Main Background (#FFFFFF)
+// Light Mode: Pure White Background, Solid Black Typography, Monochrome Accents
+val PureWhiteBackground = Color(0xFFFFFFFF)       // Pure White Background (#FFFFFF)
 val CleanCardBackground = Color(0xFFFFFFFF)       // Pure White Card & Surface (#FFFFFF)
 val CleanCardElevated = Color(0xFFFAFAFA)         // Subtle elevated surface (#FAFAFA)
 val SubtleBorderLight = Color(0xFFE5E7EB)         // Clean light neutral border (#E5E7EB)
 val SubtleBorderStrong = Color(0xFFD1D5DB)        // Input & toggle stroke (#D1D5DB)
 
-val SoftButterYellow = Color(0xFFFFF1A6)          // Consistent Soft Butter Yellow (#FFF1A6)
-val SoftButterYellowSubtle = Color(0xFFFFFBEA)    // Soft yellow container tint (#FFFBEA)
-val SoftButterYellowBorder = Color(0xFFFDE68A)    // Delicate yellow border highlight (#FDE68A)
-
-val PrimaryBlackText = Color(0xFF111111)          // Primary Black Typography & Headings (#111111)
-val SolidBlackText = PrimaryBlackText             // Alias for high-contrast primary text
-val CharcoalTextSecondary = Color(0xFF6B7280)     // Neutral Grey secondary text (#6B7280)
-val MutedTextTertiary = Color(0xFF9CA3AF)         // Neutral Grey tertiary metadata (#9CA3AF)
+val PrimaryBlackText = Color(0xFF000000)          // Pure Black Typography, Headings & Primary Buttons (#000000)
+val SolidBlackText = PrimaryBlackText             // High-contrast primary text
+val CharcoalTextSecondary = Color(0xFF555555)     // Neutral Grey secondary text (#555555)
+val MutedTextTertiary = Color(0xFF888888)         // Neutral Grey tertiary metadata (#888888)
 
 val PillInactiveBackground = Color(0xFFF4F4F5)    // Neutral light grey inactive pill (#F4F4F5)
-val PillActiveBackground = PrimaryBlackText       // Solid black active pill (#111111)
-val GridListActiveBackground = SoftButterYellow   // Soft yellow active toggle pill (#FFF1A6)
-val ScrollThumbColor = Color(0xFF6B7280)          // Neutral grey scroll thumb (#6B7280)
+val PillActiveBackground = PrimaryBlackText       // Solid black active pill (#000000)
+val GridListActiveBackground = Color(0xFF000000)  // Solid black active toggle pill (#000000)
+val ScrollThumbColor = Color(0xFF555555)          // Neutral grey scroll thumb (#555555)
 
-// Universal Theme Compatibility Aliases
-val VibrantYellowAccent = SoftButterYellow
-val VibrantYellowAccentLight = Color(0xFFFFF4B8)
-val VibrantYellowSubtle = SoftButterYellowSubtle
+// Universal Monochrome Aliases (replacing all yellow/amber with Black & Neutral)
+val SoftButterYellow = PrimaryBlackText
+val SoftButterYellowSubtle = PillInactiveBackground
+val SoftButterYellowBorder = SubtleBorderLight
+val VibrantYellowAccent = PrimaryBlackText
+val VibrantYellowAccentLight = PillInactiveBackground
+val VibrantYellowSubtle = PillInactiveBackground
 val WarmCreamBackground = PureWhiteBackground
 val WarmCardBackground = CleanCardBackground
 val WarmBorderDashed = SubtleBorderLight
 val WarmBorderLight = SubtleBorderLight
-val WarmCaramelAccent = SoftButterYellow
-val WarmCaramelAccentLight = Color(0xFFFFF4B8)
-val WarmCaramelSubtle = SoftButterYellowSubtle
+val WarmCaramelAccent = PrimaryBlackText
+val WarmCaramelAccentLight = PillInactiveBackground
+val WarmCaramelSubtle = PillInactiveBackground
 val WarmTextPrimaryLight = PrimaryBlackText
 val WarmTextSecondaryLight = CharcoalTextSecondary
-val AmberAccent = SoftButterYellow
-val AmberAccentLight = Color(0xFFFFF4B8)
+val AmberAccent = PrimaryBlackText
+val AmberAccentLight = PillInactiveBackground
+val AmberAccentSubtle = PillInactiveBackground
 
-// Dark Mode Adaptive Palette — Deep Charcoal / Black with Soft Butter Yellow
-val CharcoalBackgroundDark = Color(0xFF0D0D0E)
-val CharcoalSurfaceDark = Color(0xFF17171A)
-val CharcoalSurfaceVariantDark = Color(0xFF222226)
-val WarmTextPrimaryDark = Color(0xFFEDEDED)
-val WarmTextSecondaryDark = Color(0xFFA1A1AA)
-val CharcoalBorderDark = Color(0xFF27272A)
-val WarmCaramelAccentDark = Color(0xFFFFF1A6)
+// Dark Mode Adaptive Palette — Deep Black (#000000) & Crisp White (#FFFFFF)
+val CharcoalBackgroundDark = Color(0xFF000000)
+val CharcoalSurfaceDark = Color(0xFF121212)
+val CharcoalSurfaceVariantDark = Color(0xFF1E1E1E)
+val WarmTextPrimaryDark = Color(0xFFFFFFFF)
+val WarmTextSecondaryDark = Color(0xFFAAAAAA)
+val CharcoalBorderDark = Color(0xFF2E2E2E)
+val WarmCaramelAccentDark = Color(0xFFFFFFFF)
 
 val DeepBlackBackgroundDark = CharcoalBackgroundDark
 val WhiteTextPrimaryDark = WarmTextPrimaryDark

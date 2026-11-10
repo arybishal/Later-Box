@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Completely redesigned Home screen for Later Box.
- * World-class minimal aesthetic: Crisp White (#FFFFFF), Deep Black (#111111), and Soft Butter Yellow (#FFF1A6).
+ * Minimalist monochrome aesthetic: Pure White (#FFFFFF) and Solid Black (#000000).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
