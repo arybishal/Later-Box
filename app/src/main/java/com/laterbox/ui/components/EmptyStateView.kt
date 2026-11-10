@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 
 fun Modifier.dashedBorder(
     strokeWidth: Float = 3f,
@@ -82,7 +83,7 @@ fun EmptyDashedCard(
         ) {
             Text(
                 text = title,
-                fontFamily = FontFamily.Serif,
+                fontFamily = SerifHeadlineFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 lineHeight = 30.sp,
@@ -160,7 +161,7 @@ fun EmptyStateView(
 
         Text(
             text = title,
-            fontFamily = FontFamily.Serif,
+            fontFamily = SerifHeadlineFontFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             color = MaterialTheme.colorScheme.onBackground,

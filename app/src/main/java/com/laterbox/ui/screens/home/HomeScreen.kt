@@ -57,6 +57,7 @@ import com.laterbox.ui.components.EmptyDashedCard
 import com.laterbox.ui.components.FavoritesCollectionCard
 import com.laterbox.ui.components.PlaylistCard
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import java.util.Calendar
 
 fun getGreeting(): String {
@@ -122,7 +123,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = getGreeting(),
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = SerifHeadlineFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 32.sp,
                             lineHeight = 38.sp,
@@ -142,7 +143,7 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = "L",
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = SerifHeadlineFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onBackground
@@ -176,7 +177,7 @@ fun HomeScreen(
                 item {
                     Text(
                         text = "Continue reading & watching",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -205,7 +206,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Your playlists",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -294,7 +295,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Recent saves",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                         color = MaterialTheme.colorScheme.onBackground

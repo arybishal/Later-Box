@@ -57,6 +57,7 @@ import com.laterbox.data.update.UpdateInfo
 import com.laterbox.data.update.UpdateManager
 import com.laterbox.data.update.UpdateState
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -98,7 +99,7 @@ fun AppUpdateSection(
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = "App Updates",
-                fontFamily = FontFamily.Serif,
+                fontFamily = SerifHeadlineFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.onBackground
@@ -478,7 +479,7 @@ fun UpdateDetailsDialog(
                 Column {
                     Text(
                         text = "Later Box Update",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -531,7 +532,7 @@ fun UpdateDetailsDialog(
 
                 Text(
                     text = "Release Notes",
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = SerifHeadlineFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground

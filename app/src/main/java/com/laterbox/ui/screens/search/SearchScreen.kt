@@ -53,6 +53,7 @@ import com.laterbox.ui.components.GridListTogglePill
 import com.laterbox.ui.components.LaterBoxSearchBar
 import com.laterbox.ui.components.SortDropdownSelector
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,7 +113,7 @@ fun SearchScreen(
                 Column {
                     Text(
                         text = "Search",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp,
                         color = MaterialTheme.colorScheme.onBackground

@@ -55,6 +55,7 @@ import com.laterbox.ui.components.LaterBoxSearchBar
 import com.laterbox.ui.components.PillFilterRow
 import com.laterbox.ui.components.SortDropdownSelector
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,7 +118,7 @@ fun LibraryScreen(
                 Column {
                     Text(
                         text = "Library",
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp,
                         color = MaterialTheme.colorScheme.onBackground

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.laterbox.data.model.SortOrder
 import com.laterbox.data.model.ViewMode
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import com.laterbox.ui.theme.SerifHeadlineFontFamily
 
 @Composable
 fun LaterBoxHeader(
@@ -79,7 +80,7 @@ fun LaterBoxHeader(
             Column {
                 Text(
                     text = greeting,
-                    fontFamily = FontFamily.Serif,
+                    fontFamily = SerifHeadlineFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onBackground
