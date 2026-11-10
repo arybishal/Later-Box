@@ -41,16 +41,16 @@ Later Box is a personal content-saving, bookmarking, playlist management, and re
   - 100% on-device storage using Android Jetpack Room and DataStore.
   - Zero cloud lock-in, zero tracking, zero mandatory account creation.
 - **Design System & Theme**:
-  - Clean, high-contrast visual identity with vibrant yellow accenting:
+  - Clean, high-contrast visual identity with soft butter yellow highlighting:
     - **Background**: Pure White (`#FFFFFF`)
     - **Cards & Surfaces**: Clean Pure White (`#FFFFFF`)
-    - **Primary Accent**: Vibrant Yellow (`#F5BA13`)
-    - **Primary Typography**: Solid High-Contrast Black (`#000000`)
-    - **Secondary Typography**: Neutral Grey (`#4B5563`)
+    - **Primary Highlight**: Soft Butter Yellow (`#FFF1A6`)
+    - **Primary Typography**: Deep Black (`#111111`)
+    - **Secondary Typography**: Neutral Grey (`#6B7280`)
     - **Borders & Dividers**: Light Neutral Outline (`#E5E7EB`)
-    - **Inactive Filter Pills**: Light Grey (`#F3F4F6`)
-    - **Active View Toggle**: Soft Yellow Accent (`#FEF08A`)
-    - **Dark Theme Adaptive**: Deep Charcoal (`#161412`) & Dark Surface (`#1E1B18`)
+    - **Inactive Filter Pills**: Light Grey (`#F4F4F5`)
+    - **Active View Toggle**: Soft Yellow Highlight (`#FFF1A6`)
+    - **Dark Theme Adaptive**: Deep Charcoal (`#0D0D0E`) & Dark Surface (`#17171A`)
   - Typography: High-contrast editorial Serif headings paired with clean modern Inter/Poppins body and microcopy.
   - Zero brown/ochre (`#9E6F21` / `#9C6E1E`), strictly zero red font anywhere in the app.
   - Full support for Dynamic System Theme, Light Mode, and Dark Mode.

@@ -1,74 +1,48 @@
 package com.laterbox.ui.screens.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.AddToPlaylistDialog
-import com.laterbox.ui.components.CompactSocialFeedCard
 import com.laterbox.ui.components.ContentActionsSheet
-import com.laterbox.ui.components.ContinueWatchingCard
 import com.laterbox.ui.components.CreatePlaylistDialog
 import com.laterbox.ui.components.EditNotesDialog
-import com.laterbox.ui.components.EmptyDashedCard
-import com.laterbox.ui.components.FavoritesCollectionCard
-import com.laterbox.ui.components.PlaylistCard
-import com.laterbox.ui.theme.LaterBoxThemeTokens
-import com.laterbox.ui.theme.SerifHeadlineFontFamily
-import java.util.Calendar
+import kotlinx.coroutines.launch
 
-fun getGreeting(): String {
-    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    return when (hour) {
-        in 4..11 -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        else -> "Good evening"
-    }
-}
-
+/**
+ * Completely redesigned Home screen for Later Box.
+ * World-class minimal aesthetic: Crisp White (#FFFFFF), Deep Black (#111111), and Soft Butter Yellow (#FFF1A6).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -80,12 +54,14 @@ fun HomeScreen(
     onOpenItem: (SavedItemEntity) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
-    val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     val recentItems by viewModel.recentItems.collectAsState()
     val continueItems by viewModel.continueItems.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val favoriteCount by viewModel.favoriteCount.collectAsState()
+    val totalCount by viewModel.totalCount.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -102,93 +78,40 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 100.dp)
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp)
         ) {
-            // Header: "Save now. Enjoy later." + "Good evening" + Avatar Circle "L"
+            // 2.1 Header: Minimal wordmark with archive tag & settings entry
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(bottom = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Save now. Enjoy later.",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = extended.textSecondary
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = getGreeting(),
-                            fontFamily = SerifHeadlineFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 32.sp,
-                            lineHeight = 38.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-
-                    // Avatar Circle "L" (Clickable to open Settings)
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, extended.border, CircleShape)
-                            .background(extended.cardBackground)
-                            .clickable { onNavigateToSettings() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "L",
-                            fontFamily = SerifHeadlineFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
+                HomeHeader(onNavigateToSettings = onNavigateToSettings)
             }
 
-            // Search Bar: "Search your library"
+            // 2.2 Introductory Section: "Your saved world."
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-                        .background(extended.cardBackground)
-                        .clickable { onNavigateToSearch() }
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    Text(
-                        text = "Search your library",
-                        fontSize = 15.sp,
-                        color = extended.textSecondary
-                    )
-                }
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                HomeIntroSection()
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
-            // Section: Continue reading & watching (if any)
+            // 2.3 Prominent Search Entry
+            item {
+                HomeSearchEntry(onClick = onNavigateToSearch)
+                Spacer(modifier = Modifier.height(26.dp))
+            }
+
+            // 2.4 Continue Reading / Watching Section (compact, only shown if unfinished items exist)
             if (continueItems.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "Continue reading & watching",
-                        fontFamily = SerifHeadlineFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                    HomeSectionHeader(
+                        title = "Jump back in",
+                        badgeCount = continueItems.size
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 24.dp)
+                        modifier = Modifier.padding(bottom = 26.dp)
                     ) {
                         items(continueItems, key = { it.id }) { item ->
-                            ContinueWatchingCard(
+                            ContinueContentCard(
                                 item = item,
                                 onClick = { onOpenItem(item) }
                             )
@@ -197,137 +120,82 @@ fun HomeScreen(
                 }
             }
 
-            // Section: Your playlists
+            // 2.5 Collections Section: Favorites, Inbox, user playlists, and New Collection
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Your playlists",
-                        fontFamily = SerifHeadlineFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                HomeSectionHeader(
+                    title = "Collections",
+                    actionLabel = "+ New",
+                    onActionClick = { showCreatePlaylistDialog = true }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = { showCreatePlaylistDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = extended.amberAccent,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "New",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                val defaultInbox = playlists.find { it.isDefaultInbox }
+                val customPlaylists = playlists.filter { !it.isDefaultInbox }
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(bottom = 28.dp)
+                ) {
+                    // Smart collection: Favorites
+                    item {
+                        CollectionShortcutTile(
+                            name = "Favorites",
+                            count = favoriteCount,
+                            icon = Icons.Default.Favorite,
+                            isHighlight = true,
+                            onClick = onNavigateToFavorites
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Playlists are optional. Saves without one stay in your ",
-                        fontSize = 13.sp,
-                        color = extended.textSecondary
-                    )
-                    Text(
-                        text = "Inbox.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            val inbox = playlists.find { it.isDefaultInbox }
-                            if (inbox != null) onNavigateToPlaylist(inbox.id)
-                            else onNavigateToLibrary()
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-            }
-
-            // Collections list (Smart Favorites collection first, then user playlists)
-            val customPlaylists = playlists.filter { !it.isDefaultInbox }
-            if (customPlaylists.isNotEmpty() || favoriteCount > 0) {
-                item {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.padding(bottom = 28.dp)
-                    ) {
-                        if (favoriteCount > 0) {
-                            item {
-                                FavoritesCollectionCard(
-                                    count = favoriteCount,
-                                    onClick = onNavigateToFavorites,
-                                    modifier = Modifier
-                                        .width(140.dp)
-                                        .height(115.dp)
-                                )
+                    // Smart collection: Inbox
+                    item {
+                        CollectionShortcutTile(
+                            name = "Inbox",
+                            count = defaultInbox?.itemCount ?: 0,
+                            icon = Icons.Default.BookmarkBorder,
+                            onClick = {
+                                if (defaultInbox != null) onNavigateToPlaylist(defaultInbox.id)
+                                else onNavigateToLibrary()
                             }
-                        }
-                        items(customPlaylists) { playlist ->
-                            PlaylistCard(
-                                playlist = playlist,
-                                onClick = { onNavigateToPlaylist(playlist.id) },
-                                modifier = Modifier
-                                    .width(140.dp)
-                                    .height(115.dp)
-                            )
-                        }
+                        )
+                    }
+
+                    // User Playlists
+                    items(customPlaylists, key = { it.id }) { playlist ->
+                        CollectionShortcutTile(
+                            name = playlist.name,
+                            count = playlist.itemCount,
+                            icon = Icons.Default.Folder,
+                            onClick = { onNavigateToPlaylist(playlist.id) }
+                        )
+                    }
+
+                    // Add new collection shortcut
+                    item {
+                        HomeNewPlaylistTile(onClick = { showCreatePlaylistDialog = true })
                     }
                 }
             }
 
-            // Section: Recent saves
+            // 2.6 Recently Saved Section
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Recent saves",
-                        fontFamily = SerifHeadlineFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Text(
-                        text = "Library",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier
-                            .clickable { onNavigateToLibrary() }
-                            .padding(4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
+                HomeSectionHeader(
+                    title = "Recently saved",
+                    badgeCount = if (recentItems.isNotEmpty()) recentItems.size else null,
+                    actionLabel = "View all →",
+                    onActionClick = onNavigateToLibrary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Empty state card or recent items
+            // Compact feed items or refined empty state
             if (recentItems.isEmpty()) {
                 item {
-                    EmptyDashedCard(
-                        title = "Nothing saved yet",
-                        description = "Paste a link from Instagram, YouTube, a browser, or anywhere else. Later Box keeps the original address even if the preview cannot be read.",
-                        buttonLabel = "Save something",
-                        onButtonClick = { showAddDialog = true }
-                    )
+                    HomeEmptyState(onSaveClick = { showAddDialog = true })
                 }
             } else {
                 items(recentItems, key = { it.id }) { item ->
-                    CompactSocialFeedCard(
+                    RecentSavedItemCard(
                         item = item,
                         onClick = { onOpenItem(item) },
                         onFavoriteToggle = { viewModel.toggleFavorite(item) },
@@ -335,7 +203,7 @@ fun HomeScreen(
                         onShare = {
                             val sendIntent = Intent().apply {
                                 action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, item.url ?: item.title)
+                                putExtra(Intent.EXTRA_TEXT, item.url.ifEmpty { item.title })
                                 type = "text/plain"
                             }
                             context.startActivity(Intent.createChooser(sendIntent, "Share via"))
@@ -348,22 +216,7 @@ fun HomeScreen(
         }
     }
 
-    // Contextual Actions Bottom Sheet
-    selectedItemForActions?.let { item ->
-        ContentActionsSheet(
-            item = item,
-            sheetState = bottomSheetState,
-            onDismiss = { selectedItemForActions = null },
-            onOpenInApp = { onOpenItem(item) },
-            onAddToPlaylist = { selectedItemForPlaylists = item },
-            onToggleFavorite = { viewModel.toggleFavorite(item) },
-            onToggleArchive = { viewModel.toggleArchive(item) },
-            onEditNotes = { selectedItemForNotes = item },
-            onMoveToTrash = { viewModel.moveToTrash(item.id) }
-        )
-    }
-
-    // Manual Link / Note Dialog
+    // Modal dialogs and action sheets (preserving existing business logic)
     if (showAddDialog) {
         AddManualItemDialog(
             onDismiss = { showAddDialog = false },
@@ -374,7 +227,6 @@ fun HomeScreen(
         )
     }
 
-    // Create Playlist Dialog
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
@@ -385,55 +237,63 @@ fun HomeScreen(
         )
     }
 
-    // Edit Notes Dialog
+    selectedItemForActions?.let { item ->
+        ContentActionsSheet(
+            item = item,
+            sheetState = bottomSheetState,
+            onDismiss = { selectedItemForActions = null },
+            onOpenInApp = {
+                onOpenItem(item)
+                selectedItemForActions = null
+            },
+            onAddToPlaylist = {
+                selectedItemForPlaylists = item
+                selectedItemForActions = null
+            },
+            onToggleFavorite = {
+                viewModel.toggleFavorite(item)
+                selectedItemForActions = null
+            },
+            onToggleArchive = {
+                viewModel.toggleArchive(item)
+                selectedItemForActions = null
+            },
+            onEditNotes = {
+                selectedItemForNotes = item
+                selectedItemForActions = null
+            },
+            onMoveToTrash = {
+                viewModel.moveToTrash(item.id)
+                selectedItemForActions = null
+            }
+        )
+    }
+
     selectedItemForNotes?.let { item ->
         EditNotesDialog(
             initialNotes = item.notes,
             onDismiss = { selectedItemForNotes = null },
-            onSave = { updatedNotes ->
-                viewModel.updateNotes(item.id, updatedNotes)
+            onSave = { newNotes ->
+                viewModel.updateNotes(item.id, newNotes)
                 selectedItemForNotes = null
             }
         )
     }
 
-    // Add to Playlist Dialog
     selectedItemForPlaylists?.let { item ->
-        HomePlaylistDialogHost(
-            item = item,
-            viewModel = viewModel,
-            playlists = playlists,
+        val currentPlaylistEntities by viewModel.getPlaylistsForItem(item.id)
+            .collectAsState(initial = emptyList())
+        AddToPlaylistDialog(
+            allPlaylists = playlists.map { it.toPlaylistEntity() },
+            initiallySelectedIds = currentPlaylistEntities.map { it.id },
             onDismiss = { selectedItemForPlaylists = null },
-            onCreateNewPlaylist = { showCreatePlaylistDialog = true }
+            onSavePlaylists = { selectedIds ->
+                viewModel.updatePlaylistsForItem(item.id, selectedIds)
+                selectedItemForPlaylists = null
+            },
+            onCreateNewPlaylist = {
+                showCreatePlaylistDialog = true
+            }
         )
     }
-}
-
-@Composable
-private fun HomePlaylistDialogHost(
-    item: SavedItemEntity,
-    viewModel: HomeViewModel,
-    playlists: List<com.laterbox.data.local.relation.PlaylistWithCount>,
-    onDismiss: () -> Unit,
-    onCreateNewPlaylist: () -> Unit
-) {
-    val currentPlaylists by viewModel.getPlaylistsForItem(item.id).collectAsState(initial = emptyList())
-    AddToPlaylistDialog(
-        allPlaylists = playlists.map { p ->
-            com.laterbox.data.local.entity.PlaylistEntity(
-                id = p.id,
-                name = p.name,
-                description = p.description,
-                iconName = p.iconName,
-                isDefaultInbox = p.isDefaultInbox
-            )
-        },
-        initiallySelectedIds = currentPlaylists.map { it.id },
-        onDismiss = onDismiss,
-        onSavePlaylists = { pIds ->
-            viewModel.updatePlaylistsForItem(item.id, pIds)
-            onDismiss()
-        },
-        onCreateNewPlaylist = onCreateNewPlaylist
-    )
 }

@@ -46,4 +46,14 @@ data class PlaylistWithCount(
     val createdAt: Long,
     val isDefaultInbox: Boolean,
     val itemCount: Int
-)
+) {
+    fun toPlaylistEntity(): PlaylistEntity = PlaylistEntity(
+        id = id,
+        name = name,
+        description = description,
+        iconName = iconName,
+        coverUrl = coverUrl,
+        createdAt = createdAt,
+        isDefaultInbox = isDefaultInbox
+    )
+}

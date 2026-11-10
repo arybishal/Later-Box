@@ -48,6 +48,9 @@ class HomeViewModel(
     val favoriteCount: StateFlow<Int> = contentRepository.getFavoriteCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val totalCount: StateFlow<Int> = contentRepository.getTotalActiveCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         if (query.isBlank()) {

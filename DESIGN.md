@@ -7,8 +7,8 @@ This document details the official design system, exact color palette, typograph
 ## 1. Exact Color Palette
 
 The Later Box aesthetic embodies a clean, modern, high-contrast visual system:
-**Core Scheme**: Pure White Background (`#FFFFFF`), Solid Black Text (`#000000`), and Vibrant Yellow Accent (`#F5BA13`).
-**Strict Constraints**: Strictly ZERO brown/ochre (`#9E6F21` or `#9C6E1E`), zero red fonts, and zero crimson tones.
+**Core Scheme**: Pure White Background (`#FFFFFF`), Primary Black Typography (`#111111`), and Soft Butter Yellow Highlight (`#FFF1A6`).
+**Strict Constraints**: Strictly ZERO brown/ochre (`#9E6F21` or `#9C6E1E`), zero red fonts, zero crimson, and zero multicolors.
 
 ### 1.1 Light Mode Specification
 
@@ -16,28 +16,28 @@ The Later Box aesthetic embodies a clean, modern, high-contrast visual system:
 | :--- | :--- | :--- | :--- |
 | **`PureWhiteBackground`** | `#FFFFFF` | `(255, 255, 255)` | Main screen backdrop across Home, Library, Search, and Settings. |
 | **`CleanCardBackground`** | `#FFFFFF` | `(255, 255, 255)` | Card surfaces, empty state dashed cards, and bottom navigation bar. |
-| **`VibrantYellowAccent`** | `#F5BA13` | `(245, 186, 19)` | Primary action buttons (`Save something`, `New`) and center circular `Save (+)` tab button. |
-| **`VibrantYellowAccentLight`**| `#FDE047` | `(253, 224, 71)` | Interaction hover, press states, and badge highlights. |
-| **`VibrantYellowSubtle`** | `#FEF9C3` | `(254, 249, 195)` | Soft yellow tint for containers and active selection indicators. |
-| **`SolidBlackText`** | `#000000` | `(0, 0, 0)` | High-contrast titles (`Good afternoon`, `Library`), button labels, and active navigation tab icons. |
-| **`CharcoalTextSecondary`**| `#4B5563` | `(75, 85, 99)` | Subtitles (`Save now. Enjoy later.`, `0 items`), inactive navigation icons, and sort labels. |
-| **`SubtleBorderLight`** | `#E5E7EB` | `(229, 231, 235)` | Dashed border surrounding empty state cards, dividers, and input borders. |
-| **`PillInactiveBackground`**| `#F3F4F6` | `(243, 244, 246)` | Inactive category filter pills (`Inbox`, `Videos`, `Articles`, etc.). |
-| **`PillActiveBackground`** | `#000000` | `(0, 0, 0)` | Active category filter pill (`All`) with white text. |
-| **`GridListActiveBackground`**| `#FEF08A` | `(254, 240, 138)` | Active pill indicator inside the `[ Grid \| List ]` toggle control. |
-| **`ScrollThumbColor`** | `#4B5563` | `(75, 85, 99)` | Horizontal scroll track indicator thumb below filter pills. |
+| **`SoftButterYellow`** | `#FFF1A6` | `(255, 241, 166)` | Primary highlight color: `ARCHIVE` tag, `Favorites` shortcut, `Save (+)` tab button, progress bars. |
+| **`SoftButterYellowSubtle`**| `#FFFBEA` | `(255, 251, 234)` | Soft yellow tint for containers and badges. |
+| **`PrimaryBlackText`** | `#111111` | `(17, 17, 17)` | High-contrast titles (`Your saved world.`, `Later Box`), headings, and active navigation tab icons. |
+| **`NeutralGreySecondary`** | `#6B7280` | `(107, 114, 128)` | Subtitles (`Everything worth keeping...`), inactive navigation icons, and timestamps. |
+| **`MutedTextTertiary`** | `#9CA3AF` | `(156, 163, 175)` | Input placeholders, dividers, and inactive icons. |
+| **`SubtleBorderLight`** | `#E5E7EB` | `(229, 231, 235)` | Dashed and solid borders surrounding cards, dividers, and search bar. |
+| **`PillInactiveBackground`**| `#F4F4F5` | `(244, 244, 245)` | Inactive category filter pills and shortcuts. |
+| **`PillActiveBackground`** | `#111111` | `(17, 17, 17)` | Active category filter pill (`All`) with white text. |
+| **`GridListActiveBackground`**| `#FFF1A6` | `(255, 241, 166)` | Active pill indicator inside the `[ Grid \| List ]` toggle control. |
+| **`ScrollThumbColor`** | `#6B7280` | `(107, 114, 128)` | Horizontal scroll track indicator thumb below filter pills. |
 
-### 1.2 Dark Mode (Adaptive Warm Charcoal Palette)
+### 1.2 Dark Mode (Adaptive Charcoal Palette)
 
 | Token Name | Hex Code | RGB | Usage |
 | :--- | :--- | :--- | :--- |
-| **`CharcoalBackgroundDark`**| `#161412` | `(22, 20, 18)` | Deep charcoal main canvas with warm neutral undertone. |
-| **`CharcoalSurfaceDark`** | `#1E1B18` | `(30, 27, 24)` | Card surfaces, modals, and bottom bar. |
-| **`CharcoalSurfaceVariant`**| `#282522` | `(40, 37, 34)` | Inactive pills and input fill. |
-| **`WarmTextPrimaryDark`** | `#F4F0E8` | `(244, 240, 232)` | Headings and primary text in dark mode. |
-| **`WarmTextSecondaryDark`** | `#9E978D` | `(158, 151, 141)` | Secondary body and metadata text. |
-| **`CharcoalBorderDark`** | `#2C2723` | `(44, 39, 35)` | Borders and dividers. |
-| **`VibrantYellowAccentDark`**| `#F5BA13` | `(245, 186, 19)` | Buttons and badges in dark mode. |
+| **`CharcoalBackgroundDark`**| `#0D0D0E` | `(13, 13, 14)` | Deep charcoal canvas with modern dark mode contrast. |
+| **`CharcoalSurfaceDark`** | `#17171A` | `(23, 23, 26)` | Card surfaces, modals, and bottom bar. |
+| **`CharcoalSurfaceVariant`**| `#222226` | `(34, 34, 38)` | Inactive pills and input fill. |
+| **`WarmTextPrimaryDark`** | `#EDEDED` | `(237, 237, 237)` | Headings and primary text in dark mode. |
+| **`WarmTextSecondaryDark`** | `#A1A1AA` | `(161, 161, 170)` | Secondary body and metadata text. |
+| **`CharcoalBorderDark`** | `#27272A` | `(39, 39, 42)` | Borders and dividers. |
+| **`WarmCaramelAccentDark`** | `#FFF1A6` | `(255, 241, 166)` | Subtle butter-yellow highlight in dark mode. |
 
 ### 1.3 Destructive & Warning (Zero Red Font Constraint)
 
@@ -84,10 +84,20 @@ The Later Box typography balances **literary elegance** with **functional modern
 - **Navigation Tabs**:
   1. **Home**: Outlined House icon + `"Home"`.
   2. **Library**: Custom 4-book spine icon (`|||\`) + `"Library"`.
-  3. **Save (+)**: Elevated circular badge (`40.dp`) with `VibrantYellowAccent` (`#F5BA13`) background, dark plus icon (`#000000`), and `"Save"` label below.
+  3. **Save (+)**: Elevated circular badge (`42.dp`) with `SoftButterYellow` (`#FFF1A6`) background, dark plus icon (`#111111`), and `"Save"` label below.
   4. **Search**: Outlined Search icon + `"Search"`.
   5. **Settings**: Outlined Settings gear icon + `"Settings"`.
-- **States**: Active tab tint is `#000000` (Light) / `#FFFFFF` (Dark); inactive is `#4B5563` (Light) / `#9E978D` (Dark).
+- **States**: Active tab tint is `#111111` (Light) / `#EDEDED` (Dark) with a delicate `SoftButterYellow` (`#FFF1A6`) highlight pill behind the active tab icon; inactive is `#6B7280` (Light) / `#A1A1AA` (Dark).
+
+### 3.2 Redesigned Home Screen Architecture
+- **`HomeHeader`**: Premium title "Later Box" in high-contrast Serif, accompanied by a soft butter-yellow "ARCHIVE" pill tag, and a minimal circular settings entry.
+- **`HomeIntroSection`**: Distinctive editorial headline "Your saved world." with supporting microcopy "Everything worth keeping, all in one place."
+- **`HomeSearchEntry`**: Full-width rounded search entry with black search icon, neutral background, and keyboard hint pill.
+- **`ContinueContentCard`**: Compact (230×100dp) horizontal carousel cards showing media thumbnail, source, 2-line title, and progress bar with soft yellow indicator.
+- **`CollectionShortcutTile`**: Refined compact tiles (120×92dp) for Favorites (highlighted with soft yellow badge), Inbox, and custom playlists.
+- **`RecentSavedItemCard`**: Sleek modern feed card with domain icon, relative time, 2-line title, content type tag in soft butter-yellow, thumbnail with video overlay, and inline favorite/share/playlist actions.
+- **`HomeEmptyState`**: Minimalist empty state card with soft yellow icon badge and high-contrast black action button.
+- **`HomeQuickSaveFAB`**: Floating action button (54dp) in solid black with soft butter-yellow plus icon.
 
 ### 3.2 Dashed Empty State Card (`EmptyDashedCard`)
 - **Dimensions**: Full width, `16.dp` corner radius, `24.dp` horizontal padding, `36.dp` vertical padding.

@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Home
@@ -138,8 +139,9 @@ fun MainAppScaffold() {
             if (showBottomBar) {
                 val borderColor = extended.border
                 val surfaceColor = MaterialTheme.colorScheme.surface
-                val activeColor = MaterialTheme.colorScheme.onBackground
+                val activeColor = extended.primaryBlack
                 val inactiveColor = extended.textSecondary
+                val highlightColor = extended.softYellow
 
                 Row(
                     modifier = Modifier
@@ -154,7 +156,7 @@ fun MainAppScaffold() {
                             )
                         }
                         .navigationBarsPadding()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -165,6 +167,7 @@ fun MainAppScaffold() {
                         isSelected = isHome,
                         activeColor = activeColor,
                         inactiveColor = inactiveColor,
+                        highlightColor = highlightColor,
                         onClick = {
                             if (!isHome) {
                                 navController.navigate(Screen.Home.route) {
@@ -181,7 +184,7 @@ fun MainAppScaffold() {
                                 imageVector = Icons.Outlined.Home,
                                 contentDescription = "Home",
                                 tint = tint,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     )
@@ -193,6 +196,7 @@ fun MainAppScaffold() {
                         isSelected = isLibrary,
                         activeColor = activeColor,
                         inactiveColor = inactiveColor,
+                        highlightColor = highlightColor,
                         onClick = {
                             if (!isLibrary) {
                                 navController.navigate(Screen.Library.createRoute("All")) {
@@ -205,7 +209,7 @@ fun MainAppScaffold() {
                             }
                         },
                         icon = { tint ->
-                            Canvas(modifier = Modifier.size(24.dp)) {
+                            Canvas(modifier = Modifier.size(22.dp)) {
                                 val strokeW = 1.8.dp.toPx()
                                 val topY = size.height * 0.16f
                                 val botY = size.height * 0.84f
@@ -225,23 +229,23 @@ fun MainAppScaffold() {
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) { showAddDialog = true }
-                            .padding(horizontal = 12.dp)
+                            .padding(horizontal = 8.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(42.dp)
                                 .clip(CircleShape)
-                                .background(extended.amberAccent),
+                                .background(extended.softYellow),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Save",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
+                                tint = extended.primaryBlack,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Save",
                             fontSize = 11.sp,
@@ -257,6 +261,7 @@ fun MainAppScaffold() {
                         isSelected = isSearch,
                         activeColor = activeColor,
                         inactiveColor = inactiveColor,
+                        highlightColor = highlightColor,
                         onClick = {
                             if (!isSearch) {
                                 navController.navigate(Screen.Search.route) {
@@ -273,7 +278,7 @@ fun MainAppScaffold() {
                                 imageVector = Icons.Outlined.Search,
                                 contentDescription = "Search",
                                 tint = tint,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     )
@@ -285,6 +290,7 @@ fun MainAppScaffold() {
                         isSelected = isSettings,
                         activeColor = activeColor,
                         inactiveColor = inactiveColor,
+                        highlightColor = highlightColor,
                         onClick = {
                             if (!isSettings) {
                                 navController.navigate(Screen.Settings.route) {
@@ -301,7 +307,7 @@ fun MainAppScaffold() {
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Settings",
                                 tint = tint,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     )
@@ -445,11 +451,12 @@ private fun BottomNavTab(
     isSelected: Boolean,
     activeColor: Color,
     inactiveColor: Color,
+    highlightColor: Color,
     onClick: () -> Unit,
     icon: @Composable (tint: Color) -> Unit
 ) {
     val color = if (isSelected) activeColor else inactiveColor
-    val weight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+    val weight = if (isSelected) FontWeight.Bold else FontWeight.Medium
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -459,10 +466,18 @@ private fun BottomNavTab(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 2.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
-        icon(color)
-        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isSelected) highlightColor else Color.Transparent)
+                .padding(horizontal = if (isSelected) 12.dp else 4.dp, vertical = 3.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            icon(color)
+        }
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
             fontSize = 11.sp,

@@ -9,19 +9,19 @@ import org.junit.Test
 class ThemePaletteTest {
 
     @Test
-    fun verifyWhiteBlackAndVibrantYellowScheme() {
+    fun verifyWhiteBlackAndSoftYellowScheme() {
         assertEquals(0xFFFFFFFF.toInt(), PureWhiteBackground.toArgb())
-        assertEquals(0xFF000000.toInt(), SolidBlackText.toArgb())
-        assertEquals(0xFFF5BA13.toInt(), VibrantYellowAccent.toArgb())
+        assertEquals(0xFF111111.toInt(), PrimaryBlackText.toArgb())
+        assertEquals(0xFFFFF1A6.toInt(), SoftButterYellow.toArgb())
 
         // Ensure brown / ochre (#9E6F21 and #9C6E1E) is NOT used
-        assertNotEquals(0xFF9E6F21.toInt(), VibrantYellowAccent.toArgb())
-        assertNotEquals(0xFF9C6E1E.toInt(), VibrantYellowAccent.toArgb())
+        assertNotEquals(0xFF9E6F21.toInt(), SoftButterYellow.toArgb())
+        assertNotEquals(0xFF9C6E1E.toInt(), SoftButterYellow.toArgb())
 
-        // Vibrant yellow has high red and green, low blue
-        assertTrue("Yellow accent is warm", VibrantYellowAccent.red > 0.8f)
-        assertTrue("Yellow accent has golden green ratio", VibrantYellowAccent.green > 0.6f)
-        assertTrue("Yellow accent has low blue", VibrantYellowAccent.blue < 0.2f)
+        // Soft butter yellow has high red and green, subtle cream blue
+        assertTrue("Yellow highlight is bright", SoftButterYellow.red > 0.9f)
+        assertTrue("Yellow highlight has butter green", SoftButterYellow.green > 0.9f)
+        assertTrue("Yellow highlight is delicate butter", SoftButterYellow.blue in 0.5f..0.75f)
     }
 
     @Test
