@@ -216,11 +216,11 @@ fun GeminiSettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = extended.background
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -902,8 +902,8 @@ fun GeminiSettingsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (hasKey && !isTesting) extended.buttonPrimary else extended.buttonPrimary.copy(alpha = 0.4f))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (hasKey && !isTesting) extended.interactiveAccent else extended.interactiveAccent.copy(alpha = 0.4f))
                     .clickable(enabled = hasKey && !isTesting) {
                         isTesting = true
                         testState = AiConnectionState.TESTING

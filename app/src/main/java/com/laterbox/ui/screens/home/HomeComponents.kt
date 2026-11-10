@@ -1,6 +1,9 @@
 package com.laterbox.ui.screens.home
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,16 +23,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -37,12 +48,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,7 +71,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.laterbox.data.local.entity.SavedItemEntity
+import com.laterbox.data.local.relation.PlaylistWithCount
 import com.laterbox.data.model.ContentType
 import com.laterbox.ui.components.formatRelativeDate
 import com.laterbox.ui.theme.LaterBoxThemeTokens
@@ -67,11 +90,14 @@ import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import java.io.File
 
 /**
- * Clean, premium Header for the Later Box Home screen.
- * Displays the refined wordmark with subtle archive tag and a minimal settings entry.
+ * 3.1 Header: Spacious, modern header with uppercase category status tag,
+ * prominent "Later Box" editorial headline, dynamic live saved items count,
+ * circular search action, and circular settings/menu action.
  */
 @Composable
 fun HomeHeader(
+    totalCount: Int,
+    onNavigateToSearch: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -85,96 +111,696 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column {
+            Text(
+                text = "SAVED MEMORIES",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = extended.secondaryText,
+                letterSpacing = 1.sp
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
             Text(
                 text = "Later Box",
                 fontFamily = SerifHeadlineFontFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = extended.primaryBlack,
+                fontSize = 32.sp,
+                color = extended.primaryText,
                 letterSpacing = (-0.5).sp
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-            // Archive indicator pill in monochrome black with white text
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(extended.primaryBlack)
-                    .padding(horizontal = 7.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = "ARCHIVE",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.background,
-                    letterSpacing = 0.5.sp
-                )
-            }
+            Text(
+                text = "$totalCount items saved",
+                fontSize = 13.sp,
+                color = extended.secondaryText
+            )
         }
 
-        // Minimal circular settings button
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .border(1.dp, extended.border, CircleShape)
-                .background(extended.cardBackground)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onNavigateToSettings
-                ),
-            contentAlignment = Alignment.Center
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = "Settings",
-                tint = extended.primaryBlack,
-                modifier = Modifier.size(19.dp)
-            )
+            // Circular Search Action
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .shadow(1.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(extended.cardBackground)
+                    .border(1.dp, extended.border, CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onNavigateToSearch
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "Search",
+                    tint = extended.primaryIcons,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Circular Settings Action
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .shadow(1.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(extended.cardBackground)
+                    .border(1.dp, extended.border, CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onNavigateToSettings
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = extended.primaryIcons,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
 
 /**
- * Compact introductory section with confident typography.
- * "Your saved world." & "Everything worth keeping, all in one place."
+ * 3.2 Welcome and Activity Area: Displays live activity metrics from Room database.
+ * No fabricated statistics or fake activity.
  */
 @Composable
-fun HomeIntroSection(
+fun HomeActivitySummaryCard(
+    totalCount: Int,
+    favoriteCount: Int,
+    collectionsCount: Int,
+    latestItem: SavedItemEntity?,
+    onOpenLatest: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(26.dp), spotColor = Color(0x12000000))
+            .clip(RoundedCornerShape(26.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(26.dp)),
+        shape = RoundedCornerShape(26.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = extended.interactiveAccent,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Overview",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = extended.primaryText
+                    )
+                }
+
+                if (latestItem != null) {
+                    Text(
+                        text = "Updated ${formatRelativeDate(latestItem.savedAt)}",
+                        fontSize = 11.sp,
+                        color = extended.secondaryText
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Three dynamic metric columns
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ActivityMetricColumn(
+                    count = totalCount,
+                    label = "Saved Items",
+                    primaryColor = extended.primaryText,
+                    secondaryColor = extended.secondaryText
+                )
+
+                Box(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .width(1.dp)
+                        .background(extended.border)
+                )
+
+                ActivityMetricColumn(
+                    count = favoriteCount,
+                    label = "Favorites",
+                    primaryColor = extended.primaryText,
+                    secondaryColor = extended.secondaryText
+                )
+
+                Box(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .width(1.dp)
+                        .background(extended.border)
+                )
+
+                ActivityMetricColumn(
+                    count = collectionsCount,
+                    label = "Collections",
+                    primaryColor = extended.primaryText,
+                    secondaryColor = extended.secondaryText
+                )
+            }
+
+            if (latestItem != null && onOpenLatest != null) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(extended.surfaceSecondary)
+                        .clickable(onClick = onOpenLatest)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Recent: \"${latestItem.title}\"",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = extended.primaryText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Open →",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = extended.interactiveAccent
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityMetricColumn(
+    count: Int,
+    label: String,
+    primaryColor: Color,
+    secondaryColor: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "$count",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = primaryColor
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = secondaryColor
+        )
+    }
+}
+
+/**
+ * 3.3 Collections Section: Horizontal scrolling collections carousel.
+ * White rounded 24dp cards, live counts, icons, subtle elevation.
+ */
+@Composable
+fun HomeCollectionsSection(
+    totalCount: Int,
+    favoriteCount: Int,
+    playlists: List<PlaylistWithCount>,
+    onNavigateToLibrary: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
+    onNavigateToPlaylist: (Long) -> Unit,
+    onCreatePlaylist: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val extended = LaterBoxThemeTokens.extended
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Your saved world.",
-            fontFamily = SerifHeadlineFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 30.sp,
-            lineHeight = 36.sp,
-            color = extended.primaryBlack,
-            letterSpacing = (-0.4).sp
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Everything worth keeping, all in one place.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = extended.textSecondary,
-            fontSize = 14.sp
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Collections",
+                fontFamily = SerifHeadlineFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = extended.primaryText
+            )
+
+            Text(
+                text = "+ New",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = extended.interactiveAccent,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCreatePlaylist
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            // "All" Collection Card
+            item {
+                CollectionCard(
+                    title = "All Items",
+                    count = totalCount,
+                    icon = Icons.Default.BookmarkBorder,
+                    onClick = onNavigateToLibrary
+                )
+            }
+
+            // "Favorites" Collection Card
+            item {
+                CollectionCard(
+                    title = "Favorites",
+                    count = favoriteCount,
+                    icon = Icons.Default.Favorite,
+                    onClick = onNavigateToFavorites
+                )
+            }
+
+            // User Playlists / Collections
+            items(playlists, key = { it.id }) { playlist ->
+                CollectionCard(
+                    title = playlist.name,
+                    count = playlist.itemCount,
+                    icon = Icons.Default.Folder,
+                    onClick = { onNavigateToPlaylist(playlist.id) }
+                )
+            }
+
+            // Quick Add Card
+            item {
+                AddCollectionCard(onClick = onCreatePlaylist)
+            }
+        }
+    }
+}
+
+@Composable
+fun CollectionCard(
+    title: String,
+    count: Int,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    Card(
+        modifier = modifier
+            .width(136.dp)
+            .height(112.dp)
+            .shadow(2.dp, RoundedCornerShape(24.dp), spotColor = Color(0x10000000))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(extended.surfaceSecondary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = extended.primaryIcons,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Column {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "$count items",
+                    fontSize = 11.sp,
+                    color = extended.secondaryText
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddCollectionCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    Card(
+        modifier = modifier
+            .width(96.dp)
+            .height(112.dp)
+            .shadow(2.dp, RoundedCornerShape(24.dp), spotColor = Color(0x10000000))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(extended.surfaceSecondary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "New",
+                    tint = extended.primaryIcons,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "New",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = extended.primaryText
+            )
+        }
     }
 }
 
 /**
- * Prominent search entry card that smoothly routes to the global search engine.
+ * 3.4 Memories Section Filter Chips:
+ * Compact fully-rounded chips with real counts and neutral active states.
  */
 @Composable
-fun HomeSearchEntry(
+fun HomeFilterChipsRow(
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit,
+    totalCount: Int,
+    favoriteCount: Int,
+    articlesCount: Int,
+    videosCount: Int,
+    imagesCount: Int,
+    notesCount: Int,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    val filters = listOf(
+        "All" to totalCount,
+        "Favorites" to favoriteCount,
+        "Articles" to articlesCount,
+        "Videos" to videosCount,
+        "Images" to imagesCount,
+        "Notes" to notesCount
+    )
+
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp)
+    ) {
+        items(filters) { (name, count) ->
+            val isSelected = selectedFilter == name
+
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (isSelected) extended.primaryText else extended.cardBackground)
+                    .border(
+                        1.dp,
+                        if (isSelected) extended.primaryText else extended.border,
+                        CircleShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onFilterSelected(name) }
+                    )
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$name $count",
+                    fontSize = 12.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.background else extended.secondaryText
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 3.5 Saved Content Card:
+ * Compact white rounded card (26dp radius) with soft shadow.
+ * Left: Item title, short description / AI summary, source domain & saved date.
+ * Right: Thumbnail / media preview with rounded corners (16dp).
+ */
+@Composable
+fun MemorySavedContentCard(
+    item: SavedItemEntity,
+    onClick: () -> Unit,
+    onFavoriteToggle: () -> Unit,
+    onMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
+    val imageModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl
+    var hasLoadError by remember(imageModel) { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(26.dp), spotColor = Color(0x10000000))
+            .clip(RoundedCornerShape(26.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(26.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(26.dp),
+        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // LEFT COLUMN: Title, summary, metadata
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // Item Title (max 2 lines)
+                Text(
+                    text = item.title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 20.sp
+                )
+
+                // Short description or AI summary
+                val summary = item.description?.trim() ?: item.notes?.trim()
+                if (!summary.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = summary,
+                        fontSize = 13.sp,
+                        color = extended.secondaryText,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 18.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Bottom Metadata Row: Source initial, domain, relative date, favorite button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Small source icon or initial
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (item.sourceDomain?.take(1) ?: item.title.take(1)).uppercase(),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = extended.primaryText
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Text(
+                        text = item.sourceDomain ?: item.sourceApp ?: item.contentType.displayName,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = extended.secondaryText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = " • ${formatRelativeDate(item.savedAt)}",
+                        fontSize = 11.sp,
+                        color = extended.tertiaryText
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // RIGHT: Media preview / thumbnail
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(extended.surfaceSecondary)
+                    .border(1.dp, extended.border, RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageModel != null && !hasLoadError) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(imageModel)
+                            .crossfade(true)
+                            .listener(onError = { _, _ -> hasLoadError = true })
+                            .build(),
+                        contentDescription = item.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    if (item.contentType == ContentType.VIDEO) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.65f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Icon(
+                        imageVector = when (item.contentType) {
+                            ContentType.VIDEO -> Icons.Default.PlayArrow
+                            ContentType.ARTICLE -> Icons.Default.Description
+                            ContentType.IMAGE -> Icons.Default.Image
+                            ContentType.NOTE -> Icons.Default.Description
+                            else -> Icons.Default.Link
+                        },
+                        contentDescription = null,
+                        tint = extended.secondaryIcons,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 3.6 Floating AI Assistant Pill:
+ * Pill-shaped elevated action ("Ask questions" with sparkle icon)
+ * Floating above content with soft shadow, wired to Gemini AI.
+ */
+@Composable
+fun FloatingAiAssistantPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -182,619 +808,339 @@ fun HomeSearchEntry(
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-            .background(extended.cardBackground)
+            .shadow(6.dp, RoundedCornerShape(percent = 50), spotColor = Color(0x25000000))
+            .clip(RoundedCornerShape(percent = 50))
+            .background(extended.surfaceElevated)
+            .border(1.dp, extended.border, RoundedCornerShape(percent = 50))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 13.dp)
+            .padding(horizontal = 20.dp, vertical = 11.dp),
+        contentAlignment = Alignment.Center
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "Search",
-                tint = extended.primaryBlack,
-                modifier = Modifier.size(20.dp)
+                imageVector = Icons.Default.AutoAwesome,
+                contentDescription = "Ask Gemini",
+                tint = extended.interactiveAccent,
+                modifier = Modifier.size(18.dp)
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "Search your library, notes & links…",
+                text = "Ask questions",
                 fontSize = 14.sp,
-                color = extended.textSecondary,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Subtle keyboard/search indicator pill
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(extended.pillInactive)
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = "Find",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = extended.textSecondary
-                )
-            }
-        }
-    }
-}
-
-/**
- * Consistent Section Header across Home screen modules.
- */
-@Composable
-fun HomeSectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    badgeCount: Int? = null,
-    actionLabel: String? = null,
-    onActionClick: (() -> Unit)? = null
-) {
-    val extended = LaterBoxThemeTokens.extended
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                fontFamily = SerifHeadlineFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = extended.primaryBlack
-            )
-
-            if (badgeCount != null && badgeCount > 0) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(extended.pillInactive)
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "$badgeCount",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = extended.primaryBlack
-                    )
-                }
-            }
-        }
-
-        if (actionLabel != null && onActionClick != null) {
-            Text(
-                text = actionLabel,
-                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = extended.primaryBlack,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onActionClick
-                    )
-                    .padding(vertical = 4.dp, horizontal = 2.dp)
+                color = extended.primaryText
             )
         }
     }
 }
 
 /**
- * Compact Continue Reading / Watching card.
+ * Interactive Gemini Assistant Sheet:
+ * Full AI experience accessible directly from the Floating AI Assistant pill.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContinueContentCard(
-    item: SavedItemEntity,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+fun AskGeminiAssistantSheet(
+    sheetState: SheetState,
+    isAiEnabled: Boolean,
+    hasApiKey: Boolean,
+    isAiQuerying: Boolean,
+    aiResponse: String?,
+    aiError: String?,
+    onAskQuestion: (String) -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val extended = LaterBoxThemeTokens.extended
-    val context = LocalContext.current
-    val imageModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl
+    val clipboardManager = LocalClipboardManager.current
+    var queryText by remember { mutableStateOf("") }
 
-    Card(
-        modifier = modifier
-            .width(230.dp)
-            .height(100.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Thumbnail / Media Preview (left)
+    val promptSuggestions = listOf(
+        "Summarize recent items",
+        "What did I save about Android?",
+        "Find my favorite articles"
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = extended.cardBackground,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
             Box(
                 modifier = Modifier
-                    .width(80.dp)
-                    .fillMaxHeight()
-                    .background(extended.pillInactive),
-                contentAlignment = Alignment.Center
-            ) {
-                if (imageModel != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(imageModel)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = item.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = if (item.contentType == ContentType.VIDEO) Icons.Default.PlayArrow else Icons.Default.BookmarkBorder,
-                        contentDescription = null,
-                        tint = extended.textSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                // If video, show subtle play overlay
-                if (item.contentType == ContentType.VIDEO) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.65f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Play",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                // Bottom progress track
-                if (item.readProgress > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .height(3.dp)
-                            .background(Color.Black.copy(alpha = 0.2f))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(item.readProgress.coerceIn(0f, 1f))
-                                .height(3.dp)
-                                .background(extended.primaryBlack)
-                        )
-                    }
-                }
-            }
-
-            // Info Column (right)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = item.sourceDomain ?: item.sourceApp ?: item.contentType.displayName,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = extended.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = item.title,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = extended.primaryBlack,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 16.sp
-                )
-
-                // Progress Badge
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(extended.primaryBlack)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (item.readProgress > 0f) "Resume • ${(item.readProgress * 100).toInt()}%" else "Continue",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = extended.primaryBlack
-                    )
-                }
-            }
+                    .padding(vertical = 12.dp)
+                    .width(38.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(extended.border)
+            )
         }
-    }
-}
-
-/**
- * Compact collection tile shortcut.
- */
-@Composable
-fun CollectionShortcutTile(
-    name: String,
-    count: Int,
-    icon: ImageVector,
-    isHighlight: Boolean = false,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val extended = LaterBoxThemeTokens.extended
-
-    Card(
-        modifier = modifier
-            .width(120.dp)
-            .height(92.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
         ) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon circle container
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(if (isHighlight) extended.primaryBlack else extended.pillInactive),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = name,
-                        tint = if (isHighlight) Color.White else extended.primaryBlack,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                Text(
-                    text = "$count",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = extended.textSecondary
-                )
-            }
-
-            Text(
-                text = name,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = extended.primaryBlack,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-/**
- * Clean "New Collection" button matching CollectionShortcutTile dimensions.
- */
-@Composable
-fun HomeNewPlaylistTile(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val extended = LaterBoxThemeTokens.extended
-
-    Card(
-        modifier = modifier
-            .width(92.dp)
-            .height(92.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(extended.pillInactive),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "New Playlist",
-                    tint = extended.primaryBlack,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "New",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = extended.primaryBlack
-            )
-        }
-    }
-}
-
-/**
- * Sleek, modern compact feed item for Recently Saved content.
- */
-@Composable
-fun RecentSavedItemCard(
-    item: SavedItemEntity,
-    onClick: () -> Unit,
-    onFavoriteToggle: () -> Unit,
-    onAddToPlaylist: () -> Unit,
-    onShare: () -> Unit,
-    onMenuClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val extended = LaterBoxThemeTokens.extended
-    val context = LocalContext.current
-    val imageModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp)
-        ) {
-            // Header Row: Source Icon, Domain, Relative Date, Menu
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Circular domain / source initial
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(extended.pillInactive),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = (item.sourceDomain?.take(1) ?: item.title.take(1)).uppercase(),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = extended.primaryBlack
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = item.sourceDomain ?: item.sourceApp ?: "Saved link",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = extended.primaryBlack,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = " • ${formatRelativeDate(item.savedAt)}",
-                    fontSize = 11.sp,
-                    color = extended.textSecondary
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Menu button
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Menu",
-                        tint = extended.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Body Row: Title + Excerpt on Left, Compact Thumbnail on Right (if available)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = item.title,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = extended.primaryBlack,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 19.sp
-                    )
-
-                    if (!item.notes.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = item.notes,
-                            fontSize = 12.sp,
-                            color = extended.textSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Pill tag in light neutral grey with bold black text
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(extended.pillInactive)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = item.contentType.displayName.uppercase(),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = extended.primaryBlack
-                        )
-                    }
-                }
-
-                if (imageModel != null) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(58.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .border(1.dp, extended.border, RoundedCornerShape(10.dp))
-                            .background(extended.pillInactive),
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary),
                         contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(imageModel)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = item.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = extended.interactiveAccent,
+                            modifier = Modifier.size(18.dp)
                         )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Gemini AI Assistant",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = extended.primaryText
+                        )
+                        Text(
+                            text = "Search & synthesize your saved memories",
+                            fontSize = 12.sp,
+                            color = extended.secondaryText
+                        )
+                    }
+                }
 
-                        if (item.contentType == ContentType.VIDEO) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Black.copy(alpha = 0.65f)),
-                                contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = extended.secondaryIcons,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            if (!isAiEnabled || !hasApiKey) {
+                // Helpful activation card
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = extended.surfaceSecondary),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (!hasApiKey) "Gemini API Key Required" else "Gemini AI is Disabled",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = extended.primaryText
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (!hasApiKey)
+                                "Configure your personal Google Gemini API key in Settings to analyze items and ask questions."
+                            else
+                                "Enable Gemini AI in Settings to activate intelligent summaries and questions.",
+                            fontSize = 13.sp,
+                            color = extended.secondaryText,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = {
+                                onDismiss()
+                                onNavigateToSettings()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = extended.primaryText,
+                                contentColor = extended.cardBackground
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Open AI Settings", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            } else {
+                // Suggestion chips
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                ) {
+                    items(promptSuggestions) { prompt ->
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, CircleShape)
+                                .clickable {
+                                    queryText = prompt
+                                    onAskQuestion(prompt)
+                                }
+                                .padding(horizontal = 14.dp, vertical = 7.dp)
+                        ) {
+                            Text(
+                                text = prompt,
+                                fontSize = 12.sp,
+                                color = extended.primaryText,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Question Input
+                OutlinedTextField(
+                    value = queryText,
+                    onValueChange = { queryText = it },
+                    placeholder = {
+                        Text(
+                            "Ask anything about your saved content…",
+                            fontSize = 13.sp,
+                            color = extended.tertiaryText
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                if (queryText.isNotBlank()) {
+                                    onAskQuestion(queryText)
+                                }
+                            },
+                            enabled = queryText.isNotBlank() && !isAiQuerying
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Send",
+                                tint = if (queryText.isNotBlank()) extended.interactiveAccent else extended.disabled
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = extended.surfaceSecondary,
+                        unfocusedContainerColor = extended.surfaceSecondary,
+                        focusedBorderColor = extended.interactiveAccent,
+                        unfocusedBorderColor = extended.border
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Querying indicator
+                if (isAiQuerying) {
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            color = extended.interactiveAccent,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Gemini is analyzing your saved content…",
+                            fontSize = 13.sp,
+                            color = extended.secondaryText
+                        )
+                    }
+                }
+
+                // Error message
+                if (aiError != null) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = aiError,
+                        fontSize = 13.sp,
+                        color = extended.warmError,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(extended.surfaceSecondary)
+                            .padding(12.dp)
+                    )
+                }
+
+                // AI Response
+                if (aiResponse != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = extended.surfaceSecondary),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Video",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
+                                Text(
+                                    text = "AI Response",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = extended.interactiveAccent
+                                )
+
+                                Text(
+                                    text = "Copy",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = extended.secondaryText,
+                                    modifier = Modifier
+                                        .clickable {
+                                            clipboardManager.setText(AnnotatedString(aiResponse))
+                                        }
+                                        .padding(4.dp)
                                 )
                             }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = aiResponse,
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                color = extended.primaryText
+                            )
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Footer Row: Quick Actions (Favorite, Add to playlist, Share)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Favorite Icon Button
-                IconButton(
-                    onClick = onFavoriteToggle,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (item.isFavorite) extended.primaryBlack else extended.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Add to playlist button
-                IconButton(
-                    onClick = onAddToPlaylist,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.BookmarkBorder,
-                        contentDescription = "Save to Playlist",
-                        tint = extended.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Share button
-                IconButton(
-                    onClick = onShare,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share",
-                        tint = extended.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
         }
     }
 }
 
 /**
- * Compact, refined empty state when user hasn't saved anything yet.
+ * Clean empty state when user hasn't saved anything yet.
  */
 @Composable
 fun HomeEmptyState(
@@ -806,9 +1152,10 @@ fun HomeEmptyState(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
+            .shadow(2.dp, RoundedCornerShape(26.dp), spotColor = Color(0x10000000))
+            .clip(RoundedCornerShape(26.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(26.dp)),
+        shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -822,13 +1169,13 @@ fun HomeEmptyState(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(extended.pillInactive),
+                    .background(extended.surfaceSecondary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.BookmarkBorder,
                     contentDescription = null,
-                    tint = extended.primaryBlack,
+                    tint = extended.primaryIcons,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -840,7 +1187,7 @@ fun HomeEmptyState(
                 fontFamily = SerifHeadlineFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                color = extended.primaryBlack,
+                color = extended.primaryText,
                 textAlign = TextAlign.Center
             )
 
@@ -849,7 +1196,7 @@ fun HomeEmptyState(
             Text(
                 text = "Save links, articles, or videos from any app or browser. Later Box organizes them automatically for you.",
                 fontSize = 13.sp,
-                color = extended.textSecondary,
+                color = extended.secondaryText,
                 textAlign = TextAlign.Center,
                 lineHeight = 18.sp
             )
@@ -858,62 +1205,29 @@ fun HomeEmptyState(
 
             Button(
                 onClick = onSaveClick,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.primaryBlack,
-                    contentColor = Color.White
+                    containerColor = extended.primaryText,
+                    contentColor = extended.cardBackground
                 ),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(horizontal = 22.dp, vertical = 11.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = extended.cardBackground,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Save your first link",
+                        text = "Save your first item",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = extended.cardBackground
                     )
                 }
             }
         }
-    }
-}
-
-/**
- * Refined Quick Save Floating Action Button.
- */
-@Composable
-fun HomeQuickSaveFAB(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val extended = LaterBoxThemeTokens.extended
-
-    Box(
-        modifier = modifier
-            .size(54.dp)
-            .shadow(4.dp, CircleShape)
-            .clip(CircleShape)
-            .background(extended.primaryBlack)
-            .border(1.dp, extended.border.copy(alpha = 0.2f), CircleShape)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = "Save something",
-            tint = Color.White,
-            modifier = Modifier.size(26.dp)
-        )
     }
 }

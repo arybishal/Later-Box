@@ -223,6 +223,73 @@ class GeminiApiClient(
     }
 
     /**
+     * Sends a text prompt to Gemini and returns candidate text response.
+     */
+    suspend fun generateContentText(
+        apiKey: String,
+        modelId: String,
+        prompt: String
+    ): GeminiApiResult<String> = withContext(Dispatchers.IO) {
+        val cleanKey = apiKey.trim()
+        if (cleanKey.isBlank()) {
+            return@withContext GeminiApiResult.Error(
+                AiConnectionState.INVALID_KEY,
+                "API key is missing or not configured."
+            )
+        }
+
+        val normalizedModelId = GeminiModelInfo.normalizeModelId(modelId)
+        val url = "$BASE_URL/$normalizedModelId:generateContent"
+
+        val partsArray = JSONArray().apply {
+            put(JSONObject().apply { put("text", prompt) })
+        }
+
+        val contentsArray = JSONArray().apply {
+            put(JSONObject().apply { put("parts", partsArray) })
+        }
+
+        val requestJson = JSONObject().apply {
+            put("contents", contentsArray)
+            put("generationConfig", JSONObject().apply {
+                put("temperature", 0.7)
+                put("maxOutputTokens", 1024)
+            })
+        }
+
+        val requestBody = requestJson.toString().toRequestBody(JSON_MEDIA_TYPE)
+        val request = Request.Builder()
+            .url(url)
+            .addHeader(HEADER_API_KEY, cleanKey)
+            .post(requestBody)
+            .build()
+
+        try {
+            httpClient.newCall(request).execute().use { response ->
+                val bodyString = response.body?.string() ?: ""
+                if (!response.isSuccessful) {
+                    return@withContext mapHttpError(response.code, bodyString, normalizedModelId)
+                }
+                val text = extractCandidateText(bodyString)
+                if (!text.isNullOrBlank()) {
+                    GeminiApiResult.Success(text.trim())
+                } else {
+                    GeminiApiResult.Error(
+                        AiConnectionState.SERVER_ERROR,
+                        "Received empty response from Gemini."
+                    )
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            GeminiApiResult.Error(AiConnectionState.TIMEOUT, "Request timed out. Please try again.")
+        } catch (e: IOException) {
+            GeminiApiResult.Error(AiConnectionState.NETWORK_ERROR, "Network connection error: ${e.message}")
+        } catch (e: Exception) {
+            GeminiApiResult.Error(AiConnectionState.UNKNOWN_ERROR, "Error: ${e.message}")
+        }
+    }
+
+    /**
      * Sends content analysis prompt to Gemini and returns structured JSON output.
      */
     suspend fun generateAnalysis(

@@ -64,19 +64,20 @@ fun PlaylistsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = extended.buttonPrimary,
-                contentColor = extended.buttonPrimaryText
+                containerColor = extended.primaryText,
+                contentColor = extended.cardBackground,
+                shape = androidx.compose.foundation.shape.CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Create Playlist")
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 88.dp, top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -86,9 +87,9 @@ fun PlaylistsScreen(
                 Box(
                     modifier = Modifier
                         .height(130.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, extended.border, RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surface)
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, extended.border, RoundedCornerShape(24.dp))
+                        .background(extended.cardBackground)
                         .clickable { showCreateDialog = true }
                         .padding(14.dp),
                     contentAlignment = Alignment.Center

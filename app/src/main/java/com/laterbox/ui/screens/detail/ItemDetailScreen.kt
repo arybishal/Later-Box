@@ -325,11 +325,11 @@ fun ItemDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = extended.background
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -1321,9 +1321,9 @@ private fun Phase2AiExtensionSlot(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(extended.cardBackground)
-            .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .padding(18.dp)
     ) {
         when {
@@ -1501,10 +1501,10 @@ private fun Phase2AiExtensionSlot(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onAnalyze,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = extended.buttonPrimary,
-                        contentColor = extended.buttonPrimaryText
+                        containerColor = extended.interactiveAccent,
+                        contentColor = Color.White
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1512,13 +1512,13 @@ private fun Phase2AiExtensionSlot(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = extended.buttonPrimaryText
+                        tint = Color.White
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Generate AI Insights",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = extended.buttonPrimaryText
+                        color = Color.White
                     )
                 }
             }

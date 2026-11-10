@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,11 +48,19 @@ fun LaterBoxSearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = "Search",
+                tint = extended.secondaryIcons,
+                modifier = Modifier.size(20.dp)
+            )
+        },
         placeholder = {
             Text(
                 text = placeholder,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
-                color = extended.textSecondary
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                color = extended.tertiaryText
             )
         },
         trailingIcon = {
@@ -59,18 +69,18 @@ fun LaterBoxSearchBar(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear",
-                        tint = extended.textSecondary,
+                        tint = extended.secondaryIcons,
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
         },
         singleLine = true,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = extended.cardBackground,
             unfocusedContainerColor = extended.cardBackground,
-            focusedBorderColor = extended.primaryText,
+            focusedBorderColor = extended.interactiveAccent,
             unfocusedBorderColor = extended.border,
             cursorColor = extended.primaryText
         ),
@@ -98,17 +108,22 @@ fun PillFilterRow(
                 val isSelected = selectedCategory == category
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) extended.pillActive else extended.pillInactive)
+                        .clip(CircleShape)
+                        .background(if (isSelected) extended.primaryText else extended.cardBackground)
+                        .border(
+                            1.dp,
+                            if (isSelected) extended.primaryText else extended.border,
+                            CircleShape
+                        )
                         .clickable { onCategorySelected(category) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = category,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                        color = if (isSelected) MaterialTheme.colorScheme.background else extended.secondaryText
                     )
                 }
             }

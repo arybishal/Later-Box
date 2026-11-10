@@ -74,8 +74,8 @@ fun AppUpdateSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .background(extended.cardBackground)
             .padding(16.dp)
     ) {
@@ -231,7 +231,7 @@ fun AppUpdateSection(
                         onClick = {
                             updateManager.installUpdate(context, updateState.apkFile)
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = extended.buttonPrimary,
                             contentColor = extended.buttonPrimaryText
@@ -270,7 +270,7 @@ fun AppUpdateSection(
                     ) {
                         Button(
                             onClick = { onShowDetails(updateState.updateInfo) },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = extended.buttonPrimary,
                                 contentColor = extended.buttonPrimaryText
@@ -285,7 +285,7 @@ fun AppUpdateSection(
                                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(updateState.updateInfo.releaseUrl))
                                 context.startActivity(browserIntent)
                             },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(20.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
                             modifier = Modifier.weight(1f)
                         ) {
@@ -351,7 +351,7 @@ fun AppUpdateSection(
                         onClick = {
                             scope.launch { updateManager.checkForUpdates() }
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = extended.buttonPrimary,
                             contentColor = extended.buttonPrimaryText

@@ -217,7 +217,7 @@ fun SettingsScreen(
                 onBackClick = onBack
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -284,7 +284,7 @@ fun SettingsScreen(
 
                             Button(
                                 onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = extended.buttonPrimary,
                                     contentColor = extended.buttonPrimaryText
@@ -330,7 +330,7 @@ fun SettingsScreen(
                                         arrayOf("application/zip", "application/octet-stream", "*/*")
                                     )
                                 },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
@@ -755,11 +755,11 @@ private fun SettingsSection(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp)),
-        shape = RoundedCornerShape(14.dp),
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -846,12 +846,12 @@ fun SettingsManageButton(
     Surface(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(20.dp),
         color = containerColor,
         contentColor = contentColor,
         modifier = modifier
             .defaultMinSize(minHeight = 48.dp, minWidth = 48.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(20.dp))
     ) {
         Row(
             modifier = Modifier

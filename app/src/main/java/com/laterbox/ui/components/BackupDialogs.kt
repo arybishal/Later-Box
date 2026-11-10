@@ -56,6 +56,8 @@ fun BackupInspectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -246,6 +248,8 @@ fun BackupProgressDialog(
 
     AlertDialog(
         onDismissRequest = {}, // Non-cancelable during critical I/O
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = title,

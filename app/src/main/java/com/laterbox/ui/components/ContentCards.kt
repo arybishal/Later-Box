@@ -186,14 +186,14 @@ fun ContentCardGrid(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = extended.cardBackground
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             ContentThumbnail(
@@ -203,16 +203,17 @@ fun ContentCardGrid(
                     .aspectRatio(16f / 10f)
             )
 
-            Column(modifier = Modifier.padding(10.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -222,7 +223,7 @@ fun ContentCardGrid(
                     Text(
                         text = item.sourceDomain ?: formatRelativeDate(item.savedAt),
                         style = MaterialTheme.typography.labelSmall,
-                        color = extended.textSecondary,
+                        color = extended.secondaryText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
@@ -236,7 +237,7 @@ fun ContentCardGrid(
                             Icon(
                                 imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (item.isFavorite) extended.primaryText else extended.textSecondary,
+                                tint = if (item.isFavorite) extended.primaryText else extended.secondaryIcons,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -248,7 +249,7 @@ fun ContentCardGrid(
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "More",
-                                tint = extended.textSecondary,
+                                tint = extended.secondaryIcons,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -272,29 +273,29 @@ fun ContentCardList(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = extended.cardBackground
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             ContentThumbnail(
                 item = item,
                 modifier = Modifier
-                    .size(width = 84.dp, height = 74.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(width = 80.dp, height = 76.dp)
+                    .clip(RoundedCornerShape(16.dp))
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
@@ -303,6 +304,7 @@ fun ContentCardList(
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -321,16 +323,16 @@ fun ContentCardList(
                     Text(
                         text = " • ${formatRelativeDate(item.savedAt)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = extended.textSecondary
+                        color = extended.tertiaryText
                     )
                 }
 
                 if (!item.notes.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "Note: ${item.notes}",
+                        text = item.notes,
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                        color = extended.textSecondary,
+                        color = extended.secondaryText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -348,7 +350,7 @@ fun ContentCardList(
                     Icon(
                         imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (item.isFavorite) extended.primaryText else extended.textSecondary,
+                        tint = if (item.isFavorite) extended.primaryText else extended.secondaryIcons,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -359,7 +361,7 @@ fun ContentCardList(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Actions",
-                        tint = extended.textSecondary,
+                        tint = extended.secondaryIcons,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -378,14 +380,14 @@ fun PlaylistCard(
 
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = extended.cardBackground
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
@@ -415,6 +417,7 @@ fun PlaylistCard(
                     text = playlist.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -439,14 +442,14 @@ fun FavoritesCollectionCard(
 
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = extended.cardBackground
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
@@ -464,7 +467,7 @@ fun FavoritesCollectionCard(
                 Icon(
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favorites",
-                    tint = extended.primaryText,
+                    tint = extended.interactiveAccent,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -476,6 +479,7 @@ fun FavoritesCollectionCard(
                     text = "Favorites",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = extended.primaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -506,12 +510,12 @@ fun CompactSocialFeedCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // 1. Post Header: Favicon/Initial, Domain, Type/Date, Overflow Menu

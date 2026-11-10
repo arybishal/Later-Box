@@ -75,7 +75,7 @@ fun TrashScreen(
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         if (trashItems.isEmpty()) {
             Box(

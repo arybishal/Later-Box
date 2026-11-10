@@ -98,7 +98,7 @@ fun SearchScreen(
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -121,13 +121,13 @@ fun SearchScreen(
                         fontFamily = SerifHeadlineFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 32.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = extended.primaryText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${sortedResults.size} items",
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                        color = extended.textSecondary
+                        color = extended.secondaryText
                     )
                 }
 

@@ -101,6 +101,8 @@ fun CreatePlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = dialogTitle,
@@ -218,6 +220,8 @@ fun AddToPlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -347,6 +351,8 @@ fun AddManualItemDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Save Content",
@@ -456,6 +462,8 @@ fun EditNotesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Edit Notes",
@@ -527,6 +535,8 @@ fun AddTagDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Add Tag",
@@ -601,6 +611,8 @@ fun ConfirmationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = title,

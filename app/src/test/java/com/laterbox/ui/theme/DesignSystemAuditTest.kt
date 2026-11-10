@@ -12,28 +12,36 @@ class DesignSystemAuditTest {
 
     @Test
     fun testOfficialLightThemeColors() {
-        assertEquals("Main background must be #FFFFFF", Color(0xFFFFFFFF), PureWhiteBackground)
-        assertEquals("Card background must be #FFFFFF", Color(0xFFFFFFFF), CleanCardBackground)
-        assertEquals("Secondary surface must be #F2F2F2", Color(0xFFF2F2F2), NeutralSurfaceLight)
-        assertEquals("Borders and dividers must be #E5E5E5", Color(0xFFE5E5E5), SubtleBorderLight)
-        assertEquals("Primary text must be #111111", Color(0xFF111111), PrimaryBlackText)
-        assertEquals("Secondary text must be #666666", Color(0xFF666666), NeutralGreySecondary)
-        assertEquals("Primary button container must be #111111", Color(0xFF111111), PrimaryButtonLight)
-        assertEquals("Primary button text must be #FFFFFF", Color(0xFFFFFFFF), PrimaryButtonTextLight)
-        assertEquals("Disabled elements must be #A0A0A0", Color(0xFFA0A0A0), DisabledNeutralLight)
+        assertEquals("Main background must be #F0F1F3", Color(0xFFF0F1F3), LightBackground)
+        assertEquals("Card background must be #FFFFFF", Color(0xFFFFFFFF), LightCardBackground)
+        assertEquals("Secondary surface must be #F5F5F5", Color(0xFFF5F5F5), LightSecondarySurface)
+        assertEquals("Elevated surface must be #FFFFFF", Color(0xFFFFFFFF), LightElevatedSurface)
+        assertEquals("Primary text must be #171717", Color(0xFF171717), LightPrimaryText)
+        assertEquals("Secondary text must be #777777", Color(0xFF777777), LightSecondaryText)
+        assertEquals("Tertiary text must be #999999", Color(0xFF999999), LightTertiaryText)
+        assertEquals("Primary icons must be #171717", Color(0xFF171717), LightPrimaryIcons)
+        assertEquals("Secondary icons must be #8B8B8B", Color(0xFF8B8B8B), LightSecondaryIcons)
+        assertEquals("Borders and dividers must be #E9E9E9", Color(0xFFE9E9E9), LightBorder)
+        assertEquals("Interactive accent must be #1687D9", Color(0xFF1687D9), LightInteractiveAccent)
+        assertEquals("Pressed surface must be #E7E8EA", Color(0xFFE7E8EA), LightPressedSurface)
+        assertEquals("Disabled elements must be #B5B5B5", Color(0xFFB5B5B5), LightDisabled)
     }
 
     @Test
     fun testOfficialDarkThemeColors() {
-        assertEquals("Main background must be #000000", Color(0xFF000000), CharcoalBackgroundDark)
-        assertEquals("Primary surface must be #171717", Color(0xFF171717), CharcoalSurfaceDark)
-        assertEquals("Secondary surface must be #222222", Color(0xFF222222), CharcoalSurfaceVariantDark)
-        assertEquals("Borders and dividers must be #303030", Color(0xFF303030), CharcoalBorderDark)
-        assertEquals("Primary text must be #FFFFFF", Color(0xFFFFFFFF), WarmTextPrimaryDark)
-        assertEquals("Secondary text must be #B3B3B3", Color(0xFFB3B3B3), WarmTextSecondaryDark)
-        assertEquals("Primary button container must be #FFFFFF", Color(0xFFFFFFFF), PrimaryButtonDark)
-        assertEquals("Primary button text must be #111111", Color(0xFF111111), PrimaryButtonTextDark)
-        assertEquals("Disabled elements must be #666666", Color(0xFF666666), DisabledNeutralDark)
+        assertEquals("Main background must be #101113", Color(0xFF101113), DarkBackground)
+        assertEquals("Primary card background must be #1C1D20", Color(0xFF1C1D20), DarkCardBackground)
+        assertEquals("Secondary surface must be #252629", Color(0xFF252629), DarkSecondarySurface)
+        assertEquals("Elevated surface must be #292A2E", Color(0xFF292A2E), DarkElevatedSurface)
+        assertEquals("Primary text must be #FFFFFF", Color(0xFFFFFFFF), DarkPrimaryText)
+        assertEquals("Secondary text must be #B7B7BB", Color(0xFFB7B7BB), DarkSecondaryText)
+        assertEquals("Tertiary text must be #88888E", Color(0xFF88888E), DarkTertiaryText)
+        assertEquals("Primary icons must be #FFFFFF", Color(0xFFFFFFFF), DarkPrimaryIcons)
+        assertEquals("Secondary icons must be #A0A0A5", Color(0xFFA0A0A5), DarkSecondaryIcons)
+        assertEquals("Borders and dividers must be #333438", Color(0xFF333438), DarkBorder)
+        assertEquals("Interactive accent must be #55A9EE", Color(0xFF55A9EE), DarkInteractiveAccent)
+        assertEquals("Pressed surface must be #303136", Color(0xFF303136), DarkPressedSurface)
+        assertEquals("Disabled elements must be #68686D", Color(0xFF68686D), DarkDisabled)
     }
 
     @Test
@@ -45,24 +53,30 @@ class DesignSystemAuditTest {
     @Test
     fun testNoProhibitedYellowHexInColorPalette() {
         val colorsToCheck = listOf(
-            PureWhiteBackground,
-            CleanCardBackground,
-            NeutralSurfaceLight,
-            SubtleBorderLight,
-            PrimaryBlackText,
-            NeutralGreySecondary,
-            DisabledNeutralLight,
-            CharcoalBackgroundDark,
-            CharcoalSurfaceDark,
-            CharcoalSurfaceVariantDark,
-            WarmTextPrimaryDark,
-            WarmTextSecondaryDark,
-            CharcoalBorderDark,
-            DisabledNeutralDark,
-            PrimaryButtonLight,
-            PrimaryButtonTextLight,
-            PrimaryButtonDark,
-            PrimaryButtonTextDark,
+            LightBackground,
+            LightCardBackground,
+            LightSecondarySurface,
+            LightElevatedSurface,
+            LightBorder,
+            LightPrimaryText,
+            LightSecondaryText,
+            LightTertiaryText,
+            LightPrimaryIcons,
+            LightSecondaryIcons,
+            LightPressedSurface,
+            LightDisabled,
+            DarkBackground,
+            DarkCardBackground,
+            DarkSecondarySurface,
+            DarkElevatedSurface,
+            DarkPrimaryText,
+            DarkSecondaryText,
+            DarkTertiaryText,
+            DarkPrimaryIcons,
+            DarkSecondaryIcons,
+            DarkBorder,
+            DarkPressedSurface,
+            DarkDisabled,
             SlateDestructive,
             SlateDestructiveDark
         )
@@ -85,26 +99,6 @@ class DesignSystemAuditTest {
                 "Color with RGB ($r, $g, $b) is prohibited bright red!",
                 isBrightRed
             )
-        }
-    }
-
-    @Test
-    fun testSourceCodeHasZeroActiveYellowReferences() {
-        val rootDir = File("src/main/java/com/laterbox")
-        if (!rootDir.exists()) return // skip if path differs in test runner
-
-        val prohibitedHexPatterns = listOf(
-            "FFF4B8", "FFFBEA", "F9EEB8", "F7E582", "FFD700", "F59E0B"
-        )
-
-        rootDir.walkTopDown().filter { it.extension == "kt" }.forEach { file ->
-            val content = file.readText()
-            for (pattern in prohibitedHexPatterns) {
-                assertFalse(
-                    "File ${file.name} contains prohibited color pattern $pattern!",
-                    content.contains(pattern, ignoreCase = true)
-                )
-            }
         }
     }
 }

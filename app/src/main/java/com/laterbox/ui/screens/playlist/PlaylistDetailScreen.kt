@@ -95,7 +95,7 @@ fun PlaylistDetailScreen(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Playlist",
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = extended.primaryIcons
                             )
                         }
                         IconButton(onClick = { showDeleteConfirm = true }) {
@@ -109,7 +109,7 @@ fun PlaylistDetailScreen(
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = extended.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
