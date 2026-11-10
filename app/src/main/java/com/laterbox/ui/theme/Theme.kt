@@ -117,7 +117,7 @@ fun LaterBoxTheme(
             pillInactive = CharcoalSurfaceVariantDark,
             pillActive = Color.White,
             gridListActive = CharcoalSurfaceVariantDark,
-            softYellow = Color.White,
+            softYellow = WarmCaramelAccentDark,
             softYellowSubtle = CharcoalSurfaceVariantDark,
             softYellowBorder = CharcoalBorderDark,
             primaryBlack = Color.White

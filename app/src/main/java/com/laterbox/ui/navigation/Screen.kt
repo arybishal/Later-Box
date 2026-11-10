@@ -14,6 +14,9 @@ sealed class Screen(val route: String, val title: String) {
     object ContentViewer : Screen("viewer/{contentId}", "Viewer") {
         fun createRoute(contentId: Long) = "viewer/$contentId"
     }
+    object ItemDetail : Screen("detail/{itemId}", "Item Detail") {
+        fun createRoute(itemId: Long) = "detail/$itemId"
+    }
     object Trash : Screen("trash", "Trash")
 }
 

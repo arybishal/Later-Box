@@ -30,6 +30,12 @@ Later Box is a personal content-saving, bookmarking, playlist management, and re
   - Many-to-many relationship: a saved item can belong to multiple playlists without duplicating storage.
   - Default "Inbox" collection for quick unassigned saves.
   - Custom playlist icons, item count badges, and in-playlist search.
+- **Saved Item Detail Experience (Phase 1)**:
+  - Canonical detail destination (`detail/{itemId}`) accessible from Home, Library, Search, Playlists, and Collections.
+  - Rich content previews tailored to content types: Images (fullscreen Coil zoom), Videos (Media3 ExoPlayer preview), Articles/Web Links, Documents, and Notes.
+  - Prominent "Open in [App]" button in soft butter yellow (`#FFF4B8`) with direct deep linking to Instagram, YouTube, TikTok, Facebook, Reddit, and X (Twitter) plus browser fallback.
+  - Complete organization controls: Multi-playlist assignment, tag management, personal notes, archive toggle, link copy, and soft-delete Trash.
+  - Architectural extension hook prepared for Phase 2 Gemini AI integration without layout regressions.
 - **In-App Viewing & Safe External Launching**:
   - In-app web reader with loading progress for articles and web content.
   - High-performance video player powered by AndroidX Media3 (ExoPlayer).

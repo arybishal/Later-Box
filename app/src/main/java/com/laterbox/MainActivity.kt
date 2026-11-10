@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.laterbox.data.update.UpdateNotificationHelper
+import com.laterbox.ui.screens.detail.ItemDetailScreen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -318,16 +319,7 @@ fun MainAppScaffold() {
     ) { paddingValues ->
         val context = androidx.compose.ui.platform.LocalContext.current
         val handleOpenItem: (SavedItemEntity) -> Unit = { item ->
-            val hasSocialApp = com.laterbox.util.SocialLinkResolver.isSupportedSocialUrl(item.url) &&
-                    com.laterbox.util.SocialLinkResolver.resolveSocialAppIntent(context, item.url) != null
-            if (hasSocialApp) {
-                scope.launch {
-                    LaterBoxApp.instance.contentRepository.updateLastOpened(item.id)
-                }
-                com.laterbox.util.SocialLinkResolver.openSocialOrWebLink(context, item.url)
-            } else {
-                navController.navigate(Screen.ContentViewer.createRoute(item.id))
-            }
+            navController.navigate(Screen.ItemDetail.createRoute(item.id))
         }
 
         NavHost(
@@ -416,6 +408,20 @@ fun MainAppScaffold() {
             composable(Screen.Trash.route) {
                 TrashScreen(
                     onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.ItemDetail.route,
+                arguments = listOf(navArgument("itemId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getLong("itemId") ?: 0L
+                ItemDetailScreen(
+                    itemId = itemId,
+                    onBack = { navController.popBackStack() },
+                    onOpenViewer = { item ->
+                        navController.navigate(Screen.ContentViewer.createRoute(item.id))
+                    }
                 )
             }
 

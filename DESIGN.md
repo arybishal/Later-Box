@@ -116,3 +116,18 @@ The Later Box typography balances **literary elegance** with **functional modern
 
 ### 3.6 Sort Selector (`SortDropdownSelector`)
 - Compact dropdown with `"Sort"` label in `#555555`, followed by a rounded pill showing current sort order (`Newest first`) and a chevron dropdown indicator.
+
+### 3.7 Saved Item Detail Experience (`ItemDetailScreen`)
+- **Canonical Destination**: Single entry point (`detail/{itemId}`) for items opened from Home, Library Grid/List, Search, Playlists, or Favorites.
+- **Header**: Compact navigation bar with back arrow, content-type badge pill, reactive favorite heart toggle, and 3-dots overflow menu (Playlists, Notes, Tags, Archive, Share, Copy Link, Trash).
+- **Content Preview Centerpiece**:
+  - **Images**: High-resolution image in `16.dp` rounded container, preserving aspect ratio, tap to enlarge in fullscreen viewer.
+  - **Videos**: Thumbnail container with dark scrim, video badge, and circular play button in soft butter yellow (`#FFF4B8`) with dark icon.
+  - **Articles / Links**: Preview card with web image or editorial typography fallback.
+  - **Documents**: Polished card with document icon and file metadata.
+  - **Notes / Plain Text**: Clean serif/sans editorial note container with preserved typography.
+- **Title & Metadata**: High-contrast editorial title (`22.sp`, bold) paired with domain initial badge, domain/source name, relative saved timestamp, and compact URL pill with copy button.
+- **About This Item**: Original source description with clean empty fallback when missing, and an extensible architectural slot for Phase 2 AI metadata.
+- **Primary Action ("Open in [App]")**: Prominent button in Soft Butter Yellow (`#FFF4B8`) with `#111111` bold text, triggering native social deep linking (Instagram, Facebook, X/Twitter, TikTok, YouTube, Reddit) with browser fallback.
+- **Organization**: Reactive inline chips and dedicated dialogs for Playlists (`AddToPlaylistDialog`), Tags (`AddTagDialog`), and Personal Notes (`EditNotesDialog`).
+- **Destructive Action**: Clean, slate-colored "Move to Trash" trigger adhering strictly to the zero red font standard.

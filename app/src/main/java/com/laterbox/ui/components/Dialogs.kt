@@ -439,6 +439,61 @@ fun EditNotesDialog(
 }
 
 @Composable
+fun AddTagDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (tagName: String) -> Unit
+) {
+    var tag by remember { mutableStateOf("") }
+    val extended = LaterBoxThemeTokens.extended
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Add Tag",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = tag,
+                onValueChange = { tag = it },
+                label = { Text("Tag Name") },
+                placeholder = { Text("e.g. design, tech, inspiration") },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = extended.amberAccent,
+                    cursorColor = extended.amberAccent
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (tag.isNotBlank()) {
+                        onConfirm(tag.trim().removePrefix("#"))
+                    }
+                },
+                enabled = tag.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = extended.amberAccent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = extended.textSecondary)
+            }
+        }
+    )
+}
+
+@Composable
 fun ConfirmationDialog(
     title: String,
     message: String,
