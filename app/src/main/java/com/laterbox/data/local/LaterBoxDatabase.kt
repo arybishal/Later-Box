@@ -7,11 +7,13 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.laterbox.data.local.dao.AiAnalysisDao
 import com.laterbox.data.local.dao.PlaylistDao
 import com.laterbox.data.local.dao.ReminderDao
 import com.laterbox.data.local.dao.SavedItemDao
 import com.laterbox.data.local.dao.SearchHistoryDao
 import com.laterbox.data.local.dao.TagDao
+import com.laterbox.data.local.entity.AiAnalysisEntity
 import com.laterbox.data.local.entity.ItemPlaylistCrossRef
 import com.laterbox.data.local.entity.ItemTagCrossRef
 import com.laterbox.data.local.entity.PlaylistEntity
@@ -28,9 +30,10 @@ import com.laterbox.data.local.entity.TagEntity
         TagEntity::class,
         ItemTagCrossRef::class,
         ReminderEntity::class,
-        SearchHistoryEntity::class
+        SearchHistoryEntity::class,
+        AiAnalysisEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -41,6 +44,7 @@ abstract class LaterBoxDatabase : RoomDatabase() {
     abstract fun tagDao(): TagDao
     abstract fun reminderDao(): ReminderDao
     abstract fun searchHistoryDao(): SearchHistoryDao
+    abstract fun aiAnalysisDao(): AiAnalysisDao
 
     companion object {
         @Volatile
@@ -97,6 +101,34 @@ abstract class LaterBoxDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS ai_analyses (
+                        itemId INTEGER PRIMARY KEY NOT NULL,
+                        shortDescription TEXT,
+                        whatItsAbout TEXT,
+                        category TEXT,
+                        locationName TEXT,
+                        locationAddress TEXT,
+                        locationConfidence TEXT,
+                        peopleAndEntitiesJson TEXT NOT NULL,
+                        keyDetailsJson TEXT NOT NULL,
+                        keyTakeawaysJson TEXT NOT NULL,
+                        language TEXT,
+                        modelUsed TEXT NOT NULL,
+                        analyzedAt INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        contentFingerprint TEXT,
+                        errorMessage TEXT,
+                        FOREIGN KEY(itemId) REFERENCES saved_items(id) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_ai_analyses_status ON ai_analyses(status)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_ai_analyses_analyzedAt ON ai_analyses(analyzedAt)")
+            }
+        }
+
         fun getInstance(context: Context): LaterBoxDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -116,7 +148,7 @@ abstract class LaterBoxDatabase : RoomDatabase() {
                             )
                         }
                     })
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

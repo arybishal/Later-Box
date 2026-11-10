@@ -68,6 +68,7 @@ import com.laterbox.ui.screens.library.LibraryScreen
 import com.laterbox.ui.screens.playlist.PlaylistDetailScreen
 import com.laterbox.ui.screens.playlist.PlaylistsScreen
 import com.laterbox.ui.screens.search.SearchScreen
+import com.laterbox.ui.screens.settings.GeminiSettingsScreen
 import com.laterbox.ui.screens.settings.SettingsScreen
 import com.laterbox.ui.screens.trash.TrashScreen
 import com.laterbox.ui.screens.viewer.ContentViewerScreen
@@ -421,6 +422,9 @@ fun MainAppScaffold() {
                     onBack = { navController.popBackStack() },
                     onOpenViewer = { item ->
                         navController.navigate(Screen.ContentViewer.createRoute(item.id))
+                    },
+                    onNavigateToAiSettings = {
+                        navController.navigate(Screen.GeminiSettings.route)
                     }
                 )
             }
@@ -428,7 +432,14 @@ fun MainAppScaffold() {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onNavigateToTrash = { navController.navigate(Screen.Trash.route) }
+                    onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
+                    onNavigateToGeminiSettings = { navController.navigate(Screen.GeminiSettings.route) }
+                )
+            }
+
+            composable(Screen.GeminiSettings.route) {
+                GeminiSettingsScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

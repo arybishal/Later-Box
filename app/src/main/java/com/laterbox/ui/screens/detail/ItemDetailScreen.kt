@@ -30,11 +30,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -45,13 +47,18 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,11 +67,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.laterbox.data.ai.security.SecureApiKeyStorage
+import com.laterbox.data.local.entity.AiAnalysisEntity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -110,11 +120,18 @@ fun ItemDetailScreen(
     itemId: Long,
     onBack: () -> Unit,
     onOpenViewer: (SavedItemEntity) -> Unit,
+    onNavigateToAiSettings: () -> Unit = {},
     viewModel: ItemDetailViewModel = viewModel(
         factory = ItemDetailViewModelFactory(itemId)
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val aiAnalysis by viewModel.aiAnalysis.collectAsState()
+    val isAiEnabled by viewModel.isAiEnabled.collectAsState()
+    val hasConsentedPrivacy by viewModel.hasConsentedPrivacy.collectAsState()
+    val isAiLoading by viewModel.isAiLoading.collectAsState()
+    val aiActionError by viewModel.aiActionError.collectAsState()
+
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -125,6 +142,8 @@ fun ItemDetailScreen(
     var showEditNotesDialog by remember { mutableStateOf(false) }
     var showAddTagDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showAiPrivacyDialog by remember { mutableStateOf(false) }
+    var showDeleteAiConfirm by remember { mutableStateOf(false) }
 
     if (uiState.isLoading) {
         Box(
@@ -481,8 +500,32 @@ fun ItemDetailScreen(
                 )
             }
 
-            // Phase 2 Extension Point: Clean extensibility slot without fake AI content
-            Phase2AiExtensionSlot(item = item)
+            // Phase 2 AI Content Intelligence Section
+            Phase2AiExtensionSlot(
+                item = item,
+                aiAnalysis = aiAnalysis,
+                isAiEnabled = isAiEnabled,
+                isAiLoading = isAiLoading,
+                aiActionError = aiActionError,
+                onAnalyze = {
+                    if (!hasConsentedPrivacy) {
+                        showAiPrivacyDialog = true
+                    } else {
+                        viewModel.analyzeWithAi(forceRegenerate = false)
+                    }
+                },
+                onRegenerate = {
+                    if (!hasConsentedPrivacy) {
+                        showAiPrivacyDialog = true
+                    } else {
+                        viewModel.analyzeWithAi(forceRegenerate = true)
+                    }
+                },
+                onDeleteAnalysis = {
+                    showDeleteAiConfirm = true
+                },
+                onNavigateToSettings = onNavigateToAiSettings
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
             HorizontalDivider(color = extended.border)
@@ -914,6 +957,35 @@ fun ItemDetailScreen(
             onDismiss = { showDeleteConfirmDialog = false }
         )
     }
+
+    if (showAiPrivacyDialog) {
+        ConfirmationDialog(
+            title = "Gemini AI Content Analysis",
+            message = "Later Box uses Google Gemini API to analyze saved content (title, notes, web metadata or image) and generate structured insights.\n\nContent is sent to Google using your configured API key. Your data is not stored on external Later Box servers. Proceed with analysis?",
+            confirmLabel = "Agree & Analyze",
+            isDestructive = false,
+            onConfirm = {
+                viewModel.grantPrivacyConsent()
+                showAiPrivacyDialog = false
+                viewModel.analyzeWithAi(forceRegenerate = false)
+            },
+            onDismiss = { showAiPrivacyDialog = false }
+        )
+    }
+
+    if (showDeleteAiConfirm) {
+        ConfirmationDialog(
+            title = "Delete AI Insights?",
+            message = "This will remove the generated AI summary, takeaways, and tags for this item. You can regenerate them at any time.",
+            confirmLabel = "Delete",
+            isDestructive = true,
+            onConfirm = {
+                showDeleteAiConfirm = false
+                viewModel.deleteAiAnalysis()
+            },
+            onDismiss = { showDeleteAiConfirm = false }
+        )
+    }
 }
 
 /**
@@ -1232,15 +1304,529 @@ private fun ContentPreviewSection(
 }
 
 /**
- * Phase 2 AI Slot Extension Point.
- * Architectural hook ready for Phase 2 Gemini AI integration without modifying layout hierarchy.
- * In Phase 1, it renders clean and empty without fake content or dummy buttons.
+ * Phase 2 AI Content Intelligence Extension Point.
+ * Displays structured insights powered by Google Gemini API.
+ * Strict adherence to the approved color palette:
+ * - Background: Clean card surface (White in light, dark surface in dark)
+ * - Accent: Soft Butter-Yellow (#FFF4B8 / softYellow)
+ * - Typography: Black (#111111 / primaryBlack) / Charcoal secondary
+ * - Absolutely ZERO #9E6F21 and ZERO red fonts.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Phase2AiExtensionSlot(
-    item: SavedItemEntity
+    item: SavedItemEntity,
+    aiAnalysis: AiAnalysisEntity?,
+    isAiEnabled: Boolean,
+    isAiLoading: Boolean,
+    aiActionError: String?,
+    onAnalyze: () -> Unit,
+    onRegenerate: () -> Unit,
+    onDeleteAnalysis: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
-    // Phase 1: Pure architectural hook. Intentionally reserved for Phase 2 AI models.
+    val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
+    val hasApiKey = remember(context) { SecureApiKeyStorage.getInstance(context).hasApiKey() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(extended.cardBackground)
+            .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+            .padding(18.dp)
+    ) {
+        when {
+            // State 1: Global AI Disabled
+            !isAiEnabled -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(extended.pillInactive),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "AI Content Intelligence",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Generate instant summaries, smart categories, and takeaways with Gemini.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedButton(
+                    onClick = onNavigateToSettings,
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Enable Gemini in Settings",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = extended.primaryBlack,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
+
+            // State 2: AI Enabled but No API Key Configured
+            !hasApiKey -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(extended.pillInactive),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Key,
+                            contentDescription = null,
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Gemini API Key Required",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Add your Google Gemini API key to activate AI analysis.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedButton(
+                    onClick = onNavigateToSettings,
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Set API Key in Settings",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = extended.primaryBlack,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
+
+            // State 3: Analysis in Progress / Loading
+            isAiLoading || aiAnalysis?.status == "PENDING" -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.5.dp,
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Analyzing with Gemini AI…",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Extracting summary, takeaways, and entities…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                    }
+                }
+            }
+
+            // State 4: Analysis Failed / Error
+            aiActionError != null || aiAnalysis?.status == "FAILED" -> {
+                val errorMsg = aiActionError ?: aiAnalysis?.errorMessage ?: "Analysis failed. Please check network or API quota."
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(extended.pillInactive),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Analysis Unavailable",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = errorMsg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                Button(
+                    onClick = onAnalyze,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = extended.primaryBlack,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Retry Analysis",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }
+            }
+
+            // State 5: Not Analyzed Yet
+            aiAnalysis == null -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(extended.softYellow),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = extended.primaryBlack,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Gemini AI Insights",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Generate a structured summary, key takeaways, and category.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onAnalyze,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = extended.softYellow,
+                        contentColor = extended.primaryBlack
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Generate AI Insights",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = extended.primaryBlack
+                    )
+                }
+            }
+
+            // State 6: Completed AI Analysis (SUCCESS)
+            else -> {
+                // Header with Sparkle, Model Badge, and Actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(extended.softYellow),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = extended.primaryBlack,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Text(
+                            text = "AI Insights",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ),
+                            color = extended.primaryBlack
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(extended.softYellowSubtle)
+                                .border(1.dp, extended.softYellowBorder, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = aiAnalysis.modelUsed,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = extended.primaryBlack
+                            )
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        IconButton(
+                            onClick = onRegenerate,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Regenerate",
+                                tint = extended.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = onDeleteAnalysis,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Analysis",
+                                tint = extended.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Metadata Badges: Category, Location, Language
+                val badges = buildList {
+                    aiAnalysis.category?.takeIf { it.isNotBlank() }?.let { add("📁 $it") }
+                    aiAnalysis.locationName?.takeIf { it.isNotBlank() }?.let { add("📍 $it") }
+                    aiAnalysis.language?.takeIf { it.isNotBlank() && it != "English" }?.let { add("🌐 $it") }
+                }
+
+                if (badges.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        badges.forEach { badge ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(extended.pillInactive)
+                                    .border(1.dp, extended.border, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = badge,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = extended.primaryBlack
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Short Description
+                aiAnalysis.shortDescription?.takeIf { it.isNotBlank() }?.let { desc ->
+                    Text(
+                        text = desc,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        ),
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                // What It's About (if distinct and present)
+                aiAnalysis.whatItsAbout?.takeIf { it.isNotBlank() && it != aiAnalysis.shortDescription }?.let { about ->
+                    Text(
+                        text = "What it's about",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.textSecondary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = about,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 13.sp,
+                            lineHeight = 19.sp
+                        ),
+                        color = extended.primaryBlack
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Key Takeaways
+                val takeaways = aiAnalysis.getKeyTakeaways()
+                if (takeaways.isNotEmpty()) {
+                    Text(
+                        text = "Key Takeaways",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.textSecondary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    takeaways.forEach { takeaway ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = extended.primaryBlack,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            Text(
+                                text = takeaway,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
+                                ),
+                                color = extended.primaryBlack
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Entities and People
+                val entities = aiAnalysis.getPeopleAndEntities()
+                if (entities.isNotEmpty()) {
+                    Text(
+                        text = "Entities & Mentions",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = extended.textSecondary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        entities.forEach { entity ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(extended.pillInactive)
+                                    .padding(horizontal = 7.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = entity,
+                                    fontSize = 11.sp,
+                                    color = extended.primaryBlack
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Footer timestamp
+                HorizontalDivider(color = extended.border)
+                Spacer(modifier = Modifier.height(8.dp))
+                val dateStr = remember(aiAnalysis.analyzedAt) {
+                    SimpleDateFormat("MMM d, yyyy · HH:mm", Locale.getDefault()).format(Date(aiAnalysis.analyzedAt))
+                }
+                Text(
+                    text = "Analyzed on $dateStr",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    color = extended.textSecondary
+                )
+            }
+        }
+    }
 }
 
 private fun formatSavedDate(timestamp: Long): String {

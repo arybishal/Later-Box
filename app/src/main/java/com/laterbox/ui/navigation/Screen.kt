@@ -17,6 +17,7 @@ sealed class Screen(val route: String, val title: String) {
     object ItemDetail : Screen("detail/{itemId}", "Item Detail") {
         fun createRoute(itemId: Long) = "detail/$itemId"
     }
+    object GeminiSettings : Screen("settings/gemini", "Gemini AI")
     object Trash : Screen("trash", "Trash")
 }
 

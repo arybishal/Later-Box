@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.CloudDownload
@@ -61,10 +63,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.backup.BackupManifest
 import com.laterbox.data.backup.BackupSummary
@@ -89,7 +93,8 @@ fun formatBytes(bytes: Long): String {
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onNavigateToTrash: () -> Unit
+    onNavigateToTrash: () -> Unit,
+    onNavigateToGeminiSettings: () -> Unit = {}
 ) {
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
@@ -107,6 +112,12 @@ fun SettingsScreen(
     val lastBackupTimestamp by prefs.lastBackupTimestamp.collectAsState(initial = null)
     val autoUpdateCheck by prefs.autoUpdateCheck.collectAsState(initial = true)
     val updateState by updateManager.updateState.collectAsState()
+
+    val aiSettings = LaterBoxApp.instance.aiSettingsRepository
+    val isAiEnabled by aiSettings.isAiEnabled.collectAsState(initial = false)
+    val selectedModelId by aiSettings.selectedModelId.collectAsState(initial = com.laterbox.data.ai.model.GeminiModels.DEFAULT_MODEL_ID)
+    val secureStorage = remember { com.laterbox.data.ai.security.SecureApiKeyStorage.getInstance(context) }
+    var hasApiKey by remember { mutableStateOf(secureStorage.hasApiKey()) }
 
     var storageSize by remember { mutableLongStateOf(0L) }
     var backupSummary by remember { mutableStateOf<BackupSummary?>(null) }
@@ -126,6 +137,7 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         storageSize = storageManager.getMediaStorageSize()
         backupSummary = backupManager.getBackupSummary()
+        hasApiKey = secureStorage.hasApiKey()
     }
 
     // Storage Access Framework Export Launcher
@@ -262,18 +274,19 @@ fun SettingsScreen(
                                 onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = extended.amberAccent,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                    containerColor = extended.softYellow,
+                                    contentColor = extended.primaryBlack
                                 ),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CloudUpload,
                                     contentDescription = null,
+                                    tint = extended.primaryBlack,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Export", fontWeight = FontWeight.Bold)
+                                Text("Export", fontWeight = FontWeight.Bold, color = extended.primaryBlack)
                             }
                         }
 
@@ -306,17 +319,17 @@ fun SettingsScreen(
                                     )
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, extended.amberAccent),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CloudDownload,
                                     contentDescription = null,
-                                    tint = extended.amberAccent,
+                                    tint = extended.primaryBlack,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Import", fontWeight = FontWeight.Bold, color = extended.amberAccent)
+                                Text("Import", fontWeight = FontWeight.Bold, color = extended.primaryBlack)
                             }
                         }
                     }
@@ -345,10 +358,10 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) extended.amberAccentSubtle else MaterialTheme.colorScheme.surface)
+                                        .background(if (isSelected) extended.softYellowSubtle else MaterialTheme.colorScheme.surface)
                                         .border(
                                             1.dp,
-                                            if (isSelected) extended.amberAccent else extended.border,
+                                            if (isSelected) extended.primaryBlack else extended.border,
                                             RoundedCornerShape(10.dp)
                                         )
                                         .clickable {
@@ -361,7 +374,7 @@ fun SettingsScreen(
                                         text = mode.label,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isSelected) extended.amberAccent else MaterialTheme.colorScheme.onSurface
+                                        color = if (isSelected) extended.primaryBlack else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -402,6 +415,63 @@ fun SettingsScreen(
                             scope.launch { prefs.setInAppViewing(checked) }
                         }
                     )
+                }
+            }
+
+            // AI & Intelligence
+            item {
+                SettingsSection(
+                    title = "AI & Intelligence",
+                    icon = Icons.Default.AutoAwesome
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onNavigateToGeminiSettings() }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Google Gemini AI",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isAiEnabled && hasApiKey) extended.softYellow else extended.pillInactive)
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (isAiEnabled && hasApiKey) "ACTIVE" else if (!hasApiKey) "KEY REQUIRED" else "OFF",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isAiEnabled && hasApiKey) extended.primaryBlack else extended.textSecondary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (hasApiKey) "Model: $selectedModelId · Summaries & Takeaways" else "Configure API key, model selection, and auto-analysis",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = extended.textSecondary
+                            )
+                        }
+
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = "Configure AI Settings",
+                            tint = extended.textSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -672,7 +742,7 @@ private fun SettingsSection(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = extended.amberAccent,
+                    tint = extended.primaryBlack,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -720,8 +790,10 @@ private fun SettingsToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = extended.amberAccent,
+                checkedThumbColor = Color.White,
+                checkedTrackColor = extended.primaryBlack,
+                uncheckedThumbColor = extended.textSecondary,
+                uncheckedTrackColor = extended.pillInactive,
                 uncheckedBorderColor = extended.border
             )
         )

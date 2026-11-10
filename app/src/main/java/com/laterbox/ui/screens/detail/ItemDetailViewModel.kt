@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.laterbox.LaterBoxApp
+import com.laterbox.data.ai.AiSettingsRepository
+import com.laterbox.data.ai.GeminiAnalysisService
+import com.laterbox.data.local.dao.AiAnalysisDao
+import com.laterbox.data.local.entity.AiAnalysisEntity
 import com.laterbox.data.local.entity.PlaylistEntity
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.local.entity.TagEntity
@@ -33,11 +37,29 @@ class ItemDetailViewModel(
     val itemId: Long,
     private val contentRepository: ContentRepository = LaterBoxApp.instance.contentRepository,
     private val playlistRepository: PlaylistRepository = LaterBoxApp.instance.playlistRepository,
-    private val tagRepository: TagRepository = LaterBoxApp.instance.tagRepository
+    private val tagRepository: TagRepository = LaterBoxApp.instance.tagRepository,
+    private val geminiAnalysisService: GeminiAnalysisService = LaterBoxApp.instance.geminiAnalysisService,
+    private val aiAnalysisDao: AiAnalysisDao = LaterBoxApp.instance.database.aiAnalysisDao(),
+    private val aiSettingsRepository: AiSettingsRepository = LaterBoxApp.instance.aiSettingsRepository
 ) : ViewModel() {
 
     private val _isActionLoading = MutableStateFlow(false)
     val isActionLoading: StateFlow<Boolean> = _isActionLoading.asStateFlow()
+
+    private val _isAiLoading = MutableStateFlow(false)
+    val isAiLoading: StateFlow<Boolean> = _isAiLoading.asStateFlow()
+
+    private val _aiActionError = MutableStateFlow<String?>(null)
+    val aiActionError: StateFlow<String?> = _aiActionError.asStateFlow()
+
+    val aiAnalysis: StateFlow<AiAnalysisEntity?> = aiAnalysisDao.getAnalysisForItem(itemId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val isAiEnabled: StateFlow<Boolean> = aiSettingsRepository.isAiEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val hasConsentedPrivacy: StateFlow<Boolean> = aiSettingsRepository.hasConsentedPrivacy
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val allPlaylists: StateFlow<List<PlaylistWithCount>> = playlistRepository.getAllPlaylistsWithCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -128,6 +150,34 @@ class ItemDetailViewModel(
     fun restoreFromTrash() {
         viewModelScope.launch {
             contentRepository.restoreFromTrash(itemId)
+        }
+    }
+
+    fun grantPrivacyConsent() {
+        viewModelScope.launch {
+            aiSettingsRepository.setConsentedPrivacy(true)
+        }
+    }
+
+    fun clearAiError() {
+        _aiActionError.value = null
+    }
+
+    fun analyzeWithAi(forceRegenerate: Boolean = false) {
+        viewModelScope.launch {
+            _isAiLoading.value = true
+            _aiActionError.value = null
+            val result = geminiAnalysisService.analyzeItem(itemId, forceRegenerate = forceRegenerate)
+            result.onFailure { error ->
+                _aiActionError.value = error.message ?: "Failed to analyze content."
+            }
+            _isAiLoading.value = false
+        }
+    }
+
+    fun deleteAiAnalysis() {
+        viewModelScope.launch {
+            geminiAnalysisService.deleteAnalysis(itemId)
         }
     }
 }

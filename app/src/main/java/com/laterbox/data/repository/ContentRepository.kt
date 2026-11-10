@@ -1,5 +1,6 @@
 package com.laterbox.data.repository
 
+import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.dao.PlaylistDao
 import com.laterbox.data.local.dao.SavedItemDao
 import com.laterbox.data.local.entity.ItemPlaylistCrossRef
@@ -126,6 +127,14 @@ class ContentRepository(
                             contentType = if (current.contentType == com.laterbox.data.model.ContentType.LINK) meta.contentType else current.contentType
                         )
                         savedItemDao.updateItem(updated)
+                    }
+                } catch (_: Exception) {}
+
+                // Trigger automatic AI analysis if enabled by user
+                try {
+                    val app = LaterBoxApp.instance
+                    if (app.aiSettingsRepository.isAiEnabledNow() && app.aiSettingsRepository.isAutoAnalyzeNow()) {
+                        com.laterbox.data.ai.AiAnalysisWorker.enqueue(app, insertedId)
                     }
                 } catch (_: Exception) {}
             }
