@@ -23,11 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,9 +56,6 @@ import com.laterbox.data.update.UpdateState
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import kotlinx.coroutines.launch
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -93,7 +87,7 @@ fun AppUpdateSection(
             Icon(
                 imageVector = Icons.Default.SystemUpdate,
                 contentDescription = null,
-                tint = extended.amberAccent,
+                tint = extended.primaryBlack,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
@@ -146,7 +140,7 @@ fun AppUpdateSection(
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = extended.amberAccent
+                        color = extended.primaryBlack
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
@@ -178,7 +172,7 @@ fun AppUpdateSection(
                             text = "${(updateState.progress * 100).toInt()}%",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = extended.amberAccent
+                            color = extended.primaryBlack
                         )
                     }
 
@@ -190,7 +184,7 @@ fun AppUpdateSection(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = extended.amberAccent,
+                        color = extended.primaryBlack,
                         trackColor = extended.border
                     )
 
@@ -239,18 +233,19 @@ fun AppUpdateSection(
                         },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = extended.amberAccent,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = extended.buttonPrimary,
+                            contentColor = extended.buttonPrimaryText
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.SystemUpdate,
                             contentDescription = null,
+                            tint = extended.buttonPrimaryText,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Install Update Now", fontWeight = FontWeight.Bold)
+                        Text("Install Update Now", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
                     }
                 }
             }
@@ -277,12 +272,12 @@ fun AppUpdateSection(
                             onClick = { onShowDetails(updateState.updateInfo) },
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = extended.amberAccent,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
+                                containerColor = extended.buttonPrimary,
+                                contentColor = extended.buttonPrimaryText
                             ),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("View & Update", fontWeight = FontWeight.Bold)
+                            Text("View & Update", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
                         }
 
                         OutlinedButton(
@@ -291,11 +286,12 @@ fun AppUpdateSection(
                                 context.startActivity(browserIntent)
                             },
                             shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.OpenInBrowser, contentDescription = null, tint = extended.primaryBlack, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("GitHub", fontSize = 12.sp)
+                            Text("GitHub", fontSize = 12.sp, color = extended.primaryBlack)
                         }
                     }
                 }
@@ -314,13 +310,13 @@ fun AppUpdateSection(
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = extended.cardBackground,
-                            contentColor = MaterialTheme.colorScheme.onBackground
+                            contentColor = extended.primaryBlack
                         ),
                         modifier = Modifier.border(1.dp, extended.border, RoundedCornerShape(8.dp))
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = extended.primaryBlack, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Retry Check", fontSize = 12.sp)
+                        Text("Retry Check", fontSize = 12.sp, color = extended.primaryBlack)
                     }
                 }
             }
@@ -357,18 +353,19 @@ fun AppUpdateSection(
                         },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = extended.amberAccent,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = extended.buttonPrimary,
+                            contentColor = extended.buttonPrimaryText
                         ),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = null,
+                            tint = extended.buttonPrimaryText,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Check Now", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Check Now", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = extended.buttonPrimaryText)
                     }
                 }
             }
@@ -378,7 +375,7 @@ fun AppUpdateSection(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = extended.amberAccent)
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = extended.primaryBlack)
                     Spacer(modifier = Modifier.width(10.dp))
                     Text("Launching package installer…", fontSize = 13.sp, color = extended.textSecondary)
                 }
@@ -413,8 +410,10 @@ fun AppUpdateSection(
                 checked = autoCheckEnabled,
                 onCheckedChange = onToggleAutoCheck,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor = extended.amberAccent,
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = extended.primaryBlack,
+                    uncheckedThumbColor = extended.textSecondary,
+                    uncheckedTrackColor = extended.pillInactive,
                     uncheckedBorderColor = extended.border
                 )
             )
@@ -430,20 +429,21 @@ fun UpdateStatusBadge(
     val extended = LaterBoxThemeTokens.extended
 
     val (badgeText, badgeBg, badgeTextColor) = when (updateState) {
-        is UpdateState.Checking -> Triple("Checking…", extended.border.copy(alpha = 0.4f), extended.textSecondary)
-        is UpdateState.UpToDate -> Triple("Up to date", extended.amberAccentSubtle, extended.amberAccent)
-        is UpdateState.Available -> Triple("Update available", extended.amberAccent, MaterialTheme.colorScheme.onPrimary)
-        is UpdateState.Downloading -> Triple("Downloading…", extended.border, MaterialTheme.colorScheme.onBackground)
-        is UpdateState.Downloaded -> Triple("Ready to install", extended.amberAccent, MaterialTheme.colorScheme.onPrimary)
-        is UpdateState.Installing -> Triple("Installing…", extended.border, MaterialTheme.colorScheme.onBackground)
-        is UpdateState.Failed -> Triple("Check failed", extended.border, extended.warmError)
-        is UpdateState.Idle -> Triple("Up to date", extended.amberAccentSubtle, extended.amberAccent)
+        is UpdateState.Checking -> Triple("Checking…", extended.pillInactive, extended.textSecondary)
+        is UpdateState.UpToDate -> Triple("Up to date", extended.pillInactive, extended.primaryText)
+        is UpdateState.Available -> Triple("Update available", extended.pillActive, extended.pillActiveText)
+        is UpdateState.Downloading -> Triple("Downloading…", extended.pillInactive, extended.primaryText)
+        is UpdateState.Downloaded -> Triple("Ready to install", extended.pillActive, extended.pillActiveText)
+        is UpdateState.Installing -> Triple("Installing…", extended.pillInactive, extended.primaryText)
+        is UpdateState.Failed -> Triple("Check failed", extended.pillInactive, extended.warmError)
+        is UpdateState.Idle -> Triple("Up to date", extended.pillInactive, extended.primaryText)
     }
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(badgeBg)
+            .border(1.dp, extended.border, RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -488,13 +488,13 @@ fun UpdateDetailsDialog(
                     Text(
                         text = "v${updateInfo.versionName} is ready",
                         fontSize = 13.sp,
-                        color = extended.amberAccent,
+                        color = extended.primaryBlack,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
 
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = extended.textSecondary)
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = extended.primaryBlack)
                 }
             }
         },
@@ -516,15 +516,15 @@ fun UpdateDetailsDialog(
                 ) {
                     Column {
                         Text("Current", fontSize = 11.sp, color = extended.textSecondary)
-                        Text("v$currentVersionName", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("v$currentVersionName", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = extended.primaryBlack)
                     }
                     Column {
                         Text("New Version", fontSize = 11.sp, color = extended.textSecondary)
-                        Text("v${updateInfo.versionName}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = extended.amberAccent)
+                        Text("v${updateInfo.versionName}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = extended.primaryBlack)
                     }
                     Column {
                         Text("Size", fontSize = 11.sp, color = extended.textSecondary)
-                        Text(updateInfo.formattedSize, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(updateInfo.formattedSize, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = extended.primaryBlack)
                     }
                 }
 
@@ -563,14 +563,14 @@ fun UpdateDetailsDialog(
                     Icon(
                         imageVector = Icons.Default.OpenInBrowser,
                         contentDescription = null,
-                        tint = extended.amberAccent,
+                        tint = extended.primaryBlack,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "View Release on GitHub",
                         fontSize = 12.sp,
-                        color = extended.amberAccent,
+                        color = extended.primaryBlack,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -584,13 +584,13 @@ fun UpdateDetailsDialog(
                 },
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
-                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Download, contentDescription = null, tint = extended.buttonPrimaryText, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Update Now", fontWeight = FontWeight.Bold)
+                Text("Update Now", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
             }
         },
         dismissButton = {

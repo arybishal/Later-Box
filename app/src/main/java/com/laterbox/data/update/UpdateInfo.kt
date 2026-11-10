@@ -11,7 +11,8 @@ data class UpdateInfo(
     val apkUrl: String,
     val apkFileName: String,
     val apkSizeBytes: Long,
-    val isNewer: Boolean
+    val isNewer: Boolean,
+    val expectedSha256: String? = null
 ) {
     val formattedSize: String
         get() {

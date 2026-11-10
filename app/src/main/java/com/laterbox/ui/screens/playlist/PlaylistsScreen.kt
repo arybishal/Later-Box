@@ -64,8 +64,8 @@ fun PlaylistsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = extended.amberAccent,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = extended.buttonPrimary,
+                contentColor = extended.buttonPrimaryText
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Create Playlist")
             }
@@ -100,7 +100,7 @@ fun PlaylistsScreen(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = extended.amberAccent,
+                            tint = extended.primaryText,
                             modifier = Modifier.size(28.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -108,7 +108,7 @@ fun PlaylistsScreen(
                             text = "New Playlist",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = extended.amberAccent
+                            color = extended.primaryText
                         )
                     }
                 }

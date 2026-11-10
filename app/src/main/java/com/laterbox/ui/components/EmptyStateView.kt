@@ -107,8 +107,8 @@ fun EmptyDashedCard(
                 onClick = onButtonClick,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 ),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
@@ -116,7 +116,7 @@ fun EmptyDashedCard(
                     text = buttonLabel,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = extended.buttonPrimaryText
                 )
             }
         }
@@ -152,7 +152,7 @@ fun EmptyStateView(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = extended.amberAccent,
+                tint = extended.primaryText,
                 modifier = Modifier.size(36.dp)
             )
         }
@@ -183,15 +183,15 @@ fun EmptyStateView(
                 onClick = onAction,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text(
                     text = actionLabel,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = extended.buttonPrimaryText
                 )
             }
         }

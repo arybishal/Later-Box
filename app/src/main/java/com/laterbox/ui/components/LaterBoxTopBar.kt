@@ -221,7 +221,7 @@ fun SortDropdownSelector(
                                     SortOrder.LAST_OPENED -> "Recently opened"
                                 },
                                 fontWeight = if (sort == currentSort) FontWeight.Bold else FontWeight.Normal,
-                                color = if (sort == currentSort) extended.amberAccent else MaterialTheme.colorScheme.onSurface
+                                color = if (sort == currentSort) extended.primaryText else MaterialTheme.colorScheme.onSurface
                             )
                         },
                         onClick = {

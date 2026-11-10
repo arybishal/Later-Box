@@ -94,8 +94,12 @@ class UpdateManager(
             }
         } catch (e: Exception) {
             val lastChecked = preferencesRepository.lastUpdateCheckTimestamp.first()
+            val errorMessage = when (e) {
+                is UpdateCheckException -> e.message ?: "Update check failed"
+                else -> e.localizedMessage ?: "Failed to check for updates. Check your internet connection."
+            }
             _updateState.value = UpdateState.Failed(
-                message = e.localizedMessage ?: "Failed to check for updates. Check your internet connection.",
+                message = errorMessage,
                 canRetry = true
             )
             Result.failure(e)
@@ -209,6 +213,27 @@ class UpdateManager(
         if (packageInfo.packageName != context.packageName) {
             throw IOException("Downloaded APK package ID (${packageInfo.packageName}) does not match Later Box (${context.packageName})")
         }
+
+        // Validate SHA-256 checksum if available
+        val expectedSha = updateInfo.expectedSha256
+        if (!expectedSha.isNullOrEmpty()) {
+            val actualSha = computeSha256(apkFile)
+            if (!actualSha.equals(expectedSha, ignoreCase = true)) {
+                throw IOException("APK checksum mismatch. Expected: $expectedSha, Actual: $actualSha")
+            }
+        }
+    }
+
+    private fun computeSha256(file: File): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { fis ->
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            while (fis.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
     /**

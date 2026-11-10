@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,10 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,7 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.laterbox.data.backup.BackupManifest
 import com.laterbox.data.backup.ImportMode
 import com.laterbox.ui.theme.LaterBoxThemeTokens
@@ -66,14 +61,15 @@ fun BackupInspectionDialog(
                 Icon(
                     imageVector = Icons.Default.CloudDownload,
                     contentDescription = null,
-                    tint = extended.amberAccent,
+                    tint = extended.primaryBlack,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "Restore Later Box Backup",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
         },
@@ -92,7 +88,8 @@ fun BackupInspectionDialog(
                     Text(
                         text = "Backup Information",
                         style = MaterialTheme.typography.labelLarge,
-                        color = extended.amberAccent
+                        fontWeight = FontWeight.Bold,
+                        color = extended.primaryBlack
                     )
                     Text(
                         text = "Created: $formattedDate",
@@ -111,17 +108,20 @@ fun BackupInspectionDialog(
                         Text(
                             text = "Saved Items: ${manifest.totalItems}",
                             style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Playlists: ${manifest.totalPlaylists}",
                             style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Media: ${manifest.totalMediaFiles}",
                             style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 }
@@ -129,7 +129,8 @@ fun BackupInspectionDialog(
                 Text(
                     text = "Choose Restore Mode",
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 // Option 1: MERGE (Safe default)
@@ -137,10 +138,10 @@ fun BackupInspectionDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedMode == ImportMode.MERGE) extended.amberAccentSubtle else Color.Transparent)
+                        .background(if (selectedMode == ImportMode.MERGE) extended.surfaceSecondary else Color.Transparent)
                         .border(
                             1.dp,
-                            if (selectedMode == ImportMode.MERGE) extended.amberAccent else extended.border,
+                            if (selectedMode == ImportMode.MERGE) extended.primaryBlack else extended.border,
                             RoundedCornerShape(10.dp)
                         )
                         .clickable { selectedMode = ImportMode.MERGE }
@@ -151,7 +152,7 @@ fun BackupInspectionDialog(
                         selected = selectedMode == ImportMode.MERGE,
                         onClick = { selectedMode = ImportMode.MERGE },
                         colors = RadioButtonDefaults.colors(
-                            selectedColor = extended.amberAccent,
+                            selectedColor = extended.primaryBlack,
                             unselectedColor = extended.textSecondary
                         )
                     )
@@ -160,7 +161,8 @@ fun BackupInspectionDialog(
                         Text(
                             text = "Merge with Library (Recommended)",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Adds new items and playlists without deleting your current data.",
@@ -175,10 +177,10 @@ fun BackupInspectionDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedMode == ImportMode.REPLACE) extended.amberAccentSubtle else Color.Transparent)
+                        .background(if (selectedMode == ImportMode.REPLACE) extended.surfaceSecondary else Color.Transparent)
                         .border(
                             1.dp,
-                            if (selectedMode == ImportMode.REPLACE) extended.amberAccent else extended.border,
+                            if (selectedMode == ImportMode.REPLACE) extended.primaryBlack else extended.border,
                             RoundedCornerShape(10.dp)
                         )
                         .clickable { selectedMode = ImportMode.REPLACE }
@@ -189,7 +191,7 @@ fun BackupInspectionDialog(
                         selected = selectedMode == ImportMode.REPLACE,
                         onClick = { selectedMode = ImportMode.REPLACE },
                         colors = RadioButtonDefaults.colors(
-                            selectedColor = extended.amberAccent,
+                            selectedColor = extended.primaryBlack,
                             unselectedColor = extended.textSecondary
                         )
                     )
@@ -198,7 +200,8 @@ fun BackupInspectionDialog(
                         Text(
                             text = "Replace Existing Library",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Wipes your current library and restores the backup completely.",
@@ -214,13 +217,14 @@ fun BackupInspectionDialog(
                 onClick = { onConfirm(selectedMode) },
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text(
                     text = if (selectedMode == ImportMode.REPLACE) "Replace & Restore" else "Merge & Restore",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = extended.buttonPrimaryText
                 )
             }
         },
@@ -246,7 +250,8 @@ fun BackupProgressDialog(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
         },
         text = {
@@ -260,7 +265,7 @@ fun BackupProgressDialog(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = extended.amberAccent,
+                    color = extended.primaryBlack,
                     trackColor = extended.border
                 )
                 Text(

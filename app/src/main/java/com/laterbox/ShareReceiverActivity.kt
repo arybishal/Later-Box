@@ -178,13 +178,14 @@ fun ShareReceiverScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(extended.amberAccent),
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Inbox,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = extended.primaryText,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -263,7 +264,7 @@ fun ShareReceiverScreen(
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
                                         strokeWidth = 2.dp,
-                                        color = extended.amberAccent
+                                        color = extended.primaryText
                                     )
                                 }
                             }
@@ -273,7 +274,7 @@ fun ShareReceiverScreen(
                                 Text(
                                     text = firstItem.domain,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = extended.amberAccent
+                                    color = extended.secondaryText
                                 )
                             }
                         }
@@ -289,8 +290,8 @@ fun ShareReceiverScreen(
                     maxLines = 2,
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -314,10 +315,10 @@ fun ShareReceiverScreen(
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(if (isSelected) extended.amberAccentSubtle else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (isSelected) extended.pillActive else MaterialTheme.colorScheme.surfaceVariant)
                                 .border(
                                     1.dp,
-                                    if (isSelected) extended.amberAccent else extended.border,
+                                    if (isSelected) extended.border else extended.border,
                                     RoundedCornerShape(20.dp)
                                 )
                                 .clickable { viewModel.togglePlaylist(playlist.id) }
@@ -327,7 +328,7 @@ fun ShareReceiverScreen(
                             Icon(
                                 imageVector = if (isSelected) Icons.Default.Check else getIconForName(playlist.iconName),
                                 contentDescription = null,
-                                tint = if (isSelected) extended.amberAccent else extended.textSecondary,
+                                tint = if (isSelected) extended.pillActiveText else extended.textSecondary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -335,7 +336,7 @@ fun ShareReceiverScreen(
                                 text = playlist.name,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) extended.amberAccent else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) extended.pillActiveText else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -352,14 +353,14 @@ fun ShareReceiverScreen(
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = null,
-                                tint = extended.amberAccent,
+                                tint = extended.primaryText,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "New",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = extended.amberAccent
+                                color = extended.primaryText
                             )
                         }
                     }
@@ -390,8 +391,8 @@ fun ShareReceiverScreen(
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = extended.amberAccent,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = extended.buttonPrimary,
+                            contentColor = extended.buttonPrimaryText
                         ),
                         modifier = Modifier.weight(1f)
                     ) {

@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -284,19 +286,19 @@ fun SettingsScreen(
                                 onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = extended.softYellow,
-                                    contentColor = extended.primaryBlack
+                                    containerColor = extended.buttonPrimary,
+                                    contentColor = extended.buttonPrimaryText
                                 ),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CloudUpload,
                                     contentDescription = null,
-                                    tint = extended.primaryBlack,
+                                    tint = extended.buttonPrimaryText,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Export", fontWeight = FontWeight.Bold, color = extended.primaryBlack)
+                                Text("Export", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
                             }
                         }
 
@@ -368,10 +370,10 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) extended.softYellowSubtle else MaterialTheme.colorScheme.surface)
+                                        .background(if (isSelected) extended.pillActive else extended.surfaceSecondary)
                                         .border(
                                             1.dp,
-                                            if (isSelected) extended.primaryBlack else extended.border,
+                                            if (isSelected) extended.border else extended.border,
                                             RoundedCornerShape(10.dp)
                                         )
                                         .clickable {
@@ -384,7 +386,7 @@ fun SettingsScreen(
                                         text = mode.label,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isSelected) extended.primaryBlack else MaterialTheme.colorScheme.onSurface
+                                        color = if (isSelected) extended.pillActiveText else extended.secondaryText
                                     )
                                 }
                             }
@@ -443,7 +445,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -456,14 +458,15 @@ fun SettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(if (isAiEnabled && hasApiKey) extended.softYellow else extended.pillInactive)
+                                        .background(if (isAiEnabled && hasApiKey) extended.surfaceSecondary else extended.surfaceSecondary)
+                                        .border(1.dp, extended.border, RoundedCornerShape(6.dp))
                                         .padding(horizontal = 7.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = if (isAiEnabled && hasApiKey) "ACTIVE" else if (!hasApiKey) "KEY REQUIRED" else "OFF",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isAiEnabled && hasApiKey) extended.primaryBlack else extended.textSecondary
+                                        color = if (isAiEnabled && hasApiKey) extended.primaryText else extended.secondaryText
                                     )
                                 }
                             }
@@ -475,11 +478,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                            contentDescription = "Configure AI Settings",
-                            tint = extended.textSecondary,
-                            modifier = Modifier.size(16.dp)
+                        SettingsManageButton(
+                            onClick = onNavigateToGeminiSettings,
+                            text = "Manage"
                         )
                     }
                 }
@@ -518,10 +519,10 @@ fun SettingsScreen(
                                 imageVector = Icons.Default.CleaningServices,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
-                                tint = extended.textSecondary
+                                tint = extended.primaryBlack
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Clear", color = extended.textSecondary)
+                            Text("Clear", color = extended.primaryBlack)
                         }
                     }
 
@@ -535,12 +536,13 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(
                                 text = "Recently Deleted",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "View or permanently purge deleted items",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -548,11 +550,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = extended.textSecondary,
-                            modifier = Modifier.size(20.dp)
+                        SettingsManageButton(
+                            onClick = onNavigateToTrash,
+                            text = "Manage"
                         )
                     }
                 }
@@ -599,7 +599,7 @@ fun SettingsScreen(
                         text = "SAVE NOW. ORGANIZE EASILY. ENJOY LATER.",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = extended.amberAccent
+                        color = extended.primaryBlack
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -821,5 +821,57 @@ private fun SettingsToggleRow(
                 uncheckedBorderColor = extended.border
             )
         )
+    }
+}
+
+/**
+ * Settings Manage Button
+ * Minimal Monochrome Design System:
+ * Light theme: Background #111111, Text #FFFFFF, Icon #FFFFFF
+ * Dark theme: Background #FFFFFF, Text #111111, Icon #111111
+ * Includes 10dp rounded corners, minimum 48dp touch target, and visible pressed/disabled states.
+ */
+@Composable
+fun SettingsManageButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: String = "Manage"
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    val containerColor = if (enabled) extended.buttonPrimary else extended.buttonPrimary.copy(alpha = 0.4f)
+    val contentColor = if (enabled) extended.buttonPrimaryText else extended.buttonPrimaryText.copy(alpha = 0.4f)
+
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(10.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        modifier = modifier
+            .defaultMinSize(minHeight = 48.dp, minWidth = 48.dp)
+            .clip(RoundedCornerShape(10.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(12.dp)
+            )
+        }
     }
 }

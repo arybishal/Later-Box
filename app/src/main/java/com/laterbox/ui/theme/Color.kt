@@ -2,61 +2,48 @@ package com.laterbox.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Global Palette: Pure White (#FFFFFF), Solid Typography (#111111) & Soft Butter Yellow (#FFF4B8)
-// Minimalist Premium Aesthetic — ZERO #9E6F21, ZERO Brown/Ochre, ZERO Red font!
+// Global Palette: Pure White (#FFFFFF), High-Contrast Typography (#111111) & Deep Black (#000000)
+// Minimalist Premium Monochrome Aesthetic — Strictly ZERO yellow, ZERO amber, ZERO red font!
 
-// Light Mode: Pure White Background, High-Contrast Typography, Soft Butter Yellow Accents
-val PureWhiteBackground = Color(0xFFFFFFFF)       // Pure White Background (#FFFFFF)
-val CleanCardBackground = Color(0xFFFFFFFF)       // Pure White Card & Surface (#FFFFFF)
-val CleanCardElevated = Color(0xFFFAFAFA)         // Subtle elevated surface (#FAFAFA)
-val SubtleBorderLight = Color(0xFFE5E7EB)         // Clean light neutral border (#E5E7EB)
+// Light Mode: Pure White Canvas, High-Contrast Typography, Neutral Grey Secondary
+val PureWhiteBackground = Color(0xFFFFFFFF)       // Main background (#FFFFFF)
+val CleanCardBackground = Color(0xFFFFFFFF)       // Card & Surface (#FFFFFF)
+val NeutralSurfaceLight = Color(0xFFF2F2F2)       // Secondary surface (#F2F2F2)
+val SubtleBorderLight = Color(0xFFE5E5E5)         // Borders and dividers (#E5E5E5)
 val SubtleBorderStrong = Color(0xFFD1D5DB)        // Input & toggle stroke (#D1D5DB)
 
-val PrimaryBlackText = Color(0xFF111111)          // Primary Typography & Headings (#111111)
-val SolidBlackText = PrimaryBlackText             // High-contrast primary text
-val CharcoalTextSecondary = Color(0xFF555555)     // Neutral Grey secondary text (#555555)
+val PrimaryBlackText = Color(0xFF111111)          // Primary Typography, Icons & Primary Button (#111111)
+val SolidBlackText = PrimaryBlackText             // High-contrast primary text (#111111)
+val NeutralGreySecondary = Color(0xFF666666)      // Neutral Grey secondary text (#666666)
+val CharcoalTextSecondary = NeutralGreySecondary  // Secondary text alias (#666666)
 val MutedTextTertiary = Color(0xFF888888)         // Neutral Grey tertiary metadata (#888888)
+val DisabledNeutralLight = Color(0xFFA0A0A0)      // Disabled elements in light mode (#A0A0A0)
 
-val PillInactiveBackground = Color(0xFFF4F4F5)    // Neutral light grey inactive pill (#F4F4F5)
+val PillInactiveBackground = Color(0xFFF2F2F2)    // Neutral light grey inactive pill (#F2F2F2)
 val PillActiveBackground = PrimaryBlackText       // Active pill (#111111)
 val GridListActiveBackground = Color(0xFF111111)  // Active toggle pill (#111111)
-val ScrollThumbColor = Color(0xFF555555)          // Neutral grey scroll thumb (#555555)
+val ScrollThumbColor = Color(0xFF666666)          // Neutral grey scroll thumb (#666666)
 
-// Soft Butter Yellow (#FFF4B8) for Primary Actions, Badges & Focal Highlights
-val SoftButterYellow = Color(0xFFFFF4B8)          // Soft Butter Yellow (#FFF4B8)
-val SoftButterYellowSubtle = Color(0xFFFFFBEA)    // Very light butter yellow surface (#FFFBEA)
-val SoftButterYellowBorder = Color(0xFFF9EEB8)    // Soft yellow border (#F9EEB8)
-val VibrantYellowAccent = SoftButterYellow
-val VibrantYellowAccentLight = SoftButterYellowSubtle
-val VibrantYellowSubtle = SoftButterYellowSubtle
-val WarmCreamBackground = PureWhiteBackground
-val WarmCardBackground = CleanCardBackground
-val WarmBorderDashed = SubtleBorderLight
-val WarmBorderLight = SubtleBorderLight
-val WarmCaramelAccent = SoftButterYellow
-val WarmCaramelAccentLight = SoftButterYellowSubtle
-val WarmCaramelSubtle = SoftButterYellowSubtle
-val WarmTextPrimaryLight = PrimaryBlackText
-val WarmTextSecondaryLight = CharcoalTextSecondary
-val AmberAccent = SoftButterYellow
-val AmberAccentLight = SoftButterYellowSubtle
-val AmberAccentSubtle = SoftButterYellowSubtle
-
-// Dark Mode Adaptive Palette — Deep Black (#000000) & Restrained Soft Yellow (#FFF4B8)
-val CharcoalBackgroundDark = Color(0xFF000000)
-val CharcoalSurfaceDark = Color(0xFF121212)
-val CharcoalSurfaceVariantDark = Color(0xFF1E1E1E)
-val WarmTextPrimaryDark = Color(0xFFFFFFFF)
-val WarmTextSecondaryDark = Color(0xFFAAAAAA)
-val CharcoalBorderDark = Color(0xFF2E2E2E)
-val WarmCaramelAccentDark = Color(0xFFFFF4B8)      // Restrained soft yellow accent in dark mode
+// Dark Mode Adaptive Palette — Deep Black (#000000), Pure White (#FFFFFF) & Neutral Greys
+val CharcoalBackgroundDark = Color(0xFF000000)    // Main background (#000000)
+val CharcoalSurfaceDark = Color(0xFF171717)       // Primary surface (#171717)
+val CharcoalSurfaceVariantDark = Color(0xFF222222)// Secondary surface (#222222)
+val WarmTextPrimaryDark = Color(0xFFFFFFFF)       // Primary text, Icons & Primary Button (#FFFFFF)
+val WarmTextSecondaryDark = Color(0xFFB3B3B3)     // Secondary text (#B3B3B3)
+val CharcoalBorderDark = Color(0xFF303030)        // Borders and dividers (#303030)
+val DisabledNeutralDark = Color(0xFF666666)       // Disabled elements in dark mode (#666666)
 
 val DeepBlackBackgroundDark = CharcoalBackgroundDark
 val WhiteTextPrimaryDark = WarmTextPrimaryDark
 val NeutralTextSecondaryDark = WarmTextSecondaryDark
-val VibrantYellowAccentDark = WarmCaramelAccentDark
 
-// Destructive Actions — Strictly NO RED FONT
+// Primary Actions & Buttons (Monochrome: Black in Light, White in Dark)
+val PrimaryButtonLight = PrimaryBlackText         // Primary button background light (#111111)
+val PrimaryButtonTextLight = Color(0xFFFFFFFF)    // Primary button text light (#FFFFFF)
+val PrimaryButtonDark = Color(0xFFFFFFFF)         // Primary button background dark (#FFFFFF)
+val PrimaryButtonTextDark = PrimaryBlackText      // Primary button text dark (#111111)
+
+// Destructive Actions — Strictly Slate/Charcoal (NO RED FONT)
 val SlateDestructive = Color(0xFF374151)
 val SlateDestructiveDark = Color(0xFF4B5563)
 val WarmTerracotta = SlateDestructive

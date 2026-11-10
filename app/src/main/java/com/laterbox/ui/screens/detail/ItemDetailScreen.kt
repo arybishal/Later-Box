@@ -529,7 +529,7 @@ fun ItemDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(extended.softYellow)
+                        .background(extended.buttonPrimary)
                         .clickable {
                             viewModel.recordLastOpened()
                             SocialLinkResolver.openSocialOrWebLink(context, item.url)
@@ -541,7 +541,7 @@ fun ItemDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
-                            tint = Color(0xFF111111),
+                            tint = extended.buttonPrimaryText,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -551,7 +551,7 @@ fun ItemDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             ),
-                            color = Color(0xFF111111)
+                            color = extended.buttonPrimaryText
                         )
                     }
                 }
@@ -602,7 +602,7 @@ fun ItemDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(extended.softYellow)
+                        .background(extended.buttonPrimary)
                         .clickable { showEditNotesDialog = true }
                         .padding(vertical = 14.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
@@ -611,7 +611,7 @@ fun ItemDetailScreen(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = Color(0xFF111111),
+                            tint = extended.buttonPrimaryText,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -621,7 +621,7 @@ fun ItemDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             ),
-                            color = Color(0xFF111111)
+                            color = extended.buttonPrimaryText
                         )
                     }
                 }
@@ -1074,13 +1074,13 @@ private fun ContentPreviewSection(
                     modifier = Modifier
                         .size(54.dp)
                         .clip(CircleShape)
-                        .background(extended.softYellow),
+                        .background(extended.buttonPrimary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Play Video",
-                        tint = Color(0xFF111111),
+                        tint = extended.buttonPrimaryText,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -1202,13 +1202,14 @@ private fun ContentPreviewSection(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(extended.softYellow),
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Description,
                             contentDescription = null,
-                            tint = Color(0xFF111111),
+                            tint = extended.primaryText,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -1296,7 +1297,7 @@ private fun ContentPreviewSection(
  * Displays structured insights powered by Google Gemini API.
  * Strict adherence to the approved color palette:
  * - Background: Clean card surface (White in light, dark surface in dark)
- * - Accent: Soft Butter-Yellow (#FFF4B8 / softYellow)
+ * - Design Identity: Minimal, Premium, Monochrome, Clean (#111111 / #FFFFFF)
  * - Typography: Black (#111111 / primaryBlack) / Charcoal secondary
  * - Absolutely ZERO #9E6F21 and ZERO red fonts.
  */
@@ -1471,7 +1472,8 @@ private fun Phase2AiExtensionSlot(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(extended.softYellow),
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -1501,8 +1503,8 @@ private fun Phase2AiExtensionSlot(
                     onClick = onAnalyze,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = extended.softYellow,
-                        contentColor = extended.primaryBlack
+                        containerColor = extended.buttonPrimary,
+                        contentColor = extended.buttonPrimaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1510,13 +1512,13 @@ private fun Phase2AiExtensionSlot(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = extended.primaryBlack
+                        tint = extended.buttonPrimaryText
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Generate AI Insights",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = extended.primaryBlack
+                        color = extended.buttonPrimaryText
                     )
                 }
             }
@@ -1537,7 +1539,8 @@ private fun Phase2AiExtensionSlot(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(extended.softYellow),
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -1558,8 +1561,8 @@ private fun Phase2AiExtensionSlot(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(extended.softYellowSubtle)
-                                .border(1.dp, extended.softYellowBorder, RoundedCornerShape(6.dp))
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(

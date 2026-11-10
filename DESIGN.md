@@ -1,133 +1,188 @@
-# Later Box — Design System & Visual Specification
+# Later Box — Official Monochrome Design System & Visual Specification
 
-This document details the official design system, exact color palette, typography hierarchy, component blueprints, and visual principles for the **Later Box** Android application, sampled and calibrated directly from the reference interface screenshots.
+This document details the official design system, color tokens, typography scale, component blueprints, and visual principles for the **Later Box** Android application (`com.laterbox`).
+
+The visual identity of Later Box is:
+
+**Minimal. Premium. Monochrome. Clean.**
+
+Yellow, amber, and all chromatic accent colors have been permanently removed from the application's visual identity.
 
 ---
 
-## 1. Exact Color Palette
+## 1. Official Color Palette
 
-The Later Box aesthetic embodies a clean, minimalist monochrome visual system:
-**Core Scheme**: Pure White Background (`#FFFFFF`) and Solid Black (`#000000`).
-**Strict Constraints**: Strictly ZERO yellow, ZERO amber, ZERO brown/ochre (`#9E6F21` or `#9C6E1E`), zero red fonts, zero crimson, and zero multicolors.
+### 1.1 Official Light Theme
 
-### 1.1 Light Mode Specification
-
-| Token Name | Hex Code | RGB | Usage & Element |
+| Design Element | Hex Code | RGB | Usage & Description |
 | :--- | :--- | :--- | :--- |
-| **`PureWhiteBackground`** | `#FFFFFF` | `(255, 255, 255)` | Main screen backdrop across Home, Library, Search, and Settings. |
-| **`CleanCardBackground`** | `#FFFFFF` | `(255, 255, 255)` | Card surfaces, empty state dashed cards, and bottom navigation bar. |
-| **`PrimaryBlackText`** | `#000000` | `(0, 0, 0)` | High-contrast titles (`Your saved world.`, `Later Box`), headings, active navigation icons, and center `Save (+)` tab. |
-| **`NeutralGreySecondary`** | `#555555` | `(85, 85, 85)` | Subtitles (`Everything worth keeping...`), inactive navigation icons, and timestamps. |
-| **`MutedTextTertiary`** | `#888888` | `(136, 136, 136)` | Input placeholders, dividers, and subtle metadata. |
-| **`SubtleBorderLight`** | `#E5E7EB` | `(229, 231, 235)` | Dashed and solid borders surrounding cards, dividers, and search bar. |
-| **`PillInactiveBackground`**| `#F4F4F5` | `(244, 244, 245)` | Inactive category filter pills, badges, and icon containers. |
-| **`PillActiveBackground`** | `#000000` | `(0, 0, 0)` | Active category filter pill (`All`) with white text. |
-| **`GridListActiveBackground`**| `#000000` | `(0, 0, 0)` | Active pill indicator inside the `[ Grid \| List ]` toggle control with white text. |
-| **`ScrollThumbColor`** | `#555555` | `(85, 85, 85)` | Horizontal scroll track indicator thumb below filter pills. |
+| **Main Background** | `#FFFFFF` | `(255, 255, 255)` | Pure white canvas across Home, Library, Search, Detail, and Settings |
+| **Secondary Surface** | `#F2F2F2` | `(242, 242, 242)` | Inactive pills, tags, search bar fills, elevated surfaces, and metadata containers |
+| **Borders & Dividers** | `#E5E5E5` | `(229, 229, 229)` | Card borders, horizontal dividers, and outline container strokes |
+| **Primary Text** | `#111111` | `(17, 17, 17)` | Headlines, titles, item names, active filters, and high-contrast labels |
+| **Secondary Text** | `#666666` | `(102, 102, 102)` | Subtitles, descriptions, domain tags, timestamps, and secondary metadata |
+| **Tertiary Text / Hints** | `#888888` | `(136, 136, 136)` | Search placeholders, input hints, and subtle counter text |
+| **Primary Button Container** | `#111111` | `(17, 17, 17)` | High-priority actions ("Manage", "Open in App", "Save", "Export", "Install") |
+| **Primary Button Text** | `#FFFFFF` | `(255, 255, 255)` | White bold text on primary black buttons |
+| **Secondary Button Container**| `#F2F2F2` | `(242, 242, 242)` | Secondary neutral actions ("Cancel", "Dismiss", "Clear", "Import") |
+| **Secondary Button Text** | `#111111` | `(17, 17, 17)` | High-contrast dark text on secondary surface buttons |
+| **Icons** | `#111111` | `(17, 17, 17)` | Navigation icons, action icons, section icons, and chevrons |
+| **Disabled Elements** | `#A0A0A0` | `(160, 160, 160)` | Inactive/disabled buttons, toggles, and unavailable controls |
 
-### 1.2 Dark Mode (Adaptive Monochrome Palette)
+### 1.2 Official Dark Theme
 
-| Token Name | Hex Code | RGB | Usage |
+| Design Element | Hex Code | RGB | Usage & Description |
 | :--- | :--- | :--- | :--- |
-| **`CharcoalBackgroundDark`**| `#000000` | `(0, 0, 0)` | Pure black main canvas. |
-| **`CharcoalSurfaceDark`** | `#121212` | `(18, 18, 18)` | Card surfaces, modals, and bottom bar. |
-| **`CharcoalSurfaceVariant`**| `#1E1E1E` | `(30, 30, 30)` | Inactive pills and input fill. |
-| **`WarmTextPrimaryDark`** | `#FFFFFF` | `(255, 255, 255)` | Headings and primary text in dark mode. |
-| **`WarmTextSecondaryDark`** | `#AAAAAA` | `(170, 170, 170)` | Secondary body and metadata text. |
-| **`CharcoalBorderDark`** | `#2E2E2E` | `(46, 46, 46)` | Borders and dividers. |
-| **`WarmCaramelAccentDark`** | `#FFFFFF` | `(255, 255, 255)` | Monochrome white highlight in dark mode. |
+| **Main Background** | `#000000` | `(0, 0, 0)` | Pure black main canvas |
+| **Primary Surface** | `#171717` | `(23, 23, 23)` | Cards, dialog backdrops, bottom sheets, and top/bottom navigation bars |
+| **Secondary Surface** | `#222222` | `(34, 34, 34)` | Inactive chips, input field backgrounds, and elevated secondary containers |
+| **Borders & Dividers** | `#303030` | `(48, 48, 48)` | Subtle dark dividers, card outlines, and item separators |
+| **Primary Text** | `#FFFFFF` | `(255, 255, 255)` | Headlines, titles, item names, and high-contrast primary typography |
+| **Secondary Text** | `#B3B3B3` | `(179, 179, 179)` | Subtitles, descriptions, timestamps, and supporting metadata |
+| **Tertiary Text / Hints** | `#757575` | `(117, 117, 117)` | Search placeholders and input hints |
+| **Primary Button Container** | `#FFFFFF` | `(255, 255, 255)` | Inverted primary action buttons ("Manage", "Open in App", "Save", "Install") |
+| **Primary Button Text** | `#111111` | `(17, 17, 17)` | High-contrast dark text on pure white primary buttons |
+| **Secondary Button Container**| `#222222` | `(34, 34, 34)` | Secondary dark actions ("Cancel", "Dismiss", "Clear") |
+| **Secondary Button Text** | `#FFFFFF` | `(255, 255, 255)` | Clean white text on secondary dark buttons |
+| **Icons** | `#FFFFFF` | `(255, 255, 255)` | Navigation icons, action icons, section icons, and chevrons in dark mode |
+| **Disabled Elements** | `#666666` | `(102, 102, 102)` | Inactive/disabled buttons, toggles, and unavailable controls in dark mode |
 
-### 1.3 Destructive & Warning (Zero Red Font Constraint)
+### 1.3 Strictly Prohibited Colors
+
+The following colors are **strictly prohibited** anywhere in the Later Box user interface:
+
+- **Yellow** (including `#FFF4B8`, `#F7E582`, `#FFD700`, etc.)
+- **Amber / Gold / Bronze** (including `#F59E0B`, `#D97706`, `#B45309`, etc.)
+- **Orange / Ochre / Brown** (including `#9E6F21`, `#9C6E1E`, `#EA580C`, etc.)
+- **Blue / Cyan** (no blue links, no blue buttons, no blue chips)
+- **Purple / Violet / Pink / Magenta**
+- **Crimson / Bright Red Fonts** (destructive actions use neutral slate `#374151` / `#4B5563`, strictly zero red fonts)
+- **Decorative Green**
+- **Multicolor or Rainbow Gradients**
+
+### 1.4 Destructive Actions (Zero Red Font Constraint)
 
 | Token Name | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **`SlateDestructive`** | `#374151` | Neutral slate/charcoal for deletion and destructive confirmations (strictly NO red font). |
-| **`SlateDestructiveDark`** | `#4B5563` | Dark mode destructive accent. |
+| **`SlateDestructive`** | `#374151` | Neutral slate for deletion and destructive confirmations (Light theme) |
+| **`SlateDestructiveDark`** | `#4B5563` | Neutral slate for deletion and destructive confirmations (Dark theme) |
 
 ---
 
-## 2. Typography System
+## 2. Typography Scale
 
-The Later Box typography balances **literary elegance** with **functional modern legibility**.
+The typography balances **editorial serif elegance** with **clean modern sans-serif legibility**.
 
 ### 2.1 Font Families
-- **Display & Headings**: `FontFamily.Serif` (Android high-contrast serif typeface).
-  - Used for screen titles (`Good evening`, `Library`, `Search`, `Your playlists`, `Recent saves`).
-  - Used for empty state titles (`Nothing saved yet`, `Your library is empty`, `Search everything you saved`).
-- **Body & Microcopy**: `FontFamily.Default` (Clean neutral Sans-Serif).
-  - Used for metadata, subtitles, filter labels, buttons, input fields, and navigation labels.
+- **Display & Headings**: `FontFamily.Serif` (High-contrast editorial serif).
+  - Used for screen titles (`Later Box`, `Library`, `Search`, `Your playlists`, `Recent saves`).
+  - Used for empty state titles (`Nothing saved yet`, `Your library is empty`).
+- **Body & Functional Microcopy**: `FontFamily.Default` (Clean neutral Sans-Serif).
+  - Used for metadata, subtitles, filter labels, button labels, inputs, and navigation items.
 
-### 2.2 Typography Scale
+### 2.2 Typography Hierarchy
 
 | Style | Font Family | Weight | Size | Line Height | Usage |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display Large** | Serif | Bold | `34.sp` | `40.sp` | Top level greetings & primary heroes |
-| **Display Medium**| Serif | Bold | `32.sp` | `38.sp` | Screen headers (`Library`, `Search`) |
+| **Display Large** | Serif | Bold | `34.sp` | `40.sp` | Main hero headings |
+| **Display Medium** | Serif | Bold | `32.sp` | `38.sp` | Screen headers (`Library`, `Search`) |
 | **Headline Large** | Serif | Bold | `28.sp` | `34.sp` | Major section headers |
-| **Headline Medium**| Serif | Bold | `24.sp` | `30.sp` | Dashed card titles & modal titles |
-| **Headline Small** | Serif | SemiBold| `20.sp` | `26.sp` | Playlist card names & content card titles |
-| **Title Medium** | Sans | SemiBold| `15.sp` | `20.sp` | Card titles in compact lists |
-| **Body Large** | Sans | Normal | `15.sp` | `22.sp` | Article excerpts & reader content |
+| **Headline Medium** | Serif | Bold | `24.sp` | `30.sp` | Modal and card titles |
+| **Headline Small** | Serif | SemiBold | `20.sp` | `26.sp` | Content detail titles, card titles |
+| **Title Medium** | Sans | SemiBold | `15.sp` | `20.sp` | Compact list titles, dialog titles |
+| **Body Large** | Sans | Normal | `15.sp` | `22.sp` | Article excerpts, reader content |
 | **Body Medium** | Sans | Normal | `14.sp` | `20.sp` | Descriptions, empty state subtitles |
-| **Body Small** | Sans | Normal | `12.sp` | `16.sp` | URLs, domains, item dates |
-| **Label Large** | Sans | Bold | `13.sp` | `16.sp` | Buttons (`Save something`, `New`) |
-| **Label Small** | Sans | Medium | `11.sp` | `14.sp` | Bottom navigation bar text labels |
+| **Body Small** | Sans | Normal | `12.sp` | `16.sp` | URLs, domains, relative dates |
+| **Label Large** | Sans | SemiBold | `13.sp` | `16.sp` | Primary and Manage buttons |
+| **Label Small** | Sans | Medium | `11.sp` | `14.sp` | Bottom navigation bar labels |
 
 ---
 
-## 3. Component Architecture
+## 3. Core Component Blueprints
 
-### 3.1 5-Destination Bottom Navigation Bar
-- **Container**: `CleanCardBackground` (`#FFFFFF`) with `1.dp` solid top border in `SubtleBorderLight` (`#E5E7EB`).
-- **Navigation Tabs**:
-  1. **Home**: Outlined House icon + `"Home"`.
-  2. **Library**: Custom 4-book spine icon (`|||\`) + `"Library"`.
-  3. **Save (+)**: Elevated circular badge (`42.dp`) with solid black (`#000000`) background, white plus icon (`#FFFFFF`), and `"Save"` label below.
-  4. **Search**: Outlined Search icon + `"Search"`.
-  5. **Settings**: Outlined Settings gear icon + `"Settings"`.
-- **States**: Active tab tint is `#000000` (Light) / `#FFFFFF` (Dark) with a delicate neutral grey (`#F4F4F5`) highlight pill behind the active tab icon; inactive is `#555555` (Light) / `#AAAAAA` (Dark).
+### 3.1 Manage Button & Primary Action Buttons
+- **Purpose**: High-visibility interactive triggers ("Manage", "Open in App", "Save", "Export", "Install").
+- **Light Theme**:
+  - Container Background: `#111111` (Solid Black)
+  - Text Color: `#FFFFFF` (Pure White)
+  - Icon Tint: `#FFFFFF` (Pure White)
+  - Border: None
+- **Dark Theme**:
+  - Container Background: `#FFFFFF` (Pure White)
+  - Text Color: `#111111` (Solid Black)
+  - Icon Tint: `#111111` (Solid Black)
+  - Border: None
+- **Geometry**:
+  - Shape: `RoundedCornerShape(10.dp)`
+  - Minimum Touch Target: `48.dp` height × `48.dp` width
+  - Padding: `14.dp` horizontal × `10.dp` vertical
+  - Bounds Clipping: Strict `.clip(RoundedCornerShape(10.dp))` preventing any color bleed.
+- **States**:
+  - Pressed: Standard Material ripple with high contrast.
+  - Disabled: `alpha = 0.4f` container and content.
 
-### 3.2 Redesigned Home Screen Architecture
-- **`HomeHeader`**: Premium title "Later Box" in high-contrast Serif, accompanied by a monochrome black-bordered "ARCHIVE" pill tag, and a minimal circular settings entry.
-- **`HomeIntroSection`**: Distinctive editorial headline "Your saved world." with supporting microcopy "Everything worth keeping, all in one place."
-- **`HomeSearchEntry`**: Full-width rounded search entry with black search icon, neutral background, and keyboard hint pill.
-- **`ContinueContentCard`**: Compact (230×100dp) horizontal carousel cards showing media thumbnail, source, 2-line title, and progress bar with high-contrast black indicator.
-- **`CollectionShortcutTile`**: Refined compact tiles (120×92dp) for Favorites (highlighted with solid black circle badge and white heart), Inbox, and custom playlists.
-- **`RecentSavedItemCard`**: Sleek modern feed card with domain icon, relative time, 2-line title, content type tag in subtle neutral grey (`#F4F4F5`), thumbnail with high-contrast video overlay, and inline favorite/share/playlist actions.
-- **`HomeEmptyState`**: Minimalist empty state card with neutral icon badge and high-contrast black action button.
+### 3.2 5-Destination Bottom Navigation Bar
+- **Container**:
+  - Light: `#FFFFFF` background with `1.dp` solid top border in `#E5E5E5`.
+  - Dark: `#171717` background with `1.dp` solid top border in `#303030`.
+- **Destinations**: Home, Library, Save (+), Search, Settings.
+- **Save (+) Center Action**:
+  - Elevated circular badge (`42.dp`) with `#111111` (Light) / `#FFFFFF` (Dark) fill.
+  - Plus icon in `#FFFFFF` (Light) / `#111111` (Dark).
+- **Active Destination**:
+  - Light: `#111111` icon and label with subtle `#F2F2F2` capsule background.
+  - Dark: `#FFFFFF` icon and label with subtle `#222222` capsule background.
+- **Inactive Destination**:
+  - Light: `#666666` icon and label.
+  - Dark: `#B3B3B3` icon and label.
 
-### 3.3 Dashed Empty State Card (`EmptyDashedCard`)
-- **Dimensions**: Full width, `16.dp` corner radius, `24.dp` horizontal padding, `36.dp` vertical padding.
-- **Border**: Custom stroke (`3px`), dashed effect (`16px` dash, `12px` gap) in `#E5E7EB`.
-- **Background**: `#FFFFFF`.
-- **Content Alignment**: Vertically and horizontally centered.
-- **Button**: Rounded rectangle (`12.dp` radius), `#000000` background with `#FFFFFF` bold text.
+### 3.3 Cards and Content Feed
+- **Surface**:
+  - Light: `#FFFFFF` background with `1.dp` solid border in `#E5E5E5`.
+  - Dark: `#171717` background with `1.dp` solid border in `#303030`.
+- **Corner Radius**: `14.dp` or `16.dp`.
+- **Badge / Tag Pills**:
+  - Light: Container `#F2F2F2`, Text `#111111`, Border `#E5E5E5`.
+  - Dark: Container `#222222`, Text `#FFFFFF`, Border `#303030`.
+- **Video Play Overlay**:
+  - Circular badge (`44.dp`) with `#111111` (Light) / `#FFFFFF` (Dark) fill and `#FFFFFF` (Light) / `#111111` (Dark) play icon.
 
-### 3.4 View Toggle Pill (`GridListTogglePill`)
-- **Container**: Rounded capsule (`12.dp`), `#FFFFFF` background, `#E5E7EB` border.
-- **Active Pill**: `#000000` background with `#FFFFFF` bold text.
-- **Inactive Pill**: Transparent background with `#555555` normal text.
+### 3.4 Filter Pills & View Toggles
+- **Filter Pills**:
+  - Active: `#111111` container, `#FFFFFF` text (Light) / `#FFFFFF` container, `#111111` text (Dark).
+  - Inactive: `#F2F2F2` container, `#111111` text (Light) / `#222222` container, `#FFFFFF` text (Dark).
+- **View Toggle (Grid | List)**:
+  - Container: `#FFFFFF` / `#171717` capsule with `1.dp` border.
+  - Active segment: `#111111` / `#FFFFFF` fill with inverted text.
 
-### 3.5 Filter Pills Row (`PillFilterRow`)
-- **Items**: `All`, `Inbox`, `Videos`, `Articles`, `Images`, `Documents`, `Audio`, `Notes`.
-- **Active Pill**: `#000000` background with `#FFFFFF` bold text.
-- **Inactive Pill**: `#F4F4F5` background with `#000000` medium text.
-- **Scroll Track**: Located beneath chips with left arrow (`◀`), centered track, thumb indicator (`#555555`), and right arrow (`▶`).
+### 3.5 Dialogs and Sheets
+- **Container**:
+  - Light: `#FFFFFF` background, `16.dp` rounded corners, `#E5E5E5` border.
+  - Dark: `#171717` background, `16.dp` rounded corners, `#303030` border.
+- **Confirmation Action**: Primary button (`#111111` in Light, `#FFFFFF` in Dark).
+- **Dismiss Action**: Text button with `#666666` in Light, `#B3B3B3` in Dark.
+- **Radio Buttons & Selection**:
+  - Selected: `#111111` (Light) / `#FFFFFF` (Dark).
+  - Unselected: `#666666` (Light) / `#B3B3B3` (Dark).
 
-### 3.6 Sort Selector (`SortDropdownSelector`)
-- Compact dropdown with `"Sort"` label in `#555555`, followed by a rounded pill showing current sort order (`Newest first`) and a chevron dropdown indicator.
+### 3.6 Settings & Gemini AI Interface
+- **Section Headers**: `#111111` (Light) / `#FFFFFF` (Dark) with matching icon tint.
+- **Status Badges**:
+  - Active: `#F2F2F2` (Light) / `#222222` (Dark) container with `#111111` / `#FFFFFF` text and `1.dp` border.
+  - Inactive: `#F2F2F2` container with `#666666` text.
+- **Settings Manage Buttons**: Standard 48dp monochrome Manage button.
+- **Update Status Pill**:
+  - Up-to-date: `#F2F2F2` / `#222222` pill with `#111111` / `#FFFFFF` text.
+  - Update available: `#111111` / `#FFFFFF` badge with inverted text.
 
-### 3.7 Saved Item Detail Experience (`ItemDetailScreen`)
-- **Canonical Destination**: Single entry point (`detail/{itemId}`) for items opened from Home, Library Grid/List, Search, Playlists, or Favorites.
-- **Header**: Compact navigation bar with back arrow, content-type badge pill, reactive favorite heart toggle, and 3-dots overflow menu (Playlists, Notes, Tags, Archive, Share, Copy Link, Trash).
-- **Content Preview Centerpiece**:
-  - **Images**: High-resolution image in `16.dp` rounded container, preserving aspect ratio, tap to enlarge in fullscreen viewer.
-  - **Videos**: Thumbnail container with dark scrim, video badge, and circular play button in soft butter yellow (`#FFF4B8`) with dark icon.
-  - **Articles / Links**: Preview card with web image or editorial typography fallback.
-  - **Documents**: Polished card with document icon and file metadata.
-  - **Notes / Plain Text**: Clean serif/sans editorial note container with preserved typography.
-- **Title & Metadata**: High-contrast editorial title (`22.sp`, bold) paired with domain initial badge, domain/source name, relative saved timestamp, and compact URL pill with copy button.
-- **About This Item**: Original source description with clean empty fallback when missing, and an extensible architectural slot for Phase 2 AI metadata.
-- **Primary Action ("Open in [App]")**: Prominent button in Soft Butter Yellow (`#FFF4B8`) with `#111111` bold text, triggering native social deep linking (Instagram, Facebook, X/Twitter, TikTok, YouTube, Reddit) with browser fallback.
-- **Organization**: Reactive inline chips and dedicated dialogs for Playlists (`AddToPlaylistDialog`), Tags (`AddTagDialog`), and Personal Notes (`EditNotesDialog`).
-- **Destructive Action**: Clean, slate-colored "Move to Trash" trigger adhering strictly to the zero red font standard.
+---
+
+## 4. Accessibility and Theme Consistency
+
+1. **Contrast Ratio**:
+   - Primary text (`#111111` on `#FFFFFF` / `#FFFFFF` on `#000000`) achieves `16.5:1` to `21:1` (exceeds WCAG AAA).
+   - Secondary text (`#666666` on `#FFFFFF` / `#B3B3B3` on `#000000`) achieves `5.7:1` to `12.6:1` (exceeds WCAG AA).
+   - Primary buttons achieve `16.5:1` to `21:1` contrast in both themes.
+2. **Touch Targets**: All interactive elements maintain a minimum bounding box of `48.dp × 48.dp`.
+3. **Adaptive Switching**: Both themes are unified through `ThemeMode.SYSTEM`, `ThemeMode.LIGHT`, and `ThemeMode.DARK`. No hardcoded colors override theme tokens.
+4. **Zero Yellow / Monochrome Compliance**: All screens, dialogs, sheets, and notification components follow the monochrome palette strictly.

@@ -194,7 +194,7 @@ fun GeminiSettingsScreen(
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = extended.softYellow,
+                            tint = extended.primaryBlack,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -261,7 +261,7 @@ fun GeminiSettingsScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isAiEnabled && hasKey) extended.softYellow else extended.cardBackground)
+                            .background(if (isAiEnabled && hasKey) extended.surfaceSecondary else extended.cardBackground)
                             .border(1.dp, extended.border, RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
@@ -269,7 +269,7 @@ fun GeminiSettingsScreen(
                             text = if (isAiEnabled && hasKey) "ENABLED" else "OFF",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isAiEnabled && hasKey) Color(0xFF111111) else extended.textSecondary
+                            color = if (isAiEnabled && hasKey) extended.primaryText else extended.secondaryText
                         )
                     }
                 }
@@ -630,14 +630,15 @@ fun GeminiSettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(extended.softYellow)
+                                        .background(extended.surfaceSecondary)
+                                        .border(1.dp, extended.border, RoundedCornerShape(6.dp))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = "RECOMMENDED",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF111111)
+                                        color = extended.primaryText
                                     )
                                 }
                             }
@@ -832,14 +833,15 @@ fun GeminiSettingsScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .clip(RoundedCornerShape(4.dp))
-                                                            .background(extended.softYellow)
+                                                            .background(extended.surfaceSecondary)
+                                                            .border(1.dp, extended.border, RoundedCornerShape(4.dp))
                                                             .padding(horizontal = 5.dp, vertical = 1.dp)
                                                     ) {
                                                         Text(
                                                             text = "RECOMMENDED",
                                                             fontSize = 8.sp,
                                                             fontWeight = FontWeight.Bold,
-                                                            color = Color(0xFF111111)
+                                                            color = extended.primaryText
                                                         )
                                                     }
                                                 }
@@ -901,7 +903,7 @@ fun GeminiSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(extended.softYellow)
+                    .background(if (hasKey && !isTesting) extended.buttonPrimary else extended.buttonPrimary.copy(alpha = 0.4f))
                     .clickable(enabled = hasKey && !isTesting) {
                         isTesting = true
                         testState = AiConnectionState.TESTING
@@ -937,7 +939,7 @@ fun GeminiSettingsScreen(
                 if (isTesting) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(
-                            color = Color(0xFF111111),
+                            color = extended.buttonPrimaryText,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(16.dp)
                         )
@@ -945,7 +947,7 @@ fun GeminiSettingsScreen(
                         Text(
                             text = "Testing $cleanSelectedId...",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF111111)
+                            color = extended.buttonPrimaryText
                         )
                     }
                 } else {
@@ -953,14 +955,14 @@ fun GeminiSettingsScreen(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = null,
-                            tint = Color(0xFF111111),
+                            tint = extended.buttonPrimaryText,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Test Selected Model ($cleanSelectedId)",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF111111)
+                            color = extended.buttonPrimaryText
                         )
                     }
                 }

@@ -159,19 +159,11 @@ class SecureApiKeyStorage(
     }
 
     private fun encodeBase64(bytes: ByteArray): String {
-        return try {
-            Base64.encodeToString(bytes, Base64.NO_WRAP)
-        } catch (_: Exception) {
-            java.util.Base64.getEncoder().encodeToString(bytes)
-        }
+        return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 
     private fun decodeBase64(string: String): ByteArray {
-        return try {
-            Base64.decode(string, Base64.NO_WRAP)
-        } catch (_: Exception) {
-            java.util.Base64.getDecoder().decode(string)
-        }
+        return Base64.decode(string, Base64.NO_WRAP)
     }
 }
 

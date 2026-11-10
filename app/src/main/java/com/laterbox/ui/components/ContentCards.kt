@@ -128,7 +128,7 @@ fun ContentThumbnail(
                 text = item.contentType.displayName.uppercase(),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 fontWeight = FontWeight.Bold,
-                color = extended.amberAccent
+                color = extended.primaryText
             )
         }
 
@@ -148,7 +148,7 @@ fun ContentThumbnail(
                     text = "${(item.readProgress * 100).toInt()}%",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     fontWeight = FontWeight.Bold,
-                    color = extended.amberAccent
+                    color = extended.primaryText
                 )
             }
         }
@@ -166,7 +166,7 @@ fun ContentThumbnail(
                     modifier = Modifier
                         .fillMaxWidth(item.readProgress.coerceIn(0f, 1f))
                         .height(3.dp)
-                        .background(extended.amberAccent)
+                        .background(extended.primaryText)
                 )
             }
         }
@@ -236,7 +236,7 @@ fun ContentCardGrid(
                             Icon(
                                 imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (item.isFavorite) extended.amberAccent else extended.textSecondary,
+                                tint = if (item.isFavorite) extended.primaryText else extended.textSecondary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -315,7 +315,7 @@ fun ContentCardList(
                     Text(
                         text = item.sourceDomain ?: "Link",
                         style = MaterialTheme.typography.labelSmall,
-                        color = extended.amberAccent,
+                        color = extended.secondaryText,
                         maxLines = 1
                     )
                     Text(
@@ -348,7 +348,7 @@ fun ContentCardList(
                     Icon(
                         imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (item.isFavorite) extended.amberAccent else extended.textSecondary,
+                        tint = if (item.isFavorite) extended.primaryText else extended.textSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -397,13 +397,13 @@ fun PlaylistCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(extended.amberAccentSubtle),
+                    .background(extended.surfaceSecondary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = getIconForName(playlist.iconName),
                     contentDescription = null,
-                    tint = extended.amberAccent,
+                    tint = extended.primaryText,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -458,13 +458,13 @@ fun FavoritesCollectionCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(extended.amberAccentSubtle),
+                    .background(extended.surfaceSecondary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Favorite,
                     contentDescription = "Favorites",
-                    tint = extended.amberAccent,
+                    tint = extended.primaryText,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -530,14 +530,14 @@ fun CompactSocialFeedCard(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(extended.amberAccentSubtle),
+                            .background(extended.surfaceSecondary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = (item.sourceDomain?.take(1) ?: item.title.take(1)).uppercase(),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                             fontWeight = FontWeight.Bold,
-                            color = extended.amberAccent
+                            color = extended.primaryText
                         )
                     }
 
@@ -555,7 +555,7 @@ fun CompactSocialFeedCard(
                             Text(
                                 text = item.contentType.displayName,
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                                color = extended.amberAccent,
+                                color = extended.secondaryText,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
@@ -612,7 +612,7 @@ fun CompactSocialFeedCard(
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = "Play Video",
-                                tint = extended.amberAccent,
+                                tint = androidx.compose.ui.graphics.Color.White,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -631,7 +631,7 @@ fun CompactSocialFeedCard(
                                 modifier = Modifier
                                     .fillMaxWidth(item.readProgress.coerceIn(0f, 1f))
                                     .height(4.dp)
-                                    .background(extended.amberAccent)
+                                    .background(extended.primaryText)
                             )
                         }
                     }
@@ -654,7 +654,7 @@ fun CompactSocialFeedCard(
                         Icon(
                             imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
-                            tint = if (item.isFavorite) extended.amberAccent else extended.textSecondary,
+                            tint = if (item.isFavorite) extended.primaryText else extended.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -688,14 +688,14 @@ fun CompactSocialFeedCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(extended.amberAccentSubtle)
+                            .background(extended.surfaceSecondary)
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
                             text = "Note",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             fontWeight = FontWeight.Bold,
-                            color = extended.amberAccent
+                            color = extended.primaryText
                         )
                     }
                 }
@@ -731,7 +731,7 @@ fun CompactSocialFeedCard(
                     Text(
                         text = "“${item.notes}”",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = extended.amberAccent,
+                        color = extended.secondaryText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -790,7 +790,7 @@ fun ContinueWatchingCard(
                         text = "${(item.readProgress * 100).toInt()}% done",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                         fontWeight = FontWeight.Bold,
-                        color = extended.amberAccent
+                        color = extended.primaryText
                     )
                 }
             }

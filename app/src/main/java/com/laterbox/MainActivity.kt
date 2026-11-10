@@ -157,7 +157,7 @@ fun MainAppScaffold() {
                     snackbarData = snackbarData,
                     containerColor = extended.cardBackground,
                     contentColor = MaterialTheme.colorScheme.onBackground,
-                    actionColor = extended.amberAccent,
+                    actionColor = extended.primaryText,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .padding(12.dp)

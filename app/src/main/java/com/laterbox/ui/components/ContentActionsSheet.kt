@@ -144,7 +144,7 @@ fun ContentActionsSheet(
                     ActionItemRow(
                         icon = Icons.Default.RemoveCircleOutline,
                         label = "Remove from this Playlist",
-                        tint = extended.amberAccent,
+                        tint = extended.primaryText,
                         onClick = {
                             onDismiss()
                             onRemoveFromPlaylist()
@@ -155,7 +155,7 @@ fun ContentActionsSheet(
                 ActionItemRow(
                     icon = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     label = if (item.isFavorite) "Remove from Favorites" else "Mark as Favorite",
-                    tint = if (item.isFavorite) extended.amberAccent else MaterialTheme.colorScheme.onSurface,
+                    tint = if (item.isFavorite) extended.primaryText else MaterialTheme.colorScheme.onSurface,
                     onClick = {
                         onDismiss()
                         onToggleFavorite()

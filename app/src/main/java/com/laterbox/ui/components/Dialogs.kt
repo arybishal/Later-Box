@@ -132,8 +132,8 @@ fun CreatePlaylistDialog(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -144,8 +144,8 @@ fun CreatePlaylistDialog(
                     label = { Text("Description (Optional)") },
                     maxLines = 2,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -166,14 +166,14 @@ fun CreatePlaylistDialog(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelected) extended.amberAccent else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (isSelected) extended.pillActive else MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable { selectedIcon = iconKey },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = vector,
                                 contentDescription = iconKey,
-                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else extended.textSecondary,
+                                tint = if (isSelected) extended.pillActiveText else extended.textSecondary,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -190,8 +190,8 @@ fun CreatePlaylistDialog(
                 },
                 enabled = isValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text(confirmButtonLabel)
@@ -265,14 +265,14 @@ fun AddToPlaylistDialog(
                                     else selectedIds.remove(playlist.id)
                                 },
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = extended.amberAccent,
-                                    checkmarkColor = MaterialTheme.colorScheme.onPrimary
+                                    checkedColor = extended.primaryText,
+                                    checkmarkColor = extended.buttonPrimaryText
                                 )
                             )
                             Icon(
                                 imageVector = getIconForName(playlist.iconName),
                                 contentDescription = null,
-                                tint = extended.amberAccent,
+                                tint = extended.primaryText,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
@@ -296,14 +296,14 @@ fun AddToPlaylistDialog(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        tint = extended.amberAccent,
+                        tint = extended.primaryText,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Create new playlist",
                         style = MaterialTheme.typography.labelLarge,
-                        color = extended.amberAccent
+                        color = extended.primaryText
                     )
                 }
             }
@@ -312,8 +312,8 @@ fun AddToPlaylistDialog(
             Button(
                 onClick = { onSavePlaylists(selectedIds.toList()) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text("Save")
@@ -379,8 +379,8 @@ fun AddManualItemDialog(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -391,8 +391,8 @@ fun AddManualItemDialog(
                     label = { Text("Title (Optional)") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -411,8 +411,8 @@ fun AddManualItemDialog(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -429,8 +429,8 @@ fun AddManualItemDialog(
                 },
                 enabled = urlOrText.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text("Save Now")
@@ -485,8 +485,8 @@ fun EditNotesDialog(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -499,8 +499,8 @@ fun EditNotesDialog(
                 onClick = { if (!isTooLong) onSave(notes.trim().ifEmpty { null }) },
                 enabled = !isTooLong,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text("Save")
@@ -557,8 +557,8 @@ fun AddTagDialog(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = extended.amberAccent,
-                        cursorColor = extended.amberAccent
+                        focusedBorderColor = extended.primaryText,
+                        cursorColor = extended.primaryText
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -573,8 +573,8 @@ fun AddTagDialog(
                 },
                 enabled = isValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.amberAccent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = extended.buttonPrimary,
+                    contentColor = extended.buttonPrimaryText
                 )
             ) {
                 Text("Add")
@@ -619,8 +619,8 @@ fun ConfirmationDialog(
             Button(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isDestructive) extended.warmError else extended.amberAccent,
-                    contentColor = if (isDestructive) Color.White else MaterialTheme.colorScheme.onPrimary
+                    containerColor = if (isDestructive) extended.warmError else extended.buttonPrimary,
+                    contentColor = if (isDestructive) Color.White else extended.buttonPrimaryText
                 )
             ) {
                 Text(confirmLabel)

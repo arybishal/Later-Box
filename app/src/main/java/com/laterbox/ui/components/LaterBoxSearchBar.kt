@@ -70,9 +70,9 @@ fun LaterBoxSearchBar(
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = extended.cardBackground,
             unfocusedContainerColor = extended.cardBackground,
-            focusedBorderColor = extended.amberAccent,
+            focusedBorderColor = extended.primaryText,
             unfocusedBorderColor = extended.border,
-            cursorColor = extended.amberAccent
+            cursorColor = extended.primaryText
         ),
         modifier = modifier.fillMaxWidth()
     )

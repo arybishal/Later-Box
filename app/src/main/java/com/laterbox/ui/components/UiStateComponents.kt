@@ -744,7 +744,7 @@ fun SlowNetworkProgressView(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
-                color = extended.amberAccent,
+                color = extended.primaryText,
                 trackColor = extended.pillInactive
             )
         } else {
@@ -753,7 +753,7 @@ fun SlowNetworkProgressView(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
-                color = extended.amberAccent,
+                color = extended.primaryText,
                 trackColor = extended.pillInactive
             )
         }
@@ -804,13 +804,13 @@ fun PermissionNoticeCard(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(extended.amberAccent),
+                .background(extended.surfaceSecondary),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
+                tint = extended.primaryText,
                 modifier = Modifier.size(22.dp)
             )
         }

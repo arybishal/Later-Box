@@ -150,14 +150,14 @@ fun ContentViewerScreen(
                         Icon(
                             imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = if (isFavorite) "Remove from Favorites" else "Mark as Favorite",
-                            tint = if (isFavorite) extended.amberAccent else MaterialTheme.colorScheme.onBackground
+                            tint = if (isFavorite) extended.primaryText else MaterialTheme.colorScheme.onBackground
                         )
                     }
                     IconButton(onClick = { openInExternalApp(context, item.url) }) {
                         Icon(
                             imageVector = Icons.Default.OpenInBrowser,
                             contentDescription = "Open in Original App",
-                            tint = extended.amberAccent
+                            tint = extended.primaryText
                         )
                     }
                     IconButton(onClick = {
@@ -192,7 +192,7 @@ fun ContentViewerScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(extended.amberAccentSubtle)
+                        .background(extended.surfaceSecondary)
                         .clickable { openInExternalApp(context, item.url) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -200,7 +200,7 @@ fun ContentViewerScreen(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = extended.amberAccent,
+                        tint = extended.primaryText,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -213,7 +213,7 @@ fun ContentViewerScreen(
                     Icon(
                         imageVector = Icons.Default.OpenInNew,
                         contentDescription = null,
-                        tint = extended.amberAccent,
+                        tint = extended.primaryText,
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -271,7 +271,7 @@ fun InAppWebReader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp),
-                color = extended.amberAccent,
+                color = extended.primaryText,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }

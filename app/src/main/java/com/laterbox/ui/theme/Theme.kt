@@ -11,61 +11,83 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.laterbox.data.model.ThemeMode
 
 @Immutable
 data class ExtendedColors(
-    val border: Color,
-    val amberAccent: Color,
-    val amberAccentSubtle: Color,
-    val warmError: Color,
-    val textSecondary: Color,
+    val background: Color,
     val cardBackground: Color,
-    val pillInactive: Color,
+    val surfaceSecondary: Color,
+    val border: Color,
+    val primaryText: Color,
+    val secondaryText: Color,
+    val textSecondary: Color = secondaryText,
+    val primaryBlack: Color = primaryText,
+    val buttonPrimary: Color,
+    val buttonPrimaryText: Color,
+    val buttonSecondary: Color,
+    val buttonSecondaryText: Color,
     val pillActive: Color,
+    val pillActiveText: Color,
+    val pillInactive: Color,
+    val pillInactiveText: Color,
     val gridListActive: Color,
-    val softYellow: Color = SoftButterYellow,
-    val softYellowSubtle: Color = SoftButterYellowSubtle,
-    val softYellowBorder: Color = SoftButterYellowBorder,
-    val primaryBlack: Color = PrimaryBlackText
+    val warmError: Color,
+    val disabled: Color,
+    // Strictly monochrome backward-compatible bridges (ZERO YELLOW)
+    val softYellow: Color = buttonPrimary,
+    val softYellowSubtle: Color = surfaceSecondary,
+    val softYellowBorder: Color = border,
+    val amberAccent: Color = primaryText,
+    val amberAccentSubtle: Color = surfaceSecondary
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
-        border = SubtleBorderLight,
-        amberAccent = SoftButterYellow,
-        amberAccentSubtle = SoftButterYellowSubtle,
-        warmError = SlateDestructive,
-        textSecondary = CharcoalTextSecondary,
+        background = PureWhiteBackground,
         cardBackground = CleanCardBackground,
-        pillInactive = PillInactiveBackground,
-        pillActive = PillActiveBackground,
+        surfaceSecondary = NeutralSurfaceLight,
+        border = SubtleBorderLight,
+        primaryText = PrimaryBlackText,
+        secondaryText = NeutralGreySecondary,
+        textSecondary = NeutralGreySecondary,
+        primaryBlack = PrimaryBlackText,
+        buttonPrimary = PrimaryBlackText,
+        buttonPrimaryText = Color.White,
+        buttonSecondary = NeutralSurfaceLight,
+        buttonSecondaryText = PrimaryBlackText,
+        pillActive = PrimaryBlackText,
+        pillActiveText = Color.White,
+        pillInactive = NeutralSurfaceLight,
+        pillInactiveText = PrimaryBlackText,
         gridListActive = GridListActiveBackground,
-        softYellow = SoftButterYellow,
-        softYellowSubtle = SoftButterYellowSubtle,
-        softYellowBorder = SoftButterYellowBorder,
-        primaryBlack = PrimaryBlackText
+        warmError = SlateDestructive,
+        disabled = DisabledNeutralLight,
+        softYellow = PrimaryBlackText,
+        softYellowSubtle = NeutralSurfaceLight,
+        softYellowBorder = SubtleBorderLight,
+        amberAccent = PrimaryBlackText,
+        amberAccentSubtle = NeutralSurfaceLight
     )
 }
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlackText,
     onPrimary = Color.White,
-    primaryContainer = SoftButterYellowSubtle,
+    primaryContainer = NeutralSurfaceLight,
     onPrimaryContainer = PrimaryBlackText,
-    secondary = CharcoalTextSecondary,
+    secondary = NeutralGreySecondary,
     onSecondary = Color.White,
-    secondaryContainer = PillInactiveBackground,
+    secondaryContainer = NeutralSurfaceLight,
     onSecondaryContainer = PrimaryBlackText,
     background = PureWhiteBackground,
     onBackground = PrimaryBlackText,
     surface = CleanCardBackground,
     onSurface = PrimaryBlackText,
-    surfaceVariant = PillInactiveBackground,
-    onSurfaceVariant = CharcoalTextSecondary,
+    surfaceVariant = NeutralSurfaceLight,
+    onSurfaceVariant = NeutralGreySecondary,
     outline = SubtleBorderLight,
     outlineVariant = SubtleBorderLight,
     error = SlateDestructive,
@@ -73,18 +95,18 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = WarmCaramelAccentDark,
-    onPrimary = CharcoalBackgroundDark,
+    primary = Color.White,
+    onPrimary = PrimaryBlackText,
     primaryContainer = CharcoalSurfaceVariantDark,
-    onPrimaryContainer = WarmCaramelAccentDark,
+    onPrimaryContainer = Color.White,
     secondary = WarmTextSecondaryDark,
-    onSecondary = Color.White,
+    onSecondary = PrimaryBlackText,
     secondaryContainer = CharcoalSurfaceVariantDark,
-    onSecondaryContainer = WarmTextPrimaryDark,
+    onSecondaryContainer = Color.White,
     background = CharcoalBackgroundDark,
-    onBackground = WarmTextPrimaryDark,
+    onBackground = Color.White,
     surface = CharcoalSurfaceDark,
-    onSurface = WarmTextPrimaryDark,
+    onSurface = Color.White,
     surfaceVariant = CharcoalSurfaceVariantDark,
     onSurfaceVariant = WarmTextSecondaryDark,
     outline = CharcoalBorderDark,
@@ -108,35 +130,57 @@ fun LaterBoxTheme(
 
     val extendedColors = if (darkTheme) {
         ExtendedColors(
-            border = CharcoalBorderDark,
-            amberAccent = WarmCaramelAccentDark,
-            amberAccentSubtle = CharcoalSurfaceVariantDark,
-            warmError = SlateDestructiveDark,
-            textSecondary = WarmTextSecondaryDark,
+            background = CharcoalBackgroundDark,
             cardBackground = CharcoalSurfaceDark,
-            pillInactive = CharcoalSurfaceVariantDark,
+            surfaceSecondary = CharcoalSurfaceVariantDark,
+            border = CharcoalBorderDark,
+            primaryText = Color.White,
+            secondaryText = WarmTextSecondaryDark,
+            textSecondary = WarmTextSecondaryDark,
+            primaryBlack = Color.White,
+            buttonPrimary = Color.White,
+            buttonPrimaryText = PrimaryBlackText,
+            buttonSecondary = CharcoalSurfaceVariantDark,
+            buttonSecondaryText = Color.White,
             pillActive = Color.White,
+            pillActiveText = PrimaryBlackText,
+            pillInactive = CharcoalSurfaceVariantDark,
+            pillInactiveText = Color.White,
             gridListActive = CharcoalSurfaceVariantDark,
-            softYellow = WarmCaramelAccentDark,
+            warmError = SlateDestructiveDark,
+            disabled = DisabledNeutralDark,
+            softYellow = Color.White,
             softYellowSubtle = CharcoalSurfaceVariantDark,
             softYellowBorder = CharcoalBorderDark,
-            primaryBlack = Color.White
+            amberAccent = Color.White,
+            amberAccentSubtle = CharcoalSurfaceVariantDark
         )
     } else {
         ExtendedColors(
-            border = SubtleBorderLight,
-            amberAccent = SoftButterYellow,
-            amberAccentSubtle = SoftButterYellowSubtle,
-            warmError = SlateDestructive,
-            textSecondary = CharcoalTextSecondary,
+            background = PureWhiteBackground,
             cardBackground = CleanCardBackground,
-            pillInactive = PillInactiveBackground,
-            pillActive = PillActiveBackground,
+            surfaceSecondary = NeutralSurfaceLight,
+            border = SubtleBorderLight,
+            primaryText = PrimaryBlackText,
+            secondaryText = NeutralGreySecondary,
+            textSecondary = NeutralGreySecondary,
+            primaryBlack = PrimaryBlackText,
+            buttonPrimary = PrimaryBlackText,
+            buttonPrimaryText = Color.White,
+            buttonSecondary = NeutralSurfaceLight,
+            buttonSecondaryText = PrimaryBlackText,
+            pillActive = PrimaryBlackText,
+            pillActiveText = Color.White,
+            pillInactive = NeutralSurfaceLight,
+            pillInactiveText = PrimaryBlackText,
             gridListActive = GridListActiveBackground,
-            softYellow = SoftButterYellow,
-            softYellowSubtle = SoftButterYellowSubtle,
-            softYellowBorder = SoftButterYellowBorder,
-            primaryBlack = PrimaryBlackText
+            warmError = SlateDestructive,
+            disabled = DisabledNeutralLight,
+            softYellow = PrimaryBlackText,
+            softYellowSubtle = NeutralSurfaceLight,
+            softYellowBorder = SubtleBorderLight,
+            amberAccent = PrimaryBlackText,
+            amberAccentSubtle = NeutralSurfaceLight
         )
     }
 
