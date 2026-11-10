@@ -30,6 +30,11 @@ class UserPreferencesRepository(private val context: Context) {
         val AUTO_UPDATE_CHECK = booleanPreferencesKey("auto_update_check")
         val LAST_UPDATE_CHECK_TIMESTAMP = longPreferencesKey("last_update_check_timestamp")
         val LAST_DISMISSED_UPDATE_TAG = stringPreferencesKey("last_dismissed_update_tag")
+        val THREE_FINGER_SWIPE_ENABLED = booleanPreferencesKey("three_finger_swipe_enabled")
+    }
+
+    val threeFingerSwipeEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.THREE_FINGER_SWIPE_ENABLED] ?: false
     }
 
     val autoUpdateCheck: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -129,6 +134,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setAutoUpdateCheck(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.AUTO_UPDATE_CHECK] = enabled
+        }
+    }
+
+    suspend fun setThreeFingerSwipeEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.THREE_FINGER_SWIPE_ENABLED] = enabled
         }
     }
 

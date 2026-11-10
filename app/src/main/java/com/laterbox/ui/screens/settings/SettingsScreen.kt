@@ -48,8 +48,11 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
+import com.laterbox.service.LaterBoxGestureService
+import com.laterbox.ui.gesture.threeFingerSwipeDetector
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -174,10 +177,17 @@ fun SettingsScreen(
         )
     }
 
+    val threeFingerSwipeEnabled by prefs.threeFingerSwipeEnabled.collectAsState(initial = false)
+    var isAccessibilityActive by remember {
+        mutableStateOf(LaterBoxGestureService.isAccessibilityServiceEnabled(context))
+    }
+    var testGestureResult by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         storageSize = storageManager.getMediaStorageSize()
         backupSummary = backupManager.getBackupSummary()
         hasApiKey = secureStorage.hasApiKey()
+        isAccessibilityActive = LaterBoxGestureService.isAccessibilityServiceEnabled(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             canScheduleExactAlarms = alarmManager?.canScheduleExactAlarms() ?: true
         }
@@ -459,6 +469,188 @@ fun SettingsScreen(
                             scope.launch { prefs.setInAppViewing(checked) }
                         }
                     )
+                }
+            }
+
+            // Three-Finger Swipe Capture
+            item {
+                SettingsSection(
+                    title = "Three-Finger Swipe Capture",
+                    icon = Icons.Default.TouchApp
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "Three-Finger Horizontal Swipe",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(extended.surfaceSecondary)
+                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = if (!threeFingerSwipeEnabled) "OFF" else if (isAccessibilityActive) "GLOBAL & IN-APP" else "IN-APP ONLY",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (threeFingerSwipeEnabled) extended.primaryText else extended.secondaryText
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Swipe horizontally (left or right) using three fingers to instantly capture content into your Snaps collection.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            Switch(
+                                checked = threeFingerSwipeEnabled,
+                                onCheckedChange = { checked ->
+                                    scope.launch { prefs.setThreeFingerSwipeEnabled(checked) }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = extended.primaryBlack,
+                                    uncheckedThumbColor = extended.textSecondary,
+                                    uncheckedTrackColor = extended.pillInactive
+                                )
+                            )
+                        }
+
+                        if (threeFingerSwipeEnabled) {
+                            HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                            // Cross-App Accessibility Service Status
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "Cross-App Accessibility Service",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(extended.surfaceSecondary)
+                                                .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = if (isAccessibilityActive) "CONNECTED" else "OPTIONAL SETUP",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isAccessibilityActive) extended.primaryText else extended.secondaryText
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (isAccessibilityActive) 
+                                            "Active: Captures from other apps when Later Box is minimized." 
+                                            else "Required only if you want to swipe while inside other apps (browsers, social media).",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = extended.textSecondary
+                                    )
+                                }
+
+                                if (!isAccessibilityActive) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                            context.startActivity(intent)
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, extended.border)
+                                    ) {
+                                        Text("Setup", color = extended.primaryBlack)
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                            // In-App Interactive Test Sandbox
+                            Text(
+                                text = "Test In-App Gesture",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = extended.primaryText
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(extended.surfaceSecondary)
+                                    .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+                                    .threeFingerSwipeDetector(
+                                        enabled = true,
+                                        onSwipe = { direction ->
+                                            testGestureResult = "Success: 3-finger swipe ${direction.name} recognized!"
+                                        }
+                                    )
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Default.TouchApp,
+                                        contentDescription = null,
+                                        tint = extended.primaryBlack,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = testGestureResult ?: "Swipe left or right with 3 fingers here to test",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = if (testGestureResult != null) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (testGestureResult != null) extended.primaryBlack else extended.secondaryText
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                            // Android Platform & OEM Limitations Note
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(extended.pillInactive)
+                                    .padding(12.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "PLATFORM CAPABILITY & PRIVACY",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = extended.primaryBlack
+                                    )
+                                    Text(
+                                        text = "• Inside Later Box: 3-finger horizontal swipes work natively with zero permissions.\n• Outside Later Box: Android restricts background touch listening; enabling the Accessibility Service is required for cross-app gestures.\n• OEM Compatibility: On OnePlus, Xiaomi, and Samsung, 3-finger swipe down is reserved for system screenshots; Later Box specifically uses horizontal swipe (left or right) to prevent conflicts.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = extended.textSecondary,
+                                        lineHeight = 17.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
