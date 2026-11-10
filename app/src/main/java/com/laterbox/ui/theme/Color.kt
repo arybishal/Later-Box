@@ -2,50 +2,50 @@ package com.laterbox.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Mode Exact Palette — Calibrated directly from reference screenshots
-// (uploaded_media_0, uploaded_media_1, uploaded_media_2, uploaded_media_3)
-// Strictly NO RED FONT anywhere in the app!
+// Global Palette: Clean White Background, Solid Black Typography, Vibrant Yellow Accent
+// Strictly NO BROWN / OCHRE (#9E6F21 / #9C6E1E) and strictly NO RED FONT anywhere!
 
-val WarmCreamBackground = Color(0xFFF4F0E8)       // Exact main screen backdrop (#F4F0E8)
-val WarmCardBackground = Color(0xFFFBF8F3)        // Exact card surface & bottom bar (#FBF8F3)
-val WarmBorderDashed = Color(0xFFE2D9CC)          // Exact dashed empty card border (#E2D9CC)
-val WarmBorderLight = Color(0xFFE2D9CC)           // Exact subtle border & input stroke (#E2D9CC)
+// Light Mode: Pure White Background, Solid Black Text, Vibrant Yellow Accent
+val PureWhiteBackground = Color(0xFFFFFFFF)       // Crisp White Main Background (#FFFFFF)
+val CleanCardBackground = Color(0xFFFFFFFF)       // Crisp White Card & Bottom Bar (#FFFFFF)
+val CleanCardElevated = Color(0xFFF9FAFB)         // Subtle elevated surface (#F9FAFB)
+val SubtleBorderLight = Color(0xFFE5E7EB)         // Clean light neutral border (#E5E7EB)
+val SubtleBorderStrong = Color(0xFFD1D5DB)        // Input & toggle stroke (#D1D5DB)
 
-val WarmCaramelAccent = Color(0xFF9C6E1E)         // Exact golden amber/caramel button (#9C6E1E)
-val WarmCaramelAccentLight = Color(0xFFAE7C24)    // Slightly lighter caramel for hover/focus
-val WarmCaramelSubtle = Color(0xFFFDF6EA)         // Soft warm container tint
+val VibrantYellowAccent = Color(0xFFF5BA13)       // Clean Vibrant Yellow (#F5BA13)
+val VibrantYellowAccentLight = Color(0xFFFDE047)  // Bright secondary yellow tint (#FDE047)
+val VibrantYellowSubtle = Color(0xFFFEF9C3)       // Soft yellow container tint (#FEF9C3)
 
-val WarmTextPrimaryLight = Color(0xFF1C1915)      // Exact dark typography (#1C1915)
-val WarmTextSecondaryLight = Color(0xFF5C564E)    // Exact muted secondary typography (#5C564E)
+val SolidBlackText = Color(0xFF000000)            // Deep Black primary text (#000000)
+val CharcoalTextSecondary = Color(0xFF4B5563)     // Neutral Charcoal secondary text (#4B5563)
+val MutedTextTertiary = Color(0xFF6B7280)         // Tertiary metadata (#6B7280)
 
-val PillInactiveBackground = Color(0xFFEFE8DC)    // Exact inactive filter chips (#EFE8DC)
-val PillActiveBackground = Color(0xFF1C1915)      // Exact active filter chip "All" (#1C1915)
-val GridListActiveBackground = Color(0xFFF3E4C4)  // Exact active toggle pill "Grid" (#F3E4C4)
-val ScrollThumbColor = Color(0xFF716C64)          // Exact horizontal scroll indicator thumb (#716C64)
+val PillInactiveBackground = Color(0xFFF3F4F6)    // Clean light grey inactive pill (#F3F4F6)
+val PillActiveBackground = Color(0xFF000000)      // Solid black active pill (#000000)
+val GridListActiveBackground = Color(0xFFFEF08A)  // Soft yellow active toggle pill (#FEF08A)
+val ScrollThumbColor = Color(0xFF4B5563)          // Clean neutral scroll thumb (#4B5563)
 
-// Compatibility aliases
-val AmberAccent = WarmCaramelAccent
-val AmberAccentLight = WarmCaramelAccentLight
-val PureWhiteBackground = WarmCreamBackground
-val CleanCardBackground = WarmCardBackground
-val CleanCardElevated = WarmCardBackground
-val SubtleBorderLight = WarmBorderLight
-val SubtleBorderStrong = WarmBorderLight
-val VibrantYellowAccent = WarmCaramelAccent
-val VibrantYellowAccentLight = WarmCaramelAccentLight
-val VibrantYellowSubtle = WarmCaramelSubtle
-val SolidBlackText = WarmTextPrimaryLight
-val CharcoalTextSecondary = WarmTextSecondaryLight
-val MutedTextTertiary = WarmTextSecondaryLight
+// Universal Theme Aliases
+val WarmCreamBackground = PureWhiteBackground
+val WarmCardBackground = CleanCardBackground
+val WarmBorderDashed = SubtleBorderLight
+val WarmBorderLight = SubtleBorderLight
+val WarmCaramelAccent = VibrantYellowAccent
+val WarmCaramelAccentLight = VibrantYellowAccentLight
+val WarmCaramelSubtle = VibrantYellowSubtle
+val WarmTextPrimaryLight = SolidBlackText
+val WarmTextSecondaryLight = CharcoalTextSecondary
+val AmberAccent = VibrantYellowAccent
+val AmberAccentLight = VibrantYellowAccentLight
 
-// Dark Mode Adaptive Palette — Warm charcoal
-val CharcoalBackgroundDark = Color(0xFF161412)
-val CharcoalSurfaceDark = Color(0xFF1E1B18)
-val CharcoalSurfaceVariantDark = Color(0xFF282522)
-val WarmTextPrimaryDark = Color(0xFFF4F0E8)
-val WarmTextSecondaryDark = Color(0xFF9E978D)
-val CharcoalBorderDark = Color(0xFF2C2723)
-val WarmCaramelAccentDark = Color(0xFFB38029)
+// Dark Mode Adaptive Palette — Deep Charcoal / Black with Golden Yellow
+val CharcoalBackgroundDark = Color(0xFF09090B)
+val CharcoalSurfaceDark = Color(0xFF141417)
+val CharcoalSurfaceVariantDark = Color(0xFF202024)
+val WarmTextPrimaryDark = Color(0xFFFFFFFF)
+val WarmTextSecondaryDark = Color(0xFF9CA3AF)
+val CharcoalBorderDark = Color(0xFF27272A)
+val WarmCaramelAccentDark = Color(0xFFFACC15)
 
 val DeepBlackBackgroundDark = CharcoalBackgroundDark
 val WhiteTextPrimaryDark = WarmTextPrimaryDark

@@ -41,18 +41,18 @@ Later Box is a personal content-saving, bookmarking, playlist management, and re
   - 100% on-device storage using Android Jetpack Room and DataStore.
   - Zero cloud lock-in, zero tracking, zero mandatory account creation.
 - **Design System & Theme**:
-  - Strictly follows the exact warm, sophisticated neutral aesthetic extracted directly from reference screenshots:
-    - **Background**: Warm Ivory Cream (`#F4F0E8`)
-    - **Cards & Surfaces**: Soft Warm Off-White (`#FBF8F3`)
-    - **Primary Accent**: Warm Ochre Caramel (`#9C6E1E`)
-    - **Primary Typography**: Deep Warm Charcoal (`#1C1915`)
-    - **Secondary Typography**: Muted Warm Grey (`#5C564E`)
-    - **Borders & Dividers**: Subtle Sand Outline (`#E2D9CC`)
-    - **Inactive Filter Pills**: Soft Sand Cream (`#EFE8DC`)
-    - **Active View Toggle**: Golden Cream (`#F3E4C4`)
+  - Clean, high-contrast visual identity with vibrant yellow accenting:
+    - **Background**: Pure White (`#FFFFFF`)
+    - **Cards & Surfaces**: Clean Pure White (`#FFFFFF`)
+    - **Primary Accent**: Vibrant Yellow (`#F5BA13`)
+    - **Primary Typography**: Solid High-Contrast Black (`#000000`)
+    - **Secondary Typography**: Neutral Grey (`#4B5563`)
+    - **Borders & Dividers**: Light Neutral Outline (`#E5E7EB`)
+    - **Inactive Filter Pills**: Light Grey (`#F3F4F6`)
+    - **Active View Toggle**: Soft Yellow Accent (`#FEF08A`)
     - **Dark Theme Adaptive**: Deep Charcoal (`#161412`) & Dark Surface (`#1E1B18`)
-  - Typography: High-contrast editorial Serif headings paired with clean modern geometric Sans body and microcopy.
-  - Completely free of prohibited blue or crimson palettes.
+  - Typography: High-contrast editorial Serif headings paired with clean modern Inter/Poppins body and microcopy.
+  - Zero brown/ochre (`#9E6F21` / `#9C6E1E`), strictly zero red font anywhere in the app.
   - Full support for Dynamic System Theme, Light Mode, and Dark Mode.
 
 ---

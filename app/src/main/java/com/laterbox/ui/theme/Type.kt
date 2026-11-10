@@ -16,6 +16,8 @@ val fontProvider = GoogleFont.Provider(
 )
 
 val PlayfairGoogleFont = GoogleFont("Playfair Display")
+val InterGoogleFont = GoogleFont("Inter")
+val PoppinsGoogleFont = GoogleFont("Poppins")
 
 // High-contrast editorial Serif font matching reference screenshots
 val SerifHeadlineFontFamily = FontFamily(
@@ -25,7 +27,23 @@ val SerifHeadlineFontFamily = FontFamily(
     Font(googleFont = PlayfairGoogleFont, fontProvider = fontProvider, weight = FontWeight.Bold)
 )
 
-// Typography matching the editorial Serif + clean Sans aesthetic from reference screenshots
+// Inter modern geometric sans font family
+val InterFontFamily = FontFamily(
+    Font(googleFont = InterGoogleFont, fontProvider = fontProvider, weight = FontWeight.Normal),
+    Font(googleFont = InterGoogleFont, fontProvider = fontProvider, weight = FontWeight.Medium),
+    Font(googleFont = InterGoogleFont, fontProvider = fontProvider, weight = FontWeight.SemiBold),
+    Font(googleFont = InterGoogleFont, fontProvider = fontProvider, weight = FontWeight.Bold)
+)
+
+// Poppins expressive modern sans font family
+val PoppinsFontFamily = FontFamily(
+    Font(googleFont = PoppinsGoogleFont, fontProvider = fontProvider, weight = FontWeight.Normal),
+    Font(googleFont = PoppinsGoogleFont, fontProvider = fontProvider, weight = FontWeight.Medium),
+    Font(googleFont = PoppinsGoogleFont, fontProvider = fontProvider, weight = FontWeight.SemiBold),
+    Font(googleFont = PoppinsGoogleFont, fontProvider = fontProvider, weight = FontWeight.Bold)
+)
+
+// Typography matching the editorial Serif + clean Sans (Inter/Poppins) aesthetic
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = SerifHeadlineFontFamily,
@@ -68,43 +86,43 @@ val Typography = Typography(
         lineHeight = 24.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
         lineHeight = 20.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 22.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 13.sp,
         lineHeight = 16.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = InterFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 14.sp
