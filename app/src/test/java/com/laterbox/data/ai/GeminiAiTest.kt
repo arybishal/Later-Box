@@ -431,4 +431,39 @@ class GeminiAiTest {
         assertTrue(masked.contains("••••"))
         assertFalse(masked.contains("1234567890abcdef"))
     }
+
+    @Test
+    fun `GeminiPromptBuilder buildItemQuestionPrompt builds context-isolated prompt`() {
+        val testItem = SavedItemEntity(
+            id = 42L,
+            url = "https://example.com/guide-to-compose",
+            title = "Mastering Jetpack Compose",
+            description = "A deep dive into declarative UI on Android.",
+            notes = "Remember to review state hoisting patterns",
+            contentType = ContentType.ARTICLE
+        )
+        val testAiAnalysis = AiAnalysisEntity(
+            itemId = 42L,
+            shortDescription = "Overview of modern Android UI",
+            whatItsAbout = "Compose declarative design patterns",
+            category = "Technology",
+            modelUsed = "gemini-1.5-flash",
+            keyTakeawaysJson = "[\"Hoisting is essential\", \"Use remember for ephemeral state\"]"
+        )
+
+        val prompt = GeminiPromptBuilder.buildItemQuestionPrompt(
+            item = testItem,
+            aiAnalysis = testAiAnalysis,
+            question = "What does this guide say about state hoisting?"
+        )
+
+        assertTrue(prompt.contains("Mastering Jetpack Compose"))
+        assertTrue(prompt.contains("https://example.com/guide-to-compose"))
+        assertTrue(prompt.contains("A deep dive into declarative UI on Android."))
+        assertTrue(prompt.contains("Remember to review state hoisting patterns"))
+        assertTrue(prompt.contains("Overview of modern Android UI"))
+        assertTrue(prompt.contains("Hoisting is essential"))
+        assertTrue(prompt.contains("What does this guide say about state hoisting?"))
+        assertTrue(prompt.contains("Focus your answer directly on the specific saved item described above."))
+    }
 }

@@ -40,7 +40,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -858,17 +858,18 @@ fun AskGeminiAssistantSheet(
     aiError: String?,
     onAskQuestion: (String) -> Unit,
     onNavigateToSettings: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val extended = LaterBoxThemeTokens.extended
-    val clipboardManager = LocalClipboardManager.current
-    var queryText by remember { mutableStateOf("") }
-
-    val promptSuggestions = listOf(
+    onDismiss: () -> Unit,
+    title: String = "Gemini AI Assistant",
+    subtitle: String = "Search & synthesize your saved memories",
+    promptSuggestions: List<String> = listOf(
         "Summarize recent items",
         "What did I save about Android?",
         "Find my favorite articles"
     )
+) {
+    val extended = LaterBoxThemeTokens.extended
+    val clipboardManager = LocalClipboardManager.current
+    var queryText by remember { mutableStateOf("") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -914,17 +915,21 @@ fun AskGeminiAssistantSheet(
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Text(
-                            text = "Gemini AI Assistant",
+                            text = title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = extended.primaryText
+                            color = extended.primaryText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Search & synthesize your saved memories",
+                            text = subtitle,
                             fontSize = 12.sp,
-                            color = extended.secondaryText
+                            color = extended.secondaryText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -1036,7 +1041,7 @@ fun AskGeminiAssistantSheet(
                             enabled = queryText.isNotBlank() && !isAiQuerying
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Send,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send",
                                 tint = if (queryText.isNotBlank()) extended.interactiveAccent else extended.disabled
                             )

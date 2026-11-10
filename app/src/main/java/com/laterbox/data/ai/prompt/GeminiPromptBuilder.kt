@@ -1,5 +1,6 @@
 package com.laterbox.data.ai.prompt
 
+import com.laterbox.data.local.entity.AiAnalysisEntity
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ContentType
 import java.security.MessageDigest
@@ -58,6 +59,56 @@ object GeminiPromptBuilder {
             - Do not invent facts, locations, or people not supported by the content.
             - If location is not identifiable, return null for name and address, and "unknown" for confidence.
             - Do not include markdown code block formatting or extra commentary outside the JSON object.
+        """.trimIndent()
+    }
+
+    /**
+     * Builds a rich, item-isolated prompt for context-aware questions asked about
+     * a specific saved item in ItemDetailScreen.
+     */
+    fun buildItemQuestionPrompt(
+        item: SavedItemEntity,
+        aiAnalysis: AiAnalysisEntity?,
+        question: String
+    ): String {
+        val analysisContext = if (aiAnalysis != null) {
+            """
+            EXISTING AI ANALYSIS FOR THIS ITEM:
+            - AI Summary: ${aiAnalysis.shortDescription ?: "None"}
+            - What It's About: ${aiAnalysis.whatItsAbout ?: "None"}
+            - Key Takeaways: ${aiAnalysis.getKeyTakeaways().joinToString("; ")}
+            - Key Details: ${aiAnalysis.getKeyDetails().joinToString("; ")}
+            - Category: ${aiAnalysis.category ?: "Uncategorized"}
+            - Entities & People: ${aiAnalysis.getPeopleAndEntities().joinToString(", ")}
+            """.trimIndent()
+        } else {
+            "No prior AI analysis has been generated for this item."
+        }
+
+        return """
+            You are the Later Box Personal Content Assistant inside the Android app Later Box.
+            The user is currently viewing a specific saved item in their library (Item ID: ${item.id}).
+            They have asked a question specifically about this saved item.
+
+            CURRENT SAVED ITEM CONTEXT:
+            - Item ID: ${item.id}
+            - Title: "${item.title}"
+            - Content Type: ${item.contentType.displayName}
+            - Source / Domain: ${item.sourceDomain ?: item.sourceApp ?: "Unknown"}
+            - Original URL: ${item.url}
+            ${item.description?.let { "- Saved Description / Page Excerpt: $it" } ?: "- Saved Description: Not provided"}
+            ${item.notes?.let { "- User's Personal Note: $it" } ?: "- User's Personal Note: None"}
+
+            $analysisContext
+
+            USER'S QUESTION ABOUT THIS ITEM:
+            "$question"
+
+            CRITICAL ACCURACY GUIDELINES:
+            1. Focus your answer directly on the specific saved item described above.
+            2. Do NOT mention or blend information from other unrelated items.
+            3. If the answer cannot be determined from the available metadata, description, notes, or analysis, politely explain that the information is unavailable in this item's saved details rather than inventing facts.
+            4. Keep your answer clear, concise, well-structured, and helpful. Avoid cluttered markdown formatting.
         """.trimIndent()
     }
 

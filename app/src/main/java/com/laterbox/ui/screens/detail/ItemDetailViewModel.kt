@@ -6,6 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.ai.AiSettingsRepository
 import com.laterbox.data.ai.GeminiAnalysisService
+import com.laterbox.data.ai.model.GeminiModels
+import com.laterbox.data.ai.network.GeminiApiClient
+import com.laterbox.data.ai.network.GeminiApiResult
+import com.laterbox.data.ai.prompt.GeminiPromptBuilder
+import com.laterbox.data.ai.security.SecureApiKeyStorage
 import com.laterbox.data.local.dao.AiAnalysisDao
 import com.laterbox.data.local.entity.AiAnalysisEntity
 import com.laterbox.data.local.entity.PlaylistEntity
@@ -51,6 +56,15 @@ class ItemDetailViewModel(
 
     private val _aiActionError = MutableStateFlow<String?>(null)
     val aiActionError: StateFlow<String?> = _aiActionError.asStateFlow()
+
+    private val _isAiQuerying = MutableStateFlow(false)
+    val isAiQuerying: StateFlow<Boolean> = _isAiQuerying.asStateFlow()
+
+    private val _aiQueryResponse = MutableStateFlow<String?>(null)
+    val aiQueryResponse: StateFlow<String?> = _aiQueryResponse.asStateFlow()
+
+    private val _aiQueryError = MutableStateFlow<String?>(null)
+    val aiQueryError: StateFlow<String?> = _aiQueryError.asStateFlow()
 
     val aiAnalysis: StateFlow<AiAnalysisEntity?> = aiAnalysisDao.getAnalysisForItem(itemId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -178,6 +192,64 @@ class ItemDetailViewModel(
     fun deleteAiAnalysis() {
         viewModelScope.launch {
             geminiAnalysisService.deleteAnalysis(itemId)
+        }
+    }
+
+    fun clearAiQueryResponse() {
+        _aiQueryResponse.value = null
+        _aiQueryError.value = null
+        _isAiQuerying.value = false
+    }
+
+    fun askGeminiAboutItem(question: String) {
+        val cleanQuestion = question.trim()
+        if (cleanQuestion.isBlank()) return
+
+        val currentItem = uiState.value.item ?: return
+
+        viewModelScope.launch {
+            _isAiQuerying.value = true
+            _aiQueryError.value = null
+            _aiQueryResponse.value = null
+
+            try {
+                val apiKey = SecureApiKeyStorage.getInstance(LaterBoxApp.instance).getApiKey()
+                if (apiKey.isNullOrBlank()) {
+                    _aiQueryError.value = "Gemini API key is not configured. Add your API key in Settings."
+                    _isAiQuerying.value = false
+                    return@launch
+                }
+
+                if (!isAiEnabled.value) {
+                    _aiQueryError.value = "Gemini AI is disabled in Settings. Enable it to ask questions."
+                    _isAiQuerying.value = false
+                    return@launch
+                }
+
+                val modelId: String = aiSettingsRepository.getSelectedModelIdNow().ifBlank {
+                    GeminiModels.DEFAULT_MODEL_ID
+                }
+
+                val prompt = GeminiPromptBuilder.buildItemQuestionPrompt(
+                    item = currentItem,
+                    aiAnalysis = aiAnalysis.value,
+                    question = cleanQuestion
+                )
+
+                val client = GeminiApiClient()
+                when (val result = client.generateContentText(apiKey, modelId, prompt)) {
+                    is GeminiApiResult.Success -> {
+                        _aiQueryResponse.value = result.data
+                    }
+                    is GeminiApiResult.Error -> {
+                        _aiQueryError.value = result.message
+                    }
+                }
+            } catch (e: Exception) {
+                _aiQueryError.value = "Failed to query Gemini: ${e.localizedMessage ?: "Unknown error"}"
+            } finally {
+                _isAiQuerying.value = false
+            }
         }
     }
 }

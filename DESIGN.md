@@ -121,13 +121,52 @@ The typography balances **editorial serif elegance** for titles with **clean mod
 5. **Floating AI Assistant**:
    - Pill-shaped elevated action (`Ask questions` + sparkle icon) floating above the content with soft shadow, wired to Gemini AI.
 
-### 4.2 Library & Playlists Screens
+### 4.3 Saved Item Detail Screen (Reference 2 Specification)
+
+The Saved Item Detail screen serves as a premium, distraction-free reading, media inspection, and personal knowledge interface. It consists of two major structural zones on the soft canvas (`#F0F1F3` Light / `#101113` Dark):
+
+1. **Top Navigation & Controls**:
+   - Clean, minimal top row respecting system status bar insets.
+   - Left: Circular back navigation button (`40.dp`).
+   - Right: Circular favorite toggle, circular share action, and circular overflow menu (Edit Note, Add Tag, Add to Playlist, Archive/Unarchive, Copy Link, Move to Trash).
+
+2. **Prominent Adaptive Media Preview**:
+   - Positioned prominently above the content panel, adapting intelligently to content type:
+     - **Image**: Large media frame with natural aspect ratio preservation (`ContentScale.Crop` / `ContentScale.Fit`), rounded `18.dp` corners, fullscreen zoom/inspection affordance.
+     - **Video**: Video frame with play overlay button, dark scrim, duration badge, and in-app video player launching.
+     - **Article / Website**: Representative web thumbnail or editorial source fallback card with domain branding.
+     - **Social Media**: Media frame, source badge (Instagram, Twitter/X, TikTok, Facebook), and deep-link launcher.
+     - **Document / Note**: Clean file preview container with mime-type badge or saved note snippet.
+
+3. **Spacious Content Information Panel**:
+   - Below the preview, a prominent elevated white card (`#FFFFFF` Light / `#1C1D20` Dark) with generous `26.dp` rounded corners and subtle `1.dp` border (`#E9E9E9` Light / `#333438` Dark):
+     - **Title**: Large, readable typography (`22.sp`–`24.sp`, Bold) supporting Unicode and Devanagari.
+     - **Source & Date Metadata**: Source favicon/initial badge, domain or app name, separator dot, and relative timestamp.
+     - **URL Affordance**: Compact URL pill with one-tap clipboard copy.
+     - **Description**: "About this item" section presenting extracted page text or user notes.
+     - **AI Summary & Key Information**: Prominent AI intelligence slot powered by Gemini:
+       - Header with sparkle icon, model badge, regenerate action, and delete action.
+       - Short summary and "What it's about" narrative.
+       - "Key Takeaways" bulleted insights list.
+       - Entity and category badges.
+       - "Generate AI Insights" primary interactive blue button (`#1687D9` / `#55A9EE`) when unanalyzed.
+     - **Personal Notes**: Dedicated clean notes container with "+ Add Note" / "Edit Note" actions and reliable persistence.
+     - **Collections & Tags**: Assigned playlists and tags in compact FlowRow chip groups, maintaining multi-playlist membership and the established playlist deletion -> trash contract.
+     - **Action Buttons**: "Open Original Link" (Primary button, `20.dp` radius) and "Read in Later Box Web Viewer" (Secondary button, `20.dp` radius).
+     - **Destructive Action**: "Move this item to Trash" in neutral slate (`#374151` Light / `#4B5563` Dark) with zero red fonts.
+
+4. **Context-Aware Floating "Ask questions" AI Action**:
+   - Elevated pill (`CircleShape`, white on light / dark on dark, soft shadow, sparkle icon, "Ask questions") floating above the bottom edge.
+   - **Context Requirement**: When opened from an item, the AI assistant receives the specific item's ID, title, URL, description, personal notes, and existing AI analysis.
+   - Launches an interactive Gemini assistant bottom sheet with quick-query chips ("Summarize in 3 bullets", "What is the key takeaway?", "Explain this simply") and freeform Q&A.
+
+### 4.4 Library & Playlists Screens
 - Soft `#F0F1F3` background, white elevated cards (`24.dp`), compact grid/list toggle, responsive sorting selector, and unified search bar.
 
-### 4.3 Item Detail & Content Viewer
-- White card containers, high-contrast readable typography, interactive blue accent for AI analysis, notes, tags, and media viewing.
+### 4.5 In-App Content Viewer
+- Immersive reader mode and media player with full-screen controls, soft canvas, and clean monochrome action bar.
 
-### 4.4 Settings & Maintenance
+### 4.6 Settings & Maintenance
 - Clean grouped cards (`24.dp`), clear toggle switches, intact GitHub release update checker and SHA-256 validation.
 
 ---

@@ -73,6 +73,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import com.laterbox.data.ai.security.SecureApiKeyStorage
 import com.laterbox.data.local.entity.AiAnalysisEntity
 import androidx.compose.runtime.Composable
@@ -85,6 +86,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -111,6 +113,8 @@ import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.SkeletonDetailView
 import com.laterbox.ui.components.SlowNetworkProgressView
 import com.laterbox.ui.components.StateErrorView
+import com.laterbox.ui.screens.home.AskGeminiAssistantSheet
+import com.laterbox.ui.screens.home.FloatingAiAssistantPill
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.util.SocialLinkResolver
 import kotlinx.coroutines.launch
@@ -136,10 +140,14 @@ fun ItemDetailScreen(
     val hasConsentedPrivacy by viewModel.hasConsentedPrivacy.collectAsState()
     val isAiLoading by viewModel.isAiLoading.collectAsState()
     val aiActionError by viewModel.aiActionError.collectAsState()
+    val isAiQuerying by viewModel.isAiQuerying.collectAsState()
+    val aiQueryResponse by viewModel.aiQueryResponse.collectAsState()
+    val aiQueryError by viewModel.aiQueryError.collectAsState()
 
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val hasApiKey = remember(context) { SecureApiKeyStorage.getInstance(context).hasApiKey() }
 
     var showMenu by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf(false) }
@@ -149,6 +157,8 @@ fun ItemDetailScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showAiPrivacyDialog by remember { mutableStateOf(false) }
     var showDeleteAiConfirm by remember { mutableStateOf(false) }
+    var showAiAssistantSheet by remember { mutableStateOf(false) }
+    val aiSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (uiState.isLoading) {
         Box(
@@ -187,91 +197,145 @@ fun ItemDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Content type pill badge in header
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(extended.pillInactive)
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = item.contentType.displayName.uppercase(Locale.ROOT),
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = extended.primaryBlack,
+                            fontWeight = FontWeight.Bold,
+                            color = extended.primaryText,
                             letterSpacing = 0.5.sp
                         )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, CircleShape)
+                            .clickable(onClick = onBack),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = extended.primaryBlack
+                            tint = extended.primaryIcons,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 },
                 actions = {
                     // Favorite Toggle Action
-                    IconButton(onClick = { viewModel.toggleFavorite() }) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, CircleShape)
+                            .clickable { viewModel.toggleFavorite() },
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = if (item.isFavorite) "Favorited" else "Favorite",
-                            tint = if (item.isFavorite) extended.primaryBlack else extended.textSecondary
+                            tint = if (item.isFavorite) extended.primaryIcons else extended.secondaryIcons,
+                            modifier = Modifier.size(18.dp)
                         )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Share Action (if hasUrl)
+                    if (hasUrl) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, CircleShape)
+                                .clickable { shareItem(context, item) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share",
+                                tint = extended.primaryIcons,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
 
                     // More Actions Overflow
                     Box {
-                        IconButton(onClick = { showMenu = true }) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, CircleShape)
+                                .clickable { showMenu = true },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "More actions",
-                                tint = extended.primaryBlack
+                                tint = extended.primaryIcons,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                            modifier = Modifier
+                                .background(extended.cardBackground)
+                                .border(1.dp, extended.border, RoundedCornerShape(14.dp))
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Add to Playlist") },
+                                text = { Text("Add to Playlist", color = extended.primaryText) },
                                 onClick = {
                                     showMenu = false
                                     showPlaylistDialog = true
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Folder, contentDescription = null, tint = extended.primaryBlack)
+                                    Icon(Icons.Default.Folder, contentDescription = null, tint = extended.primaryIcons)
                                 }
                             )
 
                             DropdownMenuItem(
-                                text = { Text(if (item.notes.isNullOrBlank()) "Add Note" else "Edit Note") },
+                                text = { Text(if (item.notes.isNullOrBlank()) "Add Note" else "Edit Note", color = extended.primaryText) },
                                 onClick = {
                                     showMenu = false
                                     showEditNotesDialog = true
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, tint = extended.primaryBlack)
+                                    Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, tint = extended.primaryIcons)
                                 }
                             )
 
                             DropdownMenuItem(
-                                text = { Text("Add Tag") },
+                                text = { Text("Add Tag", color = extended.primaryText) },
                                 onClick = {
                                     showMenu = false
                                     showAddTagDialog = true
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Add, contentDescription = null, tint = extended.primaryBlack)
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = extended.primaryIcons)
                                 }
                             )
 
                             DropdownMenuItem(
-                                text = { Text(if (item.isArchived) "Unarchive" else "Archive") },
+                                text = { Text(if (item.isArchived) "Unarchive" else "Archive", color = extended.primaryText) },
                                 onClick = {
                                     showMenu = false
                                     viewModel.toggleArchive()
@@ -280,31 +344,31 @@ fun ItemDetailScreen(
                                     Icon(
                                         if (item.isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
                                         contentDescription = null,
-                                        tint = extended.primaryBlack
+                                        tint = extended.primaryIcons
                                     )
                                 }
                             )
 
                             if (hasUrl) {
                                 DropdownMenuItem(
-                                    text = { Text("Copy Link") },
+                                    text = { Text("Copy Link", color = extended.primaryText) },
                                     onClick = {
                                         showMenu = false
                                         copyToClipboard(context, item.url)
                                     },
                                     leadingIcon = {
-                                        Icon(Icons.Default.ContentCopy, contentDescription = null, tint = extended.primaryBlack)
+                                        Icon(Icons.Default.ContentCopy, contentDescription = null, tint = extended.primaryIcons)
                                     }
                                 )
 
                                 DropdownMenuItem(
-                                    text = { Text("Share") },
+                                    text = { Text("Share", color = extended.primaryText) },
                                     onClick = {
                                         showMenu = false
                                         shareItem(context, item)
                                     },
                                     leadingIcon = {
-                                        Icon(Icons.Default.Share, contentDescription = null, tint = extended.primaryBlack)
+                                        Icon(Icons.Default.Share, contentDescription = null, tint = extended.primaryIcons)
                                     }
                                 )
                             }
@@ -323,6 +387,8 @@ fun ItemDetailScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = extended.background
@@ -331,28 +397,42 @@ fun ItemDetailScreen(
         },
         containerColor = extended.background
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-        ) {
-            // =========================================================================
-            // 1. CONTENT PREVIEW (Centerpiece)
-            // =========================================================================
-            ContentPreviewSection(
-                item = item,
-                onOpenViewer = { onOpenViewer(item) },
-                onOpenOriginal = {
-                    if (hasUrl) {
-                        viewModel.recordLastOpened()
-                        SocialLinkResolver.openSocialOrWebLink(context, item.url)
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                // =========================================================================
+                // 1. CONTENT PREVIEW (Centerpiece)
+                // =========================================================================
+                ContentPreviewSection(
+                    item = item,
+                    onOpenViewer = { onOpenViewer(item) },
+                    onOpenOriginal = {
+                        if (hasUrl) {
+                            viewModel.recordLastOpened()
+                            SocialLinkResolver.openSocialOrWebLink(context, item.url)
+                        }
                     }
-                }
-            )
+                )
 
-            Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // =========================================================================
+                // 2. SPACIOUS WHITE CONTENT INFORMATION PANEL (Reference 2 Core)
+                // =========================================================================
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(2.dp, RoundedCornerShape(26.dp), spotColor = Color(0x10000000))
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(extended.cardBackground)
+                        .border(1.dp, extended.border, RoundedCornerShape(26.dp))
+                        .padding(22.dp)
+                ) {
 
             // =========================================================================
             // 2. ITEM TITLE & SOURCE METADATA
@@ -850,6 +930,7 @@ fun ItemDetailScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
                     .clickable { showDeleteConfirmDialog = true }
                     .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.Center,
@@ -871,9 +952,47 @@ fun ItemDetailScreen(
                     color = extended.warmError
                 )
             }
+        } // End of ContentInformationPanel
 
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+        Spacer(modifier = Modifier.height(100.dp))
+    }
+
+    // Floating AI Assistant Pill
+    FloatingAiAssistantPill(
+        onClick = { showAiAssistantSheet = true },
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = 24.dp)
+    )
+}
+    }
+
+    if (showAiAssistantSheet) {
+        AskGeminiAssistantSheet(
+            sheetState = aiSheetState,
+            isAiEnabled = isAiEnabled,
+            hasApiKey = hasApiKey,
+            isAiQuerying = isAiQuerying,
+            aiResponse = aiQueryResponse,
+            aiError = aiQueryError,
+            onAskQuestion = { question -> viewModel.askGeminiAboutItem(question) },
+            onNavigateToSettings = {
+                showAiAssistantSheet = false
+                onNavigateToAiSettings()
+            },
+            onDismiss = {
+                showAiAssistantSheet = false
+                viewModel.clearAiQueryResponse()
+            },
+            title = "Ask About This Item",
+            subtitle = item.title.ifBlank { "Saved memory" },
+            promptSuggestions = listOf(
+                "Summarize in 3 bullet points",
+                "What is the key takeaway?",
+                "Explain this simply",
+                "Why is this important?"
+            )
+        )
     }
 
     // =========================================================================
@@ -995,9 +1114,9 @@ private fun ContentPreviewSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 200.dp, max = 340.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
-                    .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                    .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                     .clickable { onOpenViewer() },
                 contentAlignment = Alignment.Center
             ) {
@@ -1044,9 +1163,9 @@ private fun ContentPreviewSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
-                    .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                    .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                     .clickable { onOpenViewer() },
                 contentAlignment = Alignment.Center
             ) {
@@ -1111,9 +1230,9 @@ private fun ContentPreviewSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(extended.pillInactive)
-                        .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                        .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                         .clickable { onOpenViewer() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1159,9 +1278,9 @@ private fun ContentPreviewSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(130.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(extended.pillInactive)
-                        .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                        .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                         .clickable { onOpenOriginal() }
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
@@ -1190,9 +1309,9 @@ private fun ContentPreviewSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
-                    .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                    .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                     .clickable { onOpenViewer() }
                     .padding(20.dp),
                 contentAlignment = Alignment.Center
@@ -1236,9 +1355,9 @@ private fun ContentPreviewSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
-                    .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                    .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                     .padding(20.dp)
             ) {
                 Column {
@@ -1276,9 +1395,9 @@ private fun ContentPreviewSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
-                    .border(1.dp, extended.border, RoundedCornerShape(16.dp))
+                    .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -1321,9 +1440,9 @@ private fun Phase2AiExtensionSlot(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(extended.cardBackground)
-            .border(1.dp, extended.border, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(extended.surfaceSecondary)
+            .border(1.dp, extended.border, RoundedCornerShape(20.dp))
             .padding(18.dp)
     ) {
         when {
