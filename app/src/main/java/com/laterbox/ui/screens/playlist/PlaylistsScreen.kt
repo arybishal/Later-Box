@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
+import com.laterbox.ui.components.glass.GlassFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -62,14 +62,11 @@ fun PlaylistsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            GlassFloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = extended.primaryText,
-                contentColor = extended.cardBackground,
-                shape = androidx.compose.foundation.shape.CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Create Playlist")
-            }
+                icon = Icons.Default.Add,
+                contentDescription = "Create Playlist"
+            )
         },
         containerColor = extended.background
     ) { paddingValues ->

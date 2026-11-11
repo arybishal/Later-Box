@@ -42,6 +42,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.window.Dialog
+import com.laterbox.ui.components.glass.GlassPrimaryButton
 import com.laterbox.ui.components.glass.GlassSurface
 import com.laterbox.ui.theme.GlassVariant
 import androidx.compose.runtime.Composable
@@ -246,17 +247,13 @@ fun CreatePlaylistDialog(
             }
         },
         confirmButton = {
-            Button(
+            GlassPrimaryButton(
                 onClick = {
                     if (isValid) {
                         onConfirm(trimmedName, description.trim().ifEmpty { null }, selectedIcon)
                     }
                 },
-                enabled = isValid,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.buttonPrimary,
-                    contentColor = extended.buttonPrimaryText
-                )
+                enabled = isValid
             ) {
                 Text(confirmButtonLabel)
             }
@@ -374,12 +371,8 @@ fun AddToPlaylistDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = { onSavePlaylists(selectedIds.toList()) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.buttonPrimary,
-                    contentColor = extended.buttonPrimaryText
-                )
+            GlassPrimaryButton(
+                onClick = { onSavePlaylists(selectedIds.toList()) }
             ) {
                 Text("Save")
             }
@@ -485,7 +478,7 @@ fun AddManualItemDialog(
             }
         },
         confirmButton = {
-            Button(
+            GlassPrimaryButton(
                 onClick = {
                     if (urlOrText.isNotBlank()) {
                         val formattedUrl = if (isLikelyWebDomain) "https://$trimmedInput" else trimmedInput
@@ -493,11 +486,7 @@ fun AddManualItemDialog(
                         onSave(formattedUrl, finalTitle, notes.trim().ifEmpty { null })
                     }
                 },
-                enabled = urlOrText.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.buttonPrimary,
-                    contentColor = extended.buttonPrimaryText
-                )
+                enabled = urlOrText.isNotBlank()
             ) {
                 Text("Save Now")
             }
@@ -562,13 +551,9 @@ fun EditNotesDialog(
             }
         },
         confirmButton = {
-            Button(
+            GlassPrimaryButton(
                 onClick = { if (!isTooLong) onSave(notes.trim().ifEmpty { null }) },
-                enabled = !isTooLong,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.buttonPrimary,
-                    contentColor = extended.buttonPrimaryText
-                )
+                enabled = !isTooLong
             ) {
                 Text("Save")
             }
@@ -633,17 +618,13 @@ fun AddTagDialog(
             }
         },
         confirmButton = {
-            Button(
+            GlassPrimaryButton(
                 onClick = {
                     if (isValid) {
                         onConfirm(cleanTag)
                     }
                 },
-                enabled = isValid,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = extended.buttonPrimary,
-                    contentColor = extended.buttonPrimaryText
-                )
+                enabled = isValid
             ) {
                 Text("Add")
             }

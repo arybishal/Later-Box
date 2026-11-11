@@ -62,6 +62,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import com.laterbox.ui.components.glass.GlassContainer
+import com.laterbox.ui.components.glass.GlassPrimaryButton
+import com.laterbox.ui.theme.GlassVariant
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -1046,14 +1049,10 @@ private fun SettingsSection(
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(24.dp)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    GlassContainer(
+        modifier = Modifier.fillMaxWidth(),
+        variant = GlassVariant.SUBTLE,
+        cornerRadius = 24.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1133,40 +1132,26 @@ fun SettingsManageButton(
     text: String = "Manage"
 ) {
     val extended = LaterBoxThemeTokens.extended
-
-    val containerColor = if (enabled) extended.buttonPrimary else extended.buttonPrimary.copy(alpha = 0.4f)
     val contentColor = if (enabled) extended.buttonPrimaryText else extended.buttonPrimaryText.copy(alpha = 0.4f)
 
-    Surface(
+    GlassPrimaryButton(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(20.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        modifier = modifier
-            .defaultMinSize(minHeight = 48.dp, minWidth = 48.dp)
-            .clip(RoundedCornerShape(20.dp))
+        modifier = modifier.defaultMinSize(minHeight = 48.dp, minWidth = 48.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = contentColor
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(12.dp)
-            )
-        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = contentColor
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(12.dp)
+        )
     }
 }
 

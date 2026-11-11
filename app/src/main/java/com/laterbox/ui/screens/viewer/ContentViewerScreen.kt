@@ -40,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import com.laterbox.ui.components.glass.GlassIconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -131,49 +132,48 @@ fun ContentViewerScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    GlassIconButton(
+                        onClick = onBack,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
                 },
                 actions = {
-                    IconButton(onClick = {
-                        val newFav = !isFavorite
-                        isFavorite = newFav
-                        scope.launch {
-                            LaterBoxApp.instance.contentRepository.toggleFavorite(item.id, !newFav)
-                        }
-                    }) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (isFavorite) "Remove from Favorites" else "Mark as Favorite",
-                            tint = if (isFavorite) extended.primaryText else MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    IconButton(onClick = { openInExternalApp(context, item.url) }) {
-                        Icon(
-                            imageVector = Icons.Default.OpenInBrowser,
-                            contentDescription = "Open in Original App",
-                            tint = extended.primaryText
-                        )
-                    }
-                    IconButton(onClick = {
-                        val sendIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.url}")
-                            type = "text/plain"
-                        }
-                        context.startActivity(Intent.createChooser(sendIntent, "Share"))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    GlassIconButton(
+                        onClick = {
+                            val newFav = !isFavorite
+                            isFavorite = newFav
+                            scope.launch {
+                                LaterBoxApp.instance.contentRepository.toggleFavorite(item.id, !newFav)
+                            }
+                        },
+                        icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Remove from Favorites" else "Mark as Favorite",
+                        tint = if (isFavorite) extended.primaryText else MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    GlassIconButton(
+                        onClick = { openInExternalApp(context, item.url) },
+                        icon = Icons.Default.OpenInBrowser,
+                        contentDescription = "Open in Original App",
+                        tint = extended.primaryText
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    GlassIconButton(
+                        onClick = {
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.url}")
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, "Share"))
+                        },
+                        icon = Icons.Default.Share,
+                        contentDescription = "Share",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.width(8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = extended.cardBackground

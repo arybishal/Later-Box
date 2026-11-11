@@ -3,7 +3,12 @@ package com.laterbox.ui.components
 import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,13 +51,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.cos
+import kotlin.math.sin
 import com.laterbox.ui.navigation.Screen
 import com.laterbox.ui.theme.GlassTokens
 import com.laterbox.ui.theme.GlassVariant
@@ -82,18 +92,33 @@ fun LiquidGlassBottomBar(
 ) {
     val extended = LaterBoxThemeTokens.extended
     val isDark = isSystemInDarkTheme()
-    val glassStyle = GlassTokens.styleFor(GlassVariant.REFRACTIVE, isDark)
+
+    // Smooth continuous liquid water wave and caustic motion
+    val infiniteTransition = rememberInfiniteTransition(label = "liquidWaterAnimation")
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 6.2831855f, // 2 * PI for seamless cycle
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 24000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wavePhase"
+    )
+
+    val glassStyle = GlassTokens.styleFor(GlassVariant.REFRACTIVE, isDark, wavePhase)
 
     val activeColor = glassStyle.contentColor
     val inactiveColor = glassStyle.secondaryContentColor
-    val activeIndicatorColor = if (isDark) Color(0x24FFFFFF) else Color(0x14171717)
+    val activeIndicatorColor = if (isDark) Color(0x2838BDF8) else Color(0x1F38BDF8)
 
     val pillShape = RoundedCornerShape(32.dp)
     val innerShape = RoundedCornerShape(30.5.dp)
 
     Box(
         modifier = modifier
+            .fillMaxWidth()
             .widthIn(max = 440.dp)
+            .height(68.dp)
             .shadow(
                 elevation = glassStyle.shadowElevation,
                 shape = pillShape,
@@ -155,14 +180,83 @@ fun LiquidGlassBottomBar(
                 )
         )
 
-        // Left and Right perimeter curvature accents (3D light refraction around pill ends)
+        // Animated Organic Flowing Liquid Water Waves & Crystalline Caustic Highlights
         Canvas(modifier = Modifier.matchParentSize()) {
             val h = size.height
+            val w = size.width
             val strokeWidth = 1.2.dp.toPx()
             val arcColor = if (isDark) Color(0x28FFFFFF) else Color(0x44FFFFFF)
             val aquaEdge = if (isDark) GlassTokens.DarkAquaEdgeCatch else GlassTokens.LightAquaEdgeCatch
-            if (h > 0f && size.width >= h) {
-                // Left end corner refraction catch
+            val wavePrimary = if (isDark) GlassTokens.DarkWaterWavePrimary else GlassTokens.LightWaterWavePrimary
+            val waveSecondary = if (isDark) GlassTokens.DarkWaterWaveSecondary else GlassTokens.LightWaterWaveSecondary
+            val causticLight = if (isDark) GlassTokens.DarkWaterCaustic else GlassTokens.LightWaterCaustic
+
+            if (h > 0f && w >= h) {
+                // 1. Organic Undulating Water Wave Contour across mid-body
+                val wavePath = Path().apply {
+                    moveTo(0f, h * 0.62f)
+                    var x = 0f
+                    val step = w / 16f
+                    while (x <= w + step) {
+                        val normX = (x / w) * 4f * Math.PI.toFloat()
+                        val y = h * 0.62f + sin(normX + wavePhase) * 5.5f + cos(normX * 0.5f - wavePhase * 0.7f) * 2.5f
+                        lineTo(x, y)
+                        x += step
+                    }
+                    lineTo(w, h)
+                    lineTo(0f, h)
+                    close()
+                }
+                drawPath(
+                    path = wavePath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(wavePrimary, waveSecondary, Color.Transparent),
+                        startY = h * 0.40f,
+                        endY = h
+                    )
+                )
+
+                // 2. Secondary Upper Ripple Wave
+                val ripplePath = Path().apply {
+                    moveTo(0f, h * 0.38f)
+                    var x = 0f
+                    val step = w / 16f
+                    while (x <= w + step) {
+                        val normX = (x / w) * 3f * Math.PI.toFloat()
+                        val y = h * 0.38f + cos(normX - wavePhase * 0.85f) * 4.0f
+                        lineTo(x, y)
+                        x += step
+                    }
+                    lineTo(w, h * 0.55f)
+                    lineTo(0f, h * 0.55f)
+                    close()
+                }
+                drawPath(
+                    path = ripplePath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, wavePrimary.copy(alpha = wavePrimary.alpha * 0.6f), Color.Transparent),
+                        startY = h * 0.25f,
+                        endY = h * 0.60f
+                    )
+                )
+
+                // 3. Fluid Water Caustic Light Glints
+                for (i in 0..2) {
+                    val fi = i.toFloat()
+                    val cx = w * (0.20f + fi * 0.30f) + cos(wavePhase + fi * 2.1f) * 18f
+                    val cy = h * 0.50f + sin(wavePhase * 1.3f + fi * 1.5f) * 6f
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(causticLight, Color.Transparent),
+                            center = Offset(cx, cy),
+                            radius = 32f
+                        ),
+                        radius = 32f,
+                        center = Offset(cx, cy)
+                    )
+                }
+
+                // 4. Left and Right Perimeter Curved End Meniscus Arcs
                 drawArc(
                     color = aquaEdge,
                     startAngle = 135f,
@@ -172,26 +266,25 @@ fun LiquidGlassBottomBar(
                     size = Size(h - 1f, h - 1f),
                     style = Stroke(width = strokeWidth)
                 )
-                // Right end corner refraction catch
                 drawArc(
                     color = arcColor,
                     startAngle = 315f,
                     sweepAngle = 90f,
                     useCenter = false,
-                    topLeft = Offset(size.width - h + 0.5f, 0.5f),
+                    topLeft = Offset(w - h + 0.5f, 0.5f),
                     size = Size(h - 1f, h - 1f),
                     style = Stroke(width = strokeWidth)
                 )
             }
         }
 
-        // Navigation Tabs Row
+        // Navigation Tabs Row - Strictly Fixed Geometry with 1f Equal Weight per Slot
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(68.dp)
-                .padding(horizontal = 6.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Home
@@ -203,6 +296,9 @@ fun LiquidGlassBottomBar(
                 inactiveColor = inactiveColor,
                 activeIndicatorColor = activeIndicatorColor,
                 onClick = onNavigateToHome,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 icon = { tint ->
                     Icon(
                         imageVector = Icons.Outlined.Home,
@@ -222,6 +318,9 @@ fun LiquidGlassBottomBar(
                 inactiveColor = inactiveColor,
                 activeIndicatorColor = activeIndicatorColor,
                 onClick = onNavigateToEvents,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 icon = { tint ->
                     Icon(
                         imageVector = if (isEvents) Icons.Default.Event else Icons.Outlined.Event,
@@ -237,17 +336,18 @@ fun LiquidGlassBottomBar(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable(
                         role = Role.Button,
                         onClickLabel = "Capture Snap memory",
                         onClick = onSnapClick
                     )
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
                         .shadow(
                             elevation = 4.dp,
@@ -270,7 +370,9 @@ fun LiquidGlassBottomBar(
                     text = "Snap",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = activeColor
+                    color = activeColor,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
                 )
             }
 
@@ -283,6 +385,9 @@ fun LiquidGlassBottomBar(
                 inactiveColor = inactiveColor,
                 activeIndicatorColor = activeIndicatorColor,
                 onClick = onNavigateToLibrary,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 icon = { tint ->
                     Canvas(modifier = Modifier.size(22.dp)) {
                         val strokeW = 1.8.dp.toPx()
@@ -305,6 +410,9 @@ fun LiquidGlassBottomBar(
                 inactiveColor = inactiveColor,
                 activeIndicatorColor = activeIndicatorColor,
                 onClick = onNavigateToSettings,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 icon = { tint ->
                     Icon(
                         imageVector = Icons.Outlined.Settings,
@@ -331,22 +439,23 @@ private fun LiquidGlassNavTab(
 ) {
     val animatedColor by animateColorAsState(
         targetValue = if (isSelected) activeColor else inactiveColor,
-        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "navTabColor"
     )
 
     val animatedScale by animateFloatAsState(
-        targetValue = if (isSelected) 1.05f else 1.0f,
-        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-        label = "navTabScale"
+        targetValue = if (isSelected) 1.08f else 1.0f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "navTabIconScale"
     )
 
     val animatedIndicatorBg by animateColorAsState(
         targetValue = if (isSelected) activeIndicatorColor else Color.Transparent,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = tween(durationMillis = 180),
         label = "navTabIndicator"
     )
 
+    // Column has strictly fixed geometry - layout bounds NEVER mutate or cause sibling movement
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -359,24 +468,27 @@ private fun LiquidGlassNavTab(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true, radius = 28.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 3.dp)
-            .scale(animatedScale)
     ) {
+        // Fixed dimensions for icon indicator capsule - never expands horizontally
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(animatedIndicatorBg)
-                .padding(horizontal = if (isSelected) 10.dp else 4.dp, vertical = 3.dp),
+                .size(width = 46.dp, height = 28.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(animatedIndicatorBg),
             contentAlignment = Alignment.Center
         ) {
-            icon(animatedColor)
+            Box(modifier = Modifier.scale(animatedScale)) {
+                icon(animatedColor)
+            }
         }
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = animatedColor
+            color = animatedColor,
+            textAlign = TextAlign.Center,
+            maxLines = 1
         )
     }
 }

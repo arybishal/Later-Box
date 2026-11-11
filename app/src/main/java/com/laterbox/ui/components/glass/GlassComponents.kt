@@ -57,7 +57,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import kotlin.math.sin
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -148,9 +150,10 @@ fun GlassSurface(
             )
         }
 
-        // Corner perimeter curvature accents for refractive glass pill
+        // Corner perimeter curvature accents and organic fluid wave for refractive glass
         if (variant == GlassVariant.REFRACTIVE) {
             val aquaGleam = if (isDark) GlassTokens.DarkAquaSheen else GlassTokens.LightAquaSheen
+            val waveColor = if (isDark) GlassTokens.DarkWaterWavePrimary else GlassTokens.LightWaterWavePrimary
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -165,10 +168,38 @@ fun GlassSurface(
 
             Canvas(modifier = Modifier.matchParentSize()) {
                 val h = size.height
+                val w = size.width
                 val strokeWidth = 1.2.dp.toPx()
                 val arcColor = if (isDark) Color(0x28FFFFFF) else Color(0x44FFFFFF)
                 val aquaEdge = if (isDark) GlassTokens.DarkAquaEdgeCatch else GlassTokens.LightAquaEdgeCatch
-                if (h > 0f && size.width >= h) {
+
+                // Organic fluid wave contour across surface
+                if (h > 12f && w > 12f) {
+                    val wavePath = Path().apply {
+                        moveTo(0f, h * 0.65f)
+                        val step = w / 8f
+                        var x = 0f
+                        while (x <= w + step) {
+                            val normX = (x / w) * 3f * Math.PI.toFloat()
+                            val y = h * 0.65f + sin(normX) * (h * 0.08f).coerceAtMost(5f)
+                            lineTo(x, y)
+                            x += step
+                        }
+                        lineTo(w, h)
+                        lineTo(0f, h)
+                        close()
+                    }
+                    drawPath(
+                        path = wavePath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(waveColor.copy(alpha = waveColor.alpha * 0.6f), Color.Transparent),
+                            startY = h * 0.50f,
+                            endY = h
+                        )
+                    )
+                }
+
+                if (h > 0f && w >= h) {
                     drawArc(
                         color = aquaEdge,
                         startAngle = 135f,
@@ -183,7 +214,7 @@ fun GlassSurface(
                         startAngle = 315f,
                         sweepAngle = 90f,
                         useCenter = false,
-                        topLeft = Offset(size.width - h + 0.5f, 0.5f),
+                        topLeft = Offset(w - h + 0.5f, 0.5f),
                         size = Size(h - 1f, h - 1f),
                         style = Stroke(width = strokeWidth)
                     )
@@ -255,6 +286,98 @@ fun GlassButton(
         Row(
             modifier = Modifier
                 .defaultMinSize(minHeight = 48.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * Prominent Primary Button crafted with Liquid Water Glass.
+ */
+@Composable
+fun GlassPrimaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(14.dp),
+    content: @Composable RowScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed && enabled) 0.96f else 1.0f,
+        animationSpec = tween(durationMillis = 150),
+        label = "glassPrimaryBtnScale"
+    )
+
+    GlassSurface(
+        variant = GlassVariant.REFRACTIVE,
+        shape = shape,
+        modifier = modifier
+            .scale(animatedScale)
+            .defaultMinSize(minWidth = 64.dp, minHeight = 48.dp)
+            .clip(shape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true),
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = 48.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * Secondary Subtle Glass Button.
+ */
+@Composable
+fun GlassSecondaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(14.dp),
+    content: @Composable RowScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed && enabled) 0.96f else 1.0f,
+        animationSpec = tween(durationMillis = 150),
+        label = "glassSecondaryBtnScale"
+    )
+
+    GlassSurface(
+        variant = GlassVariant.SUBTLE,
+        shape = shape,
+        modifier = modifier
+            .scale(animatedScale)
+            .defaultMinSize(minWidth = 64.dp, minHeight = 44.dp)
+            .clip(shape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true),
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = 44.dp)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically

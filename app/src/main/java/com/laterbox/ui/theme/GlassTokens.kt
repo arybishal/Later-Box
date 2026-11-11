@@ -98,8 +98,11 @@ object GlassTokens {
     val LightTopGleam = Color(0x99FFFFFF)          // 60% white horizontal gleam
 
     // Pale Aqua Water Refraction & Caustic Reflections (Light Theme)
-    val LightAquaSheen = Color(0x1A38BDF8)         // 10% delicate pale-aqua water gleam
-    val LightAquaEdgeCatch = Color(0x33BAE6FD)     // 20% aqua perimeter light catch
+    val LightAquaSheen = Color(0x2E38BDF8)         // 18% delicate pale-aqua water gleam
+    val LightAquaEdgeCatch = Color(0x4D38BDF8)     // 30% aqua perimeter light catch
+    val LightWaterWavePrimary = Color(0x4038BDF8)   // 25% vibrant pale-aqua wave crest
+    val LightWaterWaveSecondary = Color(0x280284C7) // 16% soft marine blue fluid body
+    val LightWaterCaustic = Color(0x66FFFFFF)       // 40% crystalline sun highlight
 
     // --- Dark Theme Glass Palettes ---
     // Charcoal-Silver Translucent Crystal Base
@@ -126,8 +129,11 @@ object GlassTokens {
     val DarkTopGleam = Color(0x40FFFFFF)           // 25% white gleam
 
     // Cool Blue-Silver Water Refraction & Caustics (Dark Theme)
-    val DarkAquaSheen = Color(0x2038BDF8)          // 12% cool blue-silver aqua gleam
-    val DarkAquaEdgeCatch = Color(0x300284C7)      // 18% cool aqua light catch
+    val DarkAquaSheen = Color(0x3338BDF8)          // 20% cool blue-silver aqua gleam
+    val DarkAquaEdgeCatch = Color(0x4D0284C7)      // 30% cool aqua light catch
+    val DarkWaterWavePrimary = Color(0x4038BDF8)    // 25% luminous aqua wave crest
+    val DarkWaterWaveSecondary = Color(0x300369A1)  // 19% deep azure reflection
+    val DarkWaterCaustic = Color(0x4DBAE6FD)        // 30% cool aqua light focus
 
     /**
      * Resolves the appropriate [GlassStyle] for a given [GlassVariant] and theme mode.
@@ -383,24 +389,33 @@ private const val AGSL_REFRACTIVE_GLASS = """
         // Fresnel reflection at glancing perimeter angles
         float fresnel = pow(1.0 - nz, 3.0) * (uIsDark > 0.5 ? 0.20 : 0.35);
 
-        // Organic flowing water-wave caustics
-        float2 wc = fragCoord * 0.012;
-        float w1 = sin(wc.x * 2.1 + wc.y * 1.5 + uTime * 0.45);
-        float w2 = cos(wc.x * 1.4 - wc.y * 2.2 + uTime * 0.35);
-        float w3 = sin((wc.x + wc.y) * 1.8 + uTime * 0.25);
-        float caustic = pow(clamp(0.5 + 0.5 * (w1 + w2 + w3) / 3.0, 0.0, 1.0), 3.0);
-        float causticMask = smoothstep(0.0, 4.0, distInside);
+        // Organic flowing liquid water-wave caustics & refractive displacement
+        float2 wc = fragCoord * 0.018;
+        float w1 = sin(wc.x * 1.8 + wc.y * 1.2 + uTime * 0.65);
+        float w2 = cos(wc.x * 1.4 - wc.y * 2.1 - uTime * 0.55);
+        float w3 = sin((wc.x + wc.y) * 1.5 + uTime * 0.40);
+        float waveSum = (w1 + w2 + w3) * 0.3333;
+
+        // Distinctive water caustics with fine crystalline crests
+        float causticCrest = pow(clamp(0.5 + 0.5 * waveSum, 0.0, 1.0), 3.5);
+        float causticRipple = smoothstep(0.40, 0.85, 0.5 + 0.5 * sin(wc.x * 3.5 - wc.y * 2.5 + uTime * 0.85 + waveSum * 3.0));
+        float fluidCaustic = clamp(causticCrest * 0.75 + causticRipple * 0.45, 0.0, 1.0);
+        float causticMask = smoothstep(0.0, 3.5, distInside);
 
         half4 result = baseGlass;
         result.rgb += half3(specularOuter * uRimHighlight.rgb * uRimHighlight.a);
         result.rgb += half3(specularInner * uInnerMeniscus.rgb * uInnerMeniscus.a);
         result.rgb += half3(fresnel);
 
-        // Subtle pale aqua water reflection & caustic blend
-        float aquaFactor = (caustic * 0.12 + (1.0 - lensT) * 0.08) * causticMask;
-        result.rgb = mix(result.rgb, uAquaReflect.rgb, half(aquaFactor * uAquaReflect.a));
+        // Visibly present pale-aqua water reflections and sunlight caustic highlights
+        float waterOpacity = (fluidCaustic * 0.45 + (1.0 - lensT) * 0.25) * causticMask;
+        result.rgb = mix(result.rgb, uAquaReflect.rgb, half(waterOpacity * uAquaReflect.a * 1.8));
 
-        result.a = clamp(result.a + half(specularOuter * 0.25 + specularInner * 0.15 + caustic * 0.03), 0.0, 1.0);
+        // Add crystalline water reflection crest highlights
+        half3 sunCausticLight = uIsDark > 0.5 ? half3(0.55, 0.85, 1.0) : half3(0.95, 0.98, 1.0);
+        result.rgb += sunCausticLight * half(causticCrest * 0.35 * causticMask);
+
+        result.a = clamp(result.a + half(specularOuter * 0.25 + specularInner * 0.15 + causticCrest * 0.08), 0.0, 1.0);
 
         // Edge antialiasing
         float edgeAlpha = smoothstep(0.5, -0.5, d);
