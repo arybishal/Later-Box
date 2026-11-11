@@ -74,4 +74,11 @@ class SemanticVersionTest {
         assertTrue(SemanticVersion.isVersionNewer("2.0.0.2", "2.0.0.1"))
         assertFalse(SemanticVersion.isVersionNewer("2.0.0.1", "2.0.0.2"))
     }
+
+    @Test
+    fun testV210NewerThanV20003() {
+        assertTrue(SemanticVersion.isVersionNewer("v2.1.0", "2.0.003"))
+        assertTrue(SemanticVersion.isVersionNewer("2.1.0", "2.0.003"))
+        assertFalse(SemanticVersion.isVersionNewer("2.0.003", "2.1.0"))
+    }
 }
