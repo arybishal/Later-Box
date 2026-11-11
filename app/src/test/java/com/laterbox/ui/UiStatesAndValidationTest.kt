@@ -2,6 +2,7 @@ package com.laterbox.ui
 
 import com.laterbox.ui.components.LaterBoxSnackbarController
 import com.laterbox.ui.components.SnackbarMessage
+import com.laterbox.ui.screens.settings.AiBadgeState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -88,5 +89,21 @@ class UiStatesAndValidationTest {
 
         assertTrue(isFilterOnly)
         assertFalse(activeQuery.isBlank())
+    }
+
+    @Test
+    fun testAiBadgeStateMapping_correctStateAndLabel() {
+        // When no API key is present, regardless of isAiEnabled, state is KEY_REQUIRED
+        assertEquals(AiBadgeState.KEY_REQUIRED, AiBadgeState.from(hasApiKey = false, isAiEnabled = true))
+        assertEquals(AiBadgeState.KEY_REQUIRED, AiBadgeState.from(hasApiKey = false, isAiEnabled = false))
+        assertEquals("KEY REQUIRED", AiBadgeState.KEY_REQUIRED.label)
+
+        // When API key is present but AI is disabled/paused, state is PAUSED
+        assertEquals(AiBadgeState.PAUSED, AiBadgeState.from(hasApiKey = true, isAiEnabled = false))
+        assertEquals("PAUSED", AiBadgeState.PAUSED.label)
+
+        // When API key is present and AI is enabled, state is ACTIVE
+        assertEquals(AiBadgeState.ACTIVE, AiBadgeState.from(hasApiKey = true, isAiEnabled = true))
+        assertEquals("ACTIVE", AiBadgeState.ACTIVE.label)
     }
 }

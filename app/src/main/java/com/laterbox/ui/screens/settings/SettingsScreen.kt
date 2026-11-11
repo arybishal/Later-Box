@@ -83,6 +83,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.laterbox.LaterBoxApp
@@ -265,16 +267,11 @@ fun SettingsScreen(
                     title = "AI & Intelligence",
                     icon = Icons.Default.AutoAwesome
                 ) {
-                    val statusText = when {
-                        !hasApiKey -> "Gemini setup required"
-                        !isAiEnabled -> "Gemini AI paused"
-                        autoAnalyze -> "Connected · Auto-analysis enabled"
-                        else -> "Connected · Auto-analysis paused"
-                    }
-                    val badgeLabel = when {
-                        !hasApiKey -> "KEY REQUIRED"
-                        !isAiEnabled -> "PAUSED"
-                        else -> "ACTIVE"
+                    val badgeState = AiBadgeState.from(hasApiKey = hasApiKey, isAiEnabled = isAiEnabled)
+                    val statusText = when (badgeState) {
+                        AiBadgeState.KEY_REQUIRED -> "Setup required"
+                        AiBadgeState.PAUSED -> "Gemini AI paused"
+                        AiBadgeState.ACTIVE -> if (autoAnalyze) "Connected · Auto-analysis enabled" else "Connected · Auto-analysis paused"
                     }
 
                     Column(
@@ -290,48 +287,38 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Google Gemini Intelligence",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = extended.primaryBlack
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
+                                    AiStatusBadge(state = badgeState)
                                     Text(
-                                        text = "Google Gemini Intelligence",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = extended.primaryBlack
+                                        text = statusText,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = if (badgeState == AiBadgeState.ACTIVE) extended.primaryBlack else extended.secondaryText,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(if (isAiEnabled && hasApiKey) extended.surfaceSecondary else extended.pillInactive)
-                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 7.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = badgeLabel,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isAiEnabled && hasApiKey) extended.primaryText else extended.secondaryText
-                                        )
-                                    }
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = statusText,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = if (isAiEnabled && hasApiKey) extended.primaryBlack else extended.secondaryText
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = if (hasApiKey) "Model: $selectedModelId · Automatic summaries, smart titles, topic tags & entity extraction for every saved memory." else "Add your free Google Gemini API key to unlock automatic summaries, smart titles, and instant takeaways for all saved content.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = extended.textSecondary
+                                    color = extended.textSecondary,
+                                    lineHeight = 16.sp
                                 )
                             }
 
                             SettingsManageButton(
                                 onClick = onNavigateToGeminiSettings,
-                                text = "Configure"
+                                text = if (!hasApiKey) "Setup" else "Configure"
                             )
                         }
                     }
@@ -1107,5 +1094,77 @@ fun SettingsManageButton(
                 modifier = Modifier.size(12.dp)
             )
         }
+    }
+}
+
+/**
+ * AI Badge State representing the configuration and operational status of Gemini AI.
+ */
+enum class AiBadgeState(val label: String) {
+    KEY_REQUIRED("KEY REQUIRED"),
+    ACTIVE("ACTIVE"),
+    PAUSED("PAUSED");
+
+    companion object {
+        fun from(hasApiKey: Boolean, isAiEnabled: Boolean): AiBadgeState = when {
+            !hasApiKey -> KEY_REQUIRED
+            !isAiEnabled -> PAUSED
+            else -> ACTIVE
+        }
+    }
+}
+
+/**
+ * AI Status Badge
+ * Displays the current status of Google Gemini AI in Settings.
+ * Minimalist design system token compliance:
+ * - KEY REQUIRED: Surface secondary background, border, high-contrast primary text.
+ * - ACTIVE: Subtle interactive blue accent background and border, interactive blue text.
+ * - PAUSED: Surface secondary background, border, muted secondary text.
+ */
+@Composable
+fun AiStatusBadge(
+    state: AiBadgeState,
+    modifier: Modifier = Modifier
+) {
+    val extended = LaterBoxThemeTokens.extended
+
+    val (backgroundColor, borderColor, textColor) = when (state) {
+        AiBadgeState.ACTIVE -> Triple(
+            extended.interactiveAccent.copy(alpha = 0.12f),
+            extended.interactiveAccent.copy(alpha = 0.35f),
+            extended.interactiveAccent
+        )
+        AiBadgeState.KEY_REQUIRED -> Triple(
+            extended.surfaceSecondary,
+            extended.border,
+            extended.primaryBlack
+        )
+        AiBadgeState.PAUSED -> Triple(
+            extended.surfaceSecondary,
+            extended.border,
+            extended.secondaryText
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = state.label,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 13.sp,
+            letterSpacing = 0.5.sp,
+            color = textColor,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Center
+        )
     }
 }
