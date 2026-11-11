@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.laterbox.LaterBoxApp
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
 class AiAnalysisWorker(
@@ -21,15 +22,16 @@ class AiAnalysisWorker(
         const val KEY_ITEM_ID = "ai_item_id"
         private const val WORK_NAME_PREFIX = "ai_analysis_item_"
 
-        fun enqueue(context: Context, itemId: Long) {
+        fun enqueue(context: Context, itemId: Long, requireWifi: Boolean = false) {
+            val networkType = if (requireWifi) NetworkType.UNMETERED else NetworkType.CONNECTED
             val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiredNetworkType(networkType)
                 .build()
 
             val workRequest = OneTimeWorkRequestBuilder<AiAnalysisWorker>()
                 .setConstraints(constraints)
                 .setInputData(workDataOf(KEY_ITEM_ID to itemId))
-                .setInitialDelay(2, TimeUnit.SECONDS)
+                .setInitialDelay(1, TimeUnit.SECONDS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
@@ -53,15 +55,29 @@ class AiAnalysisWorker(
             return Result.success()
         }
 
+        // Check Wi-Fi constraint if configured
+        val requiresWifi = try { aiSettings.requireWifiForAi.first() } catch (_: Exception) { false }
+        if (requiresWifi) {
+            val connectivityManager = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val activeNetwork = connectivityManager?.activeNetwork
+            val capabilities = connectivityManager?.getNetworkCapabilities(activeNetwork)
+            val isWifiOrEthernet = capabilities?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) == true ||
+                    capabilities?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) == true
+            if (!isWifiOrEthernet) {
+                // Retry when Wi-Fi is connected
+                return Result.retry()
+            }
+        }
+
         return try {
             val result = geminiService.analyzeItem(itemId, forceRegenerate = false)
             if (result.isSuccess) {
                 Result.success()
             } else {
-                if (runAttemptCount < 2) Result.retry() else Result.failure()
+                if (runAttemptCount < 3) Result.retry() else Result.failure()
             }
         } catch (_: Exception) {
-            if (runAttemptCount < 2) Result.retry() else Result.failure()
+            if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
 }

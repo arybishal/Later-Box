@@ -8,6 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.laterbox.data.update.UpdateNotificationHelper
+import com.laterbox.data.update.UpdateInfo
+import com.laterbox.ui.components.UpdateDetailsDialog
+import kotlinx.coroutines.flow.first
 import com.laterbox.ui.screens.detail.ItemDetailScreen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -129,6 +132,25 @@ fun MainAppScaffold() {
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showSnapSheet by remember { mutableStateOf(false) }
+
+    val updateManager = remember { LaterBoxApp.instance.updateManager }
+    val userPrefs = remember { LaterBoxApp.instance.preferencesRepository }
+    var availableUpdateForDialog by remember { mutableStateOf<UpdateInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        val completedFirstLaunch = userPrefs.hasCompletedFirstLaunchCheck.first()
+        if (!completedFirstLaunch) {
+            val result = updateManager.checkForUpdates()
+            result.onSuccess { updateInfo ->
+                userPrefs.setCompletedFirstLaunchCheck(true)
+                if (updateInfo != null && updateInfo.isNewer) {
+                    availableUpdateForDialog = updateInfo
+                }
+            }.onFailure {
+                // If offline or network error on first launch, allow checking next launch
+            }
+        }
+    }
 
     LaunchedEffect(activity?.intent) {
         val navigateToUpdates = activity?.intent?.getBooleanExtra(
@@ -540,6 +562,20 @@ fun MainAppScaffold() {
                     )
                     showAddDialog = false
                 }
+            }
+        )
+    }
+
+    availableUpdateForDialog?.let { updateInfo ->
+        UpdateDetailsDialog(
+            updateInfo = updateInfo,
+            currentVersionName = updateManager.currentVersionName,
+            currentVersionCode = updateManager.currentVersionCode,
+            onDismiss = { availableUpdateForDialog = null },
+            onStartDownload = {
+                availableUpdateForDialog = null
+                navController.navigate(Screen.Settings.route)
+                updateManager.startDownload(updateInfo)
             }
         )
     }

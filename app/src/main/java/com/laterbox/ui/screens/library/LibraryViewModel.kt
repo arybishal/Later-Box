@@ -33,8 +33,8 @@ class LibraryViewModel(
     private val preferencesRepository: UserPreferencesRepository = LaterBoxApp.instance.preferencesRepository
 ) : ViewModel() {
 
-    val viewMode: StateFlow<ViewMode> = preferencesRepository.viewMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ViewMode.GRID)
+    private val _viewMode = MutableStateFlow(ViewMode.GRID)
+    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
 
     val sortOrder: StateFlow<SortOrder> = preferencesRepository.sortOrder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.NEWEST)
@@ -47,6 +47,14 @@ class LibraryViewModel(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            preferencesRepository.viewMode.collect { savedMode ->
+                _viewMode.value = savedMode
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val items: StateFlow<List<SavedItemEntity>> = combine(
@@ -86,6 +94,7 @@ class LibraryViewModel(
     )
 
     fun setViewMode(mode: ViewMode) {
+        _viewMode.value = mode
         viewModelScope.launch {
             preferencesRepository.setViewMode(mode)
         }

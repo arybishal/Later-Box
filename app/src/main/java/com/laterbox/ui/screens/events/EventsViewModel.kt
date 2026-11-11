@@ -48,14 +48,25 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
         personName: String?,
         recurrenceRule: String?,
         notifyBeforeMinutes: Int,
-        note: String?
+        note: String?,
+        originalDate: Long? = null,
+        relationship: String? = null,
+        secondPersonName: String? = null,
+        reminderOffsetsDaysJson: String? = null
     ) {
         viewModelScope.launch {
             // First create a unified memory in saved_items so this event is searchable!
+            val memoryDescription = when {
+                !relationship.isNullOrBlank() && !personName.isNullOrBlank() -> "$personName ($relationship)"
+                !personName.isNullOrBlank() && !secondPersonName.isNullOrBlank() -> "$personName & $secondPersonName"
+                !personName.isNullOrBlank() -> "Associated with $personName"
+                else -> note
+            }
+
             val memoryItem = SavedItemEntity(
                 url = "local://event/${System.currentTimeMillis()}",
                 title = title,
-                description = personName?.let { "Associated with $it" } ?: note,
+                description = memoryDescription,
                 notes = note,
                 contentType = ContentType.NOTE,
                 captureMethod = "EVENT"
@@ -68,6 +79,10 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
                 eventTitle = title,
                 eventType = eventType,
                 personName = personName,
+                relationship = relationship,
+                secondPersonName = secondPersonName,
+                originalDate = originalDate,
+                reminderOffsetsDaysJson = reminderOffsetsDaysJson,
                 recurrenceRule = recurrenceRule,
                 notifyBeforeMinutes = notifyBeforeMinutes,
                 note = note
@@ -82,7 +97,11 @@ class EventsViewModel(application: Application) : AndroidViewModel(application) 
     fun markCompleted(reminder: ReminderEntity) {
         viewModelScope.launch {
             if (!reminder.recurrenceRule.isNullOrBlank() && reminder.recurrenceRule != "NONE") {
-                val nextTime = ReminderScheduler.computeNextOccurrence(reminder.dueAt, reminder.recurrenceRule)
+                val nextTime = ReminderScheduler.computeNextOccurrence(
+                    currentDueAt = reminder.dueAt,
+                    recurrenceRule = reminder.recurrenceRule,
+                    originalDate = reminder.originalDate
+                )
                 val updated = reminder.copy(dueAt = nextTime, isCompleted = false, snoozedUntil = null)
                 reminderDao.updateReminder(updated)
                 ReminderScheduler.scheduleReminder(getApplication(), updated)

@@ -136,7 +136,18 @@ class ContentRepository(
                     }
                 } catch (_: Exception) {}
 
-                // Trigger automatic AI analysis if enabled by user
+                // Trigger automatic AI analysis after web metadata enrichment
+                try {
+                    val app = LaterBoxApp.instance
+                    if (app.aiSettingsRepository.isAiEnabledNow() && app.aiSettingsRepository.isAutoAnalyzeNow()) {
+                        com.laterbox.data.ai.AiAnalysisWorker.enqueue(app, insertedId)
+                    }
+                } catch (_: Exception) {}
+            }
+        } else {
+            // For all non-web content (Notes, Snaps, Photos, Audio, Video, Files, Events):
+            // Enqueue automatic AI analysis immediately
+            externalScope.launch {
                 try {
                     val app = LaterBoxApp.instance
                     if (app.aiSettingsRepository.isAiEnabledNow() && app.aiSettingsRepository.isAutoAnalyzeNow()) {

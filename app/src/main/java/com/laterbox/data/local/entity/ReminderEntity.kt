@@ -35,5 +35,26 @@ data class ReminderEntity(
     val eventType: String = "REMINDER",
     val personName: String? = null,
     val recurrenceRule: String? = null,
-    val notifyBeforeMinutes: Int = 0
-)
+    val notifyBeforeMinutes: Int = 0,
+    val originalDate: Long? = null,
+    val relationship: String? = null,
+    val secondPersonName: String? = null,
+    val reminderOffsetsDaysJson: String? = null
+) {
+    fun getReminderOffsetsDays(): List<Int> {
+        val json = reminderOffsetsDaysJson
+        if (json.isNullOrBlank()) {
+            return if (eventType == "BIRTHDAY" || eventType == "ANNIVERSARY") {
+                listOf(30, 7, 3, 1, 0)
+            } else {
+                listOf(0)
+            }
+        }
+        return try {
+            val arr = org.json.JSONArray(json)
+            (0 until arr.length()).map { arr.getInt(it) }
+        } catch (_: Exception) {
+            listOf(0)
+        }
+    }
+}

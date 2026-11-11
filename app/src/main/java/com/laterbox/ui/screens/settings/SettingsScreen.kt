@@ -131,6 +131,7 @@ fun SettingsScreen(
 
     val aiSettings = LaterBoxApp.instance.aiSettingsRepository
     val isAiEnabled by aiSettings.isAiEnabled.collectAsState(initial = false)
+    val autoAnalyze by aiSettings.autoAnalyzeNewItems.collectAsState(initial = true)
     val selectedModelId by aiSettings.selectedModelId.collectAsState(initial = com.laterbox.data.ai.model.GeminiModels.DEFAULT_MODEL_ID)
     val secureStorage = remember { com.laterbox.data.ai.security.SecureApiKeyStorage.getInstance(context) }
     var hasApiKey by remember { mutableStateOf(secureStorage.hasApiKey()) }
@@ -258,129 +259,86 @@ fun SettingsScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // DATA & BACKUP SECTION (High Priority Feature)
+            // 1. AI & Intelligence (High Priority #1 Section)
             item {
                 SettingsSection(
-                    title = "Data & Backup",
-                    icon = Icons.Default.Backup
+                    title = "AI & Intelligence",
+                    icon = Icons.Default.AutoAwesome
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Summary info
+                    val statusText = when {
+                        !hasApiKey -> "Gemini setup required"
+                        !isAiEnabled -> "Gemini AI paused"
+                        autoAnalyze -> "Connected · Auto-analysis enabled"
+                        else -> "Connected · Auto-analysis paused"
+                    }
+                    val badgeLabel = when {
+                        !hasApiKey -> "KEY REQUIRED"
+                        !isAiEnabled -> "PAUSED"
+                        else -> "ACTIVE"
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onNavigateToGeminiSettings() }
+                            .padding(vertical = 2.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Google Gemini Intelligence",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = extended.primaryBlack
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isAiEnabled && hasApiKey) extended.surfaceSecondary else extended.pillInactive)
+                                            .border(1.dp, extended.border, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = badgeLabel,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isAiEnabled && hasApiKey) extended.primaryText else extended.secondaryText
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Last Backup",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = extended.textSecondary
+                                    text = statusText,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = if (isAiEnabled && hasApiKey) extended.primaryBlack else extended.secondaryText
                                 )
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = lastBackupTimestamp?.let { dateFormat.format(Date(it)) } ?: "Never backed up",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            backupSummary?.let { sum ->
-                                Text(
-                                    text = "${sum.totalItems} items · ${sum.totalPlaylists} playlists",
+                                    text = if (hasApiKey) "Model: $selectedModelId · Automatic summaries, smart titles, topic tags & entity extraction for every saved memory." else "Add your free Google Gemini API key to unlock automatic summaries, smart titles, and instant takeaways for all saved content.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = extended.textSecondary
                                 )
                             }
-                        }
 
-                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
-
-                        // Export Action
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                                Text(
-                                    text = "Export My Data",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Create a portable backup of your saved content, playlists, settings and downloaded media.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = extended.textSecondary
-                                )
-                            }
-
-                            Button(
-                                onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = extended.buttonPrimary,
-                                    contentColor = extended.buttonPrimaryText
-                                ),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CloudUpload,
-                                    contentDescription = null,
-                                    tint = extended.buttonPrimaryText,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Export", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
-                            }
-                        }
-
-                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
-
-                        // Import Action
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                                Text(
-                                    text = "Import Backup",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Restore your Later Box library and preferences from a previous backup.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = extended.textSecondary
-                                )
-                            }
-
-                            OutlinedButton(
-                                onClick = {
-                                    importLauncher.launch(
-                                        arrayOf("application/zip", "application/octet-stream", "*/*")
-                                    )
-                                },
-                                shape = RoundedCornerShape(20.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CloudDownload,
-                                    contentDescription = null,
-                                    tint = extended.primaryBlack,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Import", fontWeight = FontWeight.Bold, color = extended.primaryBlack)
-                            }
+                            SettingsManageButton(
+                                onClick = onNavigateToGeminiSettings,
+                                text = "Configure"
+                            )
                         }
                     }
                 }
             }
 
-            // Appearance Section
+            // 2. Appearance Section
             item {
                 SettingsSection(
                     title = "Appearance",
@@ -423,97 +381,6 @@ fun SettingsScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            // Content Saving Preferences
-            item {
-                SettingsSection(
-                    title = "Saving & Organizing",
-                    icon = Icons.Default.Tune
-                ) {
-                    SettingsToggleRow(
-                        title = "Auto-fetch Web Metadata",
-                        subtitle = "Retrieve page title, OpenGraph preview image, and domain automatically",
-                        checked = autoFetchMetadata,
-                        onCheckedChange = { checked ->
-                            scope.launch { prefs.setAutoFetchMetadata(checked) }
-                        }
-                    )
-                    HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 8.dp))
-                    SettingsToggleRow(
-                        title = "Direct Save to Inbox",
-                        subtitle = "Skip playlist picker on share and save directly to Inbox",
-                        checked = directSaveToInbox,
-                        onCheckedChange = { checked ->
-                            scope.launch { prefs.setDirectSaveToInbox(checked) }
-                        }
-                    )
-                    HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 8.dp))
-                    SettingsToggleRow(
-                        title = "In-App Content Viewer",
-                        subtitle = "Open articles and media inside Later Box rather than external browser",
-                        checked = inAppViewing,
-                        onCheckedChange = { checked ->
-                            scope.launch { prefs.setInAppViewing(checked) }
-                        }
-                    )
-                }
-            }
-
-            // AI & Intelligence
-            item {
-                SettingsSection(
-                    title = "AI & Intelligence",
-                    icon = Icons.Default.AutoAwesome
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { onNavigateToGeminiSettings() }
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Google Gemini AI",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (isAiEnabled && hasApiKey) extended.surfaceSecondary else extended.surfaceSecondary)
-                                        .border(1.dp, extended.border, RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 7.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (isAiEnabled && hasApiKey) "ACTIVE" else if (!hasApiKey) "KEY REQUIRED" else "OFF",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isAiEnabled && hasApiKey) extended.primaryText else extended.secondaryText
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (hasApiKey) "Model: $selectedModelId · Summaries & Takeaways" else "Configure API key, model selection, and auto-analysis",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = extended.textSecondary
-                            )
-                        }
-
-                        SettingsManageButton(
-                            onClick = onNavigateToGeminiSettings,
-                            text = "Manage"
-                        )
                     }
                 }
             }
@@ -712,6 +579,41 @@ fun SettingsScreen(
                 }
             }
 
+            // 4. Content Saving Preferences
+            item {
+                SettingsSection(
+                    title = "Saving & Organizing",
+                    icon = Icons.Default.Tune
+                ) {
+                    SettingsToggleRow(
+                        title = "Auto-fetch Web Metadata",
+                        subtitle = "Retrieve page title, OpenGraph preview image, and domain automatically",
+                        checked = autoFetchMetadata,
+                        onCheckedChange = { checked ->
+                            scope.launch { prefs.setAutoFetchMetadata(checked) }
+                        }
+                    )
+                    HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 8.dp))
+                    SettingsToggleRow(
+                        title = "Direct Save to Inbox",
+                        subtitle = "Skip playlist picker on share and save directly to Inbox",
+                        checked = directSaveToInbox,
+                        onCheckedChange = { checked ->
+                            scope.launch { prefs.setDirectSaveToInbox(checked) }
+                        }
+                    )
+                    HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 8.dp))
+                    SettingsToggleRow(
+                        title = "In-App Content Viewer",
+                        subtitle = "Open articles and media inside Later Box rather than external browser",
+                        checked = inAppViewing,
+                        onCheckedChange = { checked ->
+                            scope.launch { prefs.setInAppViewing(checked) }
+                        }
+                    )
+                }
+            }
+
             // Storage & Trash Management
             item {
                 SettingsSection(
@@ -780,6 +682,128 @@ fun SettingsScreen(
                             onClick = onNavigateToTrash,
                             text = "Manage"
                         )
+                    }
+                }
+            }
+
+            // 6. Data & Backup
+            item {
+                SettingsSection(
+                    title = "Data & Backup",
+                    icon = Icons.Default.Backup
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Summary info
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Last Backup",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = extended.textSecondary
+                                )
+                                Text(
+                                    text = lastBackupTimestamp?.let { dateFormat.format(Date(it)) } ?: "Never backed up",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            backupSummary?.let { sum ->
+                                Text(
+                                    text = "${sum.totalItems} items · ${sum.totalPlaylists} playlists",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = extended.textSecondary
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Export Action
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Export My Data",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Create a portable backup of your saved content, playlists, settings and downloaded media.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            Button(
+                                onClick = { exportLauncher.launch("LaterBox_Backup.zip") },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = extended.buttonPrimary,
+                                    contentColor = extended.buttonPrimaryText
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudUpload,
+                                    contentDescription = null,
+                                    tint = extended.buttonPrimaryText,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Export", fontWeight = FontWeight.Bold, color = extended.buttonPrimaryText)
+                            }
+                        }
+
+                        HorizontalDivider(color = extended.border, modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Import Action
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = "Import Backup",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Restore your Later Box library and preferences from a previous backup.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = extended.textSecondary
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    importLauncher.launch(
+                                        arrayOf("application/zip", "application/octet-stream", "*/*")
+                                    )
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = null,
+                                    tint = extended.primaryBlack,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Import", fontWeight = FontWeight.Bold, color = extended.primaryBlack)
+                            }
+                        }
                     }
                 }
             }

@@ -230,11 +230,11 @@ fun LibraryScreen(
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(bottom = 100.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredItems, key = { it.id }) { item ->
-                            CompactSocialFeedCard(
+                            ContentCardList(
                                 item = item,
                                 onClick = { onOpenItem(item) },
                                 onFavoriteToggle = {
@@ -242,15 +242,6 @@ fun LibraryScreen(
                                     LaterBoxSnackbarController.showMessage(
                                         if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
                                     )
-                                },
-                                onAddToPlaylist = { selectedItemForPlaylists = item },
-                                onShare = {
-                                    val sendIntent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, item.url.ifEmpty { item.title })
-                                        type = "text/plain"
-                                    }
-                                    context.startActivity(Intent.createChooser(sendIntent, "Share via"))
                                 },
                                 onMenuClick = { selectedItemForActions = item }
                             )

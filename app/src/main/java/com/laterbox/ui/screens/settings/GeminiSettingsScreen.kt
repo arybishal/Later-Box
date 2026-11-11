@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -95,7 +96,12 @@ import com.laterbox.data.ai.network.GeminiApiResult
 import com.laterbox.data.ai.security.SecureApiKeyStorage
 import com.laterbox.ui.components.ConfirmationDialog
 import com.laterbox.ui.theme.LaterBoxThemeTokens
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -143,6 +149,10 @@ fun GeminiSettingsScreen(
     var isTesting by remember { mutableStateOf(false) }
 
     var showDeleteKeyDialog by remember { mutableStateOf(false) }
+    var isBatchAnalyzing by remember { mutableStateOf(false) }
+    var batchProgressCurrent by remember { mutableStateOf(0) }
+    var batchProgressTotal by remember { mutableStateOf(0) }
+    var batchJob by remember { mutableStateOf<Job?>(null) }
 
     val cleanSelectedId = GeminiModelInfo.normalizeModelId(selectedModelId)
     val currentSelectedModel = GeminiModels.findModel(cleanSelectedId, discoveredModels)
@@ -1320,6 +1330,192 @@ fun GeminiSettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = extended.textSecondary
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // =========================================================================
+            // BATCH ANALYSIS CARD
+            // =========================================================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(extended.cardBackground)
+                    .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = extended.primaryBlack,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Analyze Existing Memories",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = extended.primaryBlack
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Run Gemini AI intelligence across all previously saved memories that don't have analysis yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = extended.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (isBatchAnalyzing) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Analyzing $batchProgressCurrent of $batchProgressTotal...",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = extended.primaryBlack
+                                )
+                                TextButton(
+                                    onClick = {
+                                        batchJob?.cancel()
+                                        isBatchAnalyzing = false
+                                        Toast.makeText(context, "Batch analysis cancelled", Toast.LENGTH_SHORT).show()
+                                    }
+                                ) {
+                                    Text("Cancel", color = extended.warmError, fontSize = 12.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val progressFloat = if (batchProgressTotal > 0) {
+                                batchProgressCurrent.toFloat() / batchProgressTotal.toFloat()
+                            } else 0f
+                            LinearProgressIndicator(
+                                progress = { progressFloat },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = extended.primaryBlack,
+                                trackColor = extended.pillInactive
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                if (!isAiEnabled || !hasKey) {
+                                    Toast.makeText(context, "Please enable Gemini AI and add an API key first.", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                isBatchAnalyzing = true
+                                batchJob = scope.launch(Dispatchers.IO) {
+                                    try {
+                                        val allItems = LaterBoxApp.instance.database.savedItemDao().getAllItemsSnapshot()
+                                            .filter { !it.isDeleted }
+                                        val analyses = LaterBoxApp.instance.database.aiAnalysisDao().getAllAnalysesSnapshot()
+                                            .filter { it.status == "SUCCESS" }
+                                            .map { it.itemId }
+                                            .toSet()
+
+                                        val pendingItems = allItems.filter { !analyses.contains(it.id) }
+                                        withContext(Dispatchers.Main) {
+                                            batchProgressTotal = pendingItems.size
+                                            batchProgressCurrent = 0
+                                        }
+
+                                        if (pendingItems.isEmpty()) {
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(context, "All active memories are already analyzed!", Toast.LENGTH_SHORT).show()
+                                                isBatchAnalyzing = false
+                                            }
+                                            return@launch
+                                        }
+
+                                        val geminiService = LaterBoxApp.instance.geminiAnalysisService
+                                        for (item in pendingItems) {
+                                            if (!isActive) break
+                                            try {
+                                                geminiService.analyzeItem(item.id, forceRegenerate = false)
+                                            } catch (_: Exception) {}
+                                            withContext(Dispatchers.Main) {
+                                                batchProgressCurrent++
+                                            }
+                                            delay(800)
+                                        }
+
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, "Batch analysis complete: $batchProgressCurrent memories analyzed.", Toast.LENGTH_SHORT).show()
+                                            isBatchAnalyzing = false
+                                        }
+                                    } catch (_: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            isBatchAnalyzing = false
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = isAiEnabled && hasKey,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = extended.primaryBlack,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Start Bulk Analysis", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // =========================================================================
+            // AI ACCURACY & PRIVACY NOTICE CARD
+            // =========================================================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(extended.surfaceSecondary)
+                    .border(1.dp, extended.border, RoundedCornerShape(12.dp))
+                    .padding(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        imageVector = Icons.Default.Security,
+                        contentDescription = null,
+                        tint = extended.secondaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "AI Accuracy & Privacy Notice",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = extended.primaryBlack
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Gemini may make mistakes. AI-generated titles, tags, and summaries are automated suggestions based on content excerpts and should be verified for accuracy. Later Box never uploads your personal memories to external third-party servers outside of direct calls to your configured Google Gemini API key.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = extended.textSecondary,
+                            lineHeight = 18.sp
+                        )
+                    }
                 }
             }
 

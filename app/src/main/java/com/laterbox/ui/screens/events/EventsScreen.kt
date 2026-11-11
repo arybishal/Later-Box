@@ -6,19 +6,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
@@ -65,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laterbox.data.local.entity.ReminderEntity
+import com.laterbox.data.reminder.EventRecurrenceCalculator
 import com.laterbox.ui.components.EmptyStateView
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import java.text.SimpleDateFormat
@@ -247,8 +253,20 @@ fun EventsScreen(
     if (showCreateDialog) {
         CreateEventDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { title, dueAt, eventType, personName, recurrence, notifyBefore, note ->
-                viewModel.createEvent(title, dueAt, eventType, personName, recurrence, notifyBefore, note)
+            onConfirm = { title, dueAt, eventType, personName, recurrence, notifyBefore, note, origDate, relation, secondPerson, offsetsJson ->
+                viewModel.createEvent(
+                    title = title,
+                    dueAt = dueAt,
+                    eventType = eventType,
+                    personName = personName,
+                    recurrenceRule = recurrence,
+                    notifyBeforeMinutes = notifyBefore,
+                    note = note,
+                    originalDate = origDate,
+                    relationship = relation,
+                    secondPersonName = secondPerson,
+                    reminderOffsetsDaysJson = offsetsJson
+                )
                 showCreateDialog = false
             }
         )
@@ -293,11 +311,19 @@ private fun EventCard(
 ) {
     val extended = LaterBoxThemeTokens.extended
     val now = System.currentTimeMillis()
-    val dueAt = reminder.snoozedUntil ?: reminder.dueAt
+
+    val isAnnual = reminder.eventType == "BIRTHDAY" || reminder.eventType == "ANNIVERSARY"
+    val recurrenceResult = if (isAnnual && reminder.originalDate != null) {
+        EventRecurrenceCalculator.calculateNextOccurrence(reminder.originalDate)
+    } else null
+
+    val dueAt = reminder.snoozedUntil ?: (recurrenceResult?.nextOccurrenceEpochMs ?: reminder.dueAt)
     val diffMillis = dueAt - now
-    val diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
+    val diffDays = recurrenceResult?.daysRemaining ?: TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
 
     val countdownLabel = when {
+        reminder.snoozedUntil != null -> "Snoozed"
+        recurrenceResult != null -> recurrenceResult.formattedStatus
         diffMillis < 0 -> "Overdue"
         diffDays == 0 -> "Today"
         diffDays == 1 -> "Tomorrow"
@@ -311,6 +337,25 @@ private fun EventCard(
         "ANNIVERSARY" -> Icons.Default.Favorite
         "EVENT" -> Icons.Default.Event
         else -> Icons.Default.Notifications
+    }
+
+    val subtitleText = when (reminder.eventType) {
+        "BIRTHDAY" -> {
+            val ageStr = recurrenceResult?.turningAgeOrYears?.let { "Turning $it" }
+            val relStr = reminder.relationship?.ifBlank { null }
+            listOfNotNull(reminder.personName, relStr, ageStr).joinToString(" · ")
+        }
+        "ANNIVERSARY" -> {
+            val yearsStr = recurrenceResult?.turningAgeOrYears?.let { "$it Years" }
+            val couple = when {
+                !reminder.personName.isNullOrBlank() && !reminder.secondPersonName.isNullOrBlank() ->
+                    "${reminder.personName} & ${reminder.secondPersonName}"
+                !reminder.personName.isNullOrBlank() -> reminder.personName
+                else -> null
+            }
+            listOfNotNull(couple, yearsStr).joinToString(" · ")
+        }
+        else -> reminder.personName ?: reminder.note ?: ""
     }
 
     Card(
@@ -359,9 +404,9 @@ private fun EventCard(
                             ),
                             color = extended.primaryBlack
                         )
-                        if (!reminder.personName.isNullOrBlank()) {
+                        if (subtitleText.isNotBlank()) {
                             Text(
-                                text = reminder.personName,
+                                text = subtitleText,
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                 color = extended.textSecondary
                             )
@@ -377,11 +422,12 @@ private fun EventCard(
                 }
 
                 // Countdown Pill
+                val isToday = diffDays == 0
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(
-                            if (diffDays == 0) extended.interactiveAccent.copy(alpha = 0.15f) else extended.surfaceSecondary
+                            if (isToday) extended.interactiveAccent.copy(alpha = 0.15f) else extended.surfaceSecondary
                         )
                         .border(1.dp, extended.border, RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 5.dp)
@@ -390,9 +436,21 @@ private fun EventCard(
                         text = countdownLabel,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (diffDays == 0) extended.interactiveAccent else extended.primaryText
+                        color = if (isToday) extended.interactiveAccent else extended.primaryText
                     )
                 }
+            }
+
+            // Original Date / Context info if available
+            if (reminder.originalDate != null && reminder.originalDate > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val origDateLabel = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(reminder.originalDate))
+                val contextPrefix = if (reminder.eventType == "BIRTHDAY") "Born: " else "Since: "
+                Text(
+                    text = "$contextPrefix$origDateLabel",
+                    fontSize = 11.sp,
+                    color = extended.tertiaryText
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -478,7 +536,7 @@ private fun EventCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun CreateEventDialog(
     onDismiss: () -> Unit,
@@ -489,23 +547,41 @@ private fun CreateEventDialog(
         personName: String?,
         recurrence: String?,
         notifyBefore: Int,
-        note: String?
+        note: String?,
+        originalDate: Long?,
+        relationship: String?,
+        secondPersonName: String?,
+        offsetsJson: String?
     ) -> Unit
 ) {
     val extended = LaterBoxThemeTokens.extended
-    var title by remember { mutableStateOf("") }
     var eventType by remember { mutableStateOf("BIRTHDAY") }
-    var personName by remember { mutableStateOf("") }
+
+    // Common fields
+    var title by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var recurrence by remember { mutableStateOf("YEARLY") }
-    var notifyBefore by remember { mutableStateOf(1440) } // 1 day before default
+    var notifyBefore by remember { mutableStateOf(1440) }
+
+    // Birthday specific fields
+    var personName by remember { mutableStateOf("") }
+    var relationship by remember { mutableStateOf("") }
+
+    // Anniversary specific fields
+    var secondPersonName by remember { mutableStateOf("") }
+
+    // Approaching reminder offsets (days before)
+    var selectedOffsets by remember { mutableStateOf(setOf(7, 1, 0)) }
 
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // Selected date epoch
     var selectedEpoch by remember {
         val cal = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 1)
             set(Calendar.HOUR_OF_DAY, 9)
             set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
         mutableStateOf(cal.timeInMillis)
     }
@@ -544,19 +620,49 @@ private fun CreateEventDialog(
             shape = RoundedCornerShape(26.dp),
             color = extended.cardBackground,
             border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 680.dp)
         ) {
             Column(
                 modifier = Modifier
                     .padding(22.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Text(
-                    text = "New Event or Reminder",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = extended.primaryBlack
-                )
+                // Dialog Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (eventType) {
+                            "BIRTHDAY" -> "Add Birthday"
+                            "ANNIVERSARY" -> "Add Anniversary"
+                            "EVENT" -> "New Event"
+                            else -> "New Reminder"
+                        },
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = extended.primaryBlack
+                    )
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(extended.surfaceSecondary)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = extended.secondaryText,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
 
                 // Event Type Selector Chips
                 Row(
@@ -565,7 +671,7 @@ private fun CreateEventDialog(
                 ) {
                     listOf(
                         "BIRTHDAY" to "🎂 Birthday",
-                        "ANNIVERSARY" to "💍 Anniversary",
+                        "ANNIVERSARY" to "💍 Anniv.",
                         "REMINDER" to "⏰ Reminder",
                         "EVENT" to "📅 Event"
                     ).forEach { (type, label) ->
@@ -580,6 +686,10 @@ private fun CreateEventDialog(
                                     eventType = type
                                     if (type == "BIRTHDAY" || type == "ANNIVERSARY") {
                                         recurrence = "YEARLY"
+                                        selectedOffsets = setOf(30, 7, 1, 0)
+                                    } else {
+                                        recurrence = "NONE"
+                                        selectedOffsets = setOf(0)
                                     }
                                 }
                                 .padding(vertical = 8.dp),
@@ -595,23 +705,352 @@ private fun CreateEventDialog(
                     }
                 }
 
-                // Title
+                when (eventType) {
+                    "BIRTHDAY" -> {
+                        // Person Name
+                        OutlinedTextField(
+                            value = personName,
+                            onValueChange = {
+                                personName = it
+                                if (title.isBlank() || title.endsWith("'s Birthday")) {
+                                    title = if (it.isNotBlank()) "$it's Birthday" else ""
+                                }
+                            },
+                            label = { Text("Person's Name", color = extended.secondaryText) },
+                            placeholder = { Text("e.g. Alex", color = extended.tertiaryText) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = extended.surfaceSecondary,
+                                unfocusedContainerColor = extended.surfaceSecondary,
+                                focusedBorderColor = extended.interactiveAccent,
+                                unfocusedBorderColor = extended.border
+                            )
+                        )
+
+                        // Quick Relationship Chips
+                        Column {
+                            Text("Relationship (optional)", fontSize = 11.sp, color = extended.secondaryText)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf("Family", "Friend", "Partner", "Parent", "Child", "Sibling", "Colleague").forEach { rel ->
+                                    val isRelSelected = relationship == rel
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(if (isRelSelected) extended.buttonPrimary else extended.surfaceSecondary)
+                                            .border(1.dp, if (isRelSelected) extended.buttonPrimary else extended.border, RoundedCornerShape(8.dp))
+                                            .clickable { relationship = if (isRelSelected) "" else rel }
+                                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                                    ) {
+                                        Text(
+                                            text = rel,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isRelSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isRelSelected) extended.buttonPrimaryText else extended.primaryText
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Birth Date Picker
+                        val calcResult = remember(selectedEpoch) {
+                            EventRecurrenceCalculator.calculateNextOccurrence(selectedEpoch)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                                .clickable { showDatePicker = true }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Real Birth Date (Includes Year)", fontSize = 11.sp, color = extended.secondaryText)
+                                Text(
+                                    text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(selectedEpoch)),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = extended.primaryBlack
+                                )
+                                if (calcResult.turningAgeOrYears != null) {
+                                    Text(
+                                        text = "Will be turning ${calcResult.turningAgeOrYears} (${calcResult.formattedStatus})",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = extended.interactiveAccent
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Event,
+                                contentDescription = "Pick Birth Date",
+                                tint = extended.primaryText,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    "ANNIVERSARY" -> {
+                        // Title
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Anniversary Title", color = extended.secondaryText) },
+                            placeholder = { Text("e.g. Wedding Anniversary", color = extended.tertiaryText) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = extended.surfaceSecondary,
+                                unfocusedContainerColor = extended.surfaceSecondary,
+                                focusedBorderColor = extended.interactiveAccent,
+                                unfocusedBorderColor = extended.border
+                            )
+                        )
+
+                        // Couple Names
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = personName,
+                                onValueChange = { personName = it },
+                                label = { Text("Partner 1", color = extended.secondaryText) },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = extended.surfaceSecondary,
+                                    unfocusedContainerColor = extended.surfaceSecondary,
+                                    focusedBorderColor = extended.interactiveAccent,
+                                    unfocusedBorderColor = extended.border
+                                )
+                            )
+                            OutlinedTextField(
+                                value = secondPersonName,
+                                onValueChange = { secondPersonName = it },
+                                label = { Text("Partner 2", color = extended.secondaryText) },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = extended.surfaceSecondary,
+                                    unfocusedContainerColor = extended.surfaceSecondary,
+                                    focusedBorderColor = extended.interactiveAccent,
+                                    unfocusedBorderColor = extended.border
+                                )
+                            )
+                        }
+
+                        // Anniversary Original Date Picker
+                        val calcResult = remember(selectedEpoch) {
+                            EventRecurrenceCalculator.calculateNextOccurrence(selectedEpoch)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                                .clickable { showDatePicker = true }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Original Anniversary Date", fontSize = 11.sp, color = extended.secondaryText)
+                                Text(
+                                    text = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(selectedEpoch)),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = extended.primaryBlack
+                                )
+                                if (calcResult.turningAgeOrYears != null) {
+                                    Text(
+                                        text = "Celebrating ${calcResult.turningAgeOrYears} years (${calcResult.formattedStatus})",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = extended.interactiveAccent
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Event,
+                                contentDescription = "Pick Anniversary Date",
+                                tint = extended.primaryText,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        // General Reminder / Event
+                        OutlinedTextField(
+                            value = title,
+                            onValueChange = { title = it },
+                            label = { Text("Title", color = extended.secondaryText) },
+                            placeholder = { Text("e.g. Flight to Tokyo", color = extended.tertiaryText) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = extended.surfaceSecondary,
+                                unfocusedContainerColor = extended.surfaceSecondary,
+                                focusedBorderColor = extended.interactiveAccent,
+                                unfocusedBorderColor = extended.border
+                            )
+                        )
+
+                        // Date Picker
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(extended.surfaceSecondary)
+                                .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                                .clickable { showDatePicker = true }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Date", fontSize = 11.sp, color = extended.secondaryText)
+                                Text(
+                                    text = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(Date(selectedEpoch)),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = extended.primaryBlack
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Event,
+                                contentDescription = "Pick Date",
+                                tint = extended.primaryText,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Recurrence Selector
+                        Column {
+                            Text("Recurrence", fontSize = 11.sp, color = extended.secondaryText)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    "NONE" to "One-time",
+                                    "YEARLY" to "Yearly",
+                                    "MONTHLY" to "Monthly",
+                                    "WEEKLY" to "Weekly"
+                                ).forEach { (rec, label) ->
+                                    val isSelected = recurrence == rec
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isSelected) extended.surfaceSecondary else Color.Transparent)
+                                            .border(1.dp, if (isSelected) extended.primaryBlack else extended.border, RoundedCornerShape(10.dp))
+                                            .clickable { recurrence = rec }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = extended.primaryText
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Approaching Notifications Schedule (Checklist / Chips)
+                Column {
+                    Text(
+                        text = "Approaching Notifications",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = extended.secondaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val offsetOptions = if (eventType == "BIRTHDAY" || eventType == "ANNIVERSARY") {
+                            listOf(
+                                30 to "30d before",
+                                7 to "7d before",
+                                3 to "3d before",
+                                1 to "1d before",
+                                0 to "On the day"
+                            )
+                        } else {
+                            listOf(
+                                7 to "7d before",
+                                1 to "1d before",
+                                0 to "On time"
+                            )
+                        }
+
+                        offsetOptions.forEach { (days, label) ->
+                            val isChecked = selectedOffsets.contains(days)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isChecked) extended.buttonPrimary else extended.surfaceSecondary)
+                                    .border(1.dp, if (isChecked) extended.buttonPrimary else extended.border, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        selectedOffsets = if (isChecked) {
+                                            if (selectedOffsets.size > 1) selectedOffsets - days else selectedOffsets
+                                        } else {
+                                            selectedOffsets + days
+                                        }
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = (if (isChecked) "✓ " else "") + label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isChecked) extended.buttonPrimaryText else extended.primaryText
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Optional Notes / Gift Ideas
                 OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
+                    value = note,
+                    onValueChange = { note = it },
                     placeholder = {
                         Text(
                             when (eventType) {
-                                "BIRTHDAY" -> "Birthday (e.g. Maya's Birthday)"
-                                "ANNIVERSARY" -> "Anniversary (e.g. Wedding Anniversary)"
-                                else -> "Event Title"
+                                "BIRTHDAY" -> "Gift ideas, preferences, or notes (optional)"
+                                "ANNIVERSARY" -> "Plans, reservation details, or ideas (optional)"
+                                else -> "Additional notes (optional)"
                             },
                             color = extended.tertiaryText
                         )
                     },
-                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
+                    maxLines = 3,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = extended.surfaceSecondary,
                         unfocusedContainerColor = extended.surfaceSecondary,
@@ -620,87 +1059,15 @@ private fun CreateEventDialog(
                     )
                 )
 
-                // Person Name (for birthdays / anniversaries)
-                if (eventType == "BIRTHDAY" || eventType == "ANNIVERSARY") {
-                    OutlinedTextField(
-                        value = personName,
-                        onValueChange = { personName = it },
-                        placeholder = { Text("Person or Relationship (optional)", color = extended.tertiaryText) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = extended.surfaceSecondary,
-                            unfocusedContainerColor = extended.surfaceSecondary,
-                            focusedBorderColor = extended.interactiveAccent,
-                            unfocusedBorderColor = extended.border
-                        )
-                    )
-                }
-
-                // Date Picker trigger button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(extended.surfaceSecondary)
-                        .border(1.dp, extended.border, RoundedCornerShape(14.dp))
-                        .clickable { showDatePicker = true }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Event Date", fontSize = 11.sp, color = extended.secondaryText)
-                        Text(
-                            text = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(Date(selectedEpoch)),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = extended.primaryBlack
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.Event,
-                        contentDescription = "Pick Date",
-                        tint = extended.primaryText,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // Recurrence Selector
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(
-                        "NONE" to "One-time",
-                        "YEARLY" to "Every Year",
-                        "MONTHLY" to "Every Month"
-                    ).forEach { (rec, label) ->
-                        val isSelected = recurrence == rec
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) extended.surfaceSecondary else Color.Transparent)
-                                .border(1.dp, if (isSelected) extended.primaryBlack else extended.border, RoundedCornerShape(10.dp))
-                                .clickable { recurrence = rec }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = extended.primaryText
-                            )
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Actions: Cancel & Create
+                // Actions: Cancel & Save
+                val effectiveTitle = when (eventType) {
+                    "BIRTHDAY" -> if (title.isNotBlank()) title else if (personName.isNotBlank()) "$personName's Birthday" else ""
+                    else -> title
+                }
+                val canSave = effectiveTitle.isNotBlank()
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -716,19 +1083,32 @@ private fun CreateEventDialog(
 
                     Button(
                         onClick = {
-                            if (title.isNotBlank()) {
+                            if (canSave) {
+                                val isAnnual = eventType == "BIRTHDAY" || eventType == "ANNIVERSARY"
+                                val finalRecurrence = if (isAnnual) "YEARLY" else recurrence
+                                val offsetsString = selectedOffsets.sortedDescending().joinToString(",")
+                                val targetDueAt = if (isAnnual) {
+                                    EventRecurrenceCalculator.calculateNextOccurrence(selectedEpoch).nextOccurrenceEpochMs
+                                } else {
+                                    selectedEpoch
+                                }
+
                                 onConfirm(
-                                    title.trim(),
-                                    selectedEpoch,
+                                    effectiveTitle.trim(),
+                                    targetDueAt,
                                     eventType,
                                     personName.trim().ifBlank { null },
-                                    recurrence,
+                                    finalRecurrence,
                                     notifyBefore,
-                                    note.trim().ifBlank { null }
+                                    note.trim().ifBlank { null },
+                                    if (isAnnual) selectedEpoch else null,
+                                    relationship.trim().ifBlank { null },
+                                    secondPersonName.trim().ifBlank { null },
+                                    offsetsString
                                 )
                             }
                         },
-                        enabled = title.isNotBlank(),
+                        enabled = canSave,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = extended.buttonPrimary,
@@ -736,7 +1116,14 @@ private fun CreateEventDialog(
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Save Event", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = when (eventType) {
+                                "BIRTHDAY" -> "Save Birthday"
+                                "ANNIVERSARY" -> "Save Anniversary"
+                                else -> "Save Event"
+                            },
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

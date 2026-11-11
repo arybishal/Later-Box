@@ -30,6 +30,17 @@ class UserPreferencesRepository(private val context: Context) {
         val AUTO_UPDATE_CHECK = booleanPreferencesKey("auto_update_check")
         val LAST_UPDATE_CHECK_TIMESTAMP = longPreferencesKey("last_update_check_timestamp")
         val LAST_DISMISSED_UPDATE_TAG = stringPreferencesKey("last_dismissed_update_tag")
+        val HAS_COMPLETED_FIRST_LAUNCH_CHECK = booleanPreferencesKey("has_completed_first_launch_check")
+    }
+
+    val hasCompletedFirstLaunchCheck: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.HAS_COMPLETED_FIRST_LAUNCH_CHECK] ?: false
+    }
+
+    suspend fun setCompletedFirstLaunchCheck(completed: Boolean = true) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_COMPLETED_FIRST_LAUNCH_CHECK] = completed
+        }
     }
 
     val autoUpdateCheck: Flow<Boolean> = context.dataStore.data.map { preferences ->

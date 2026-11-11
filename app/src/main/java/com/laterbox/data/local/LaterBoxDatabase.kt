@@ -33,7 +33,7 @@ import com.laterbox.data.local.entity.TagEntity
         SearchHistoryEntity::class,
         AiAnalysisEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -154,6 +154,15 @@ abstract class LaterBoxDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE reminders ADD COLUMN originalDate INTEGER")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN relationship TEXT")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN secondPersonName TEXT")
+                db.execSQL("ALTER TABLE reminders ADD COLUMN reminderOffsetsDaysJson TEXT")
+            }
+        }
+
         fun getInstance(context: Context): LaterBoxDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -173,8 +182,7 @@ abstract class LaterBoxDatabase : RoomDatabase() {
                             )
                         }
                     })
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 INSTANCE = instance
                 instance

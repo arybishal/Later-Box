@@ -41,7 +41,7 @@ class AiSettingsRepository(private val context: Context) {
     }
 
     val autoAnalyzeNewItems: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
-        preferences[PreferencesKeys.AUTO_ANALYZE] ?: false
+        preferences[PreferencesKeys.AUTO_ANALYZE] ?: true
     }
 
     val autoGenerateTitle: Flow<Boolean> = context.aiDataStore.data.map { preferences ->
