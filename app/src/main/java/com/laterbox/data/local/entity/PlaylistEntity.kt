@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
     tableName = "playlists",
     indices = [
         Index(value = ["name"]),
-        Index(value = ["createdAt"])
+        Index(value = ["createdAt"]),
+        Index(value = ["isDemo"])
     ]
 )
 data class PlaylistEntity(
@@ -19,5 +20,6 @@ data class PlaylistEntity(
     val iconName: String? = "bookmark",
     val coverUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val isDefaultInbox: Boolean = false
+    val isDefaultInbox: Boolean = false,
+    val isDemo: Boolean = false
 )

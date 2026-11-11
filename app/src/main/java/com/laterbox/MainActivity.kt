@@ -564,7 +564,14 @@ fun MainAppScaffold() {
                 SettingsScreen(
                     onBack = null,
                     onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
-                    onNavigateToGeminiSettings = { navController.navigate(Screen.GeminiSettings.route) }
+                    onNavigateToGeminiSettings = { navController.navigate(Screen.GeminiSettings.route) },
+                    onNavigateToDemoDataLab = { navController.navigate(Screen.DemoDataLab.route) }
+                )
+            }
+
+            composable(Screen.DemoDataLab.route) {
+                com.laterbox.ui.screens.developer.DemoDataLabScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
 

@@ -87,6 +87,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.ChevronRight
+import com.laterbox.BuildConfig
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.backup.BackupManifest
 import com.laterbox.data.backup.BackupSummary
@@ -112,7 +115,8 @@ fun formatBytes(bytes: Long): String {
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onNavigateToTrash: () -> Unit,
-    onNavigateToGeminiSettings: () -> Unit = {}
+    onNavigateToGeminiSettings: () -> Unit = {},
+    onNavigateToDemoDataLab: () -> Unit = {}
 ) {
     val extended = LaterBoxThemeTokens.extended
     val context = LocalContext.current
@@ -130,6 +134,8 @@ fun SettingsScreen(
     val lastBackupTimestamp by prefs.lastBackupTimestamp.collectAsState(initial = null)
     val autoUpdateCheck by prefs.autoUpdateCheck.collectAsState(initial = true)
     val updateState by updateManager.updateState.collectAsState()
+    val isDevModeEnabled by prefs.isDeveloperModeEnabled.collectAsState(initial = false)
+    var versionTapCount by remember { mutableStateOf(0) }
 
     val aiSettings = LaterBoxApp.instance.aiSettingsRepository
     val isAiEnabled by aiSettings.isAiEnabled.collectAsState(initial = false)
@@ -829,7 +835,16 @@ fun SettingsScreen(
                     Text(
                         text = "Version ${updateManager.currentVersionName} (Build ${updateManager.currentVersionCode})",
                         style = MaterialTheme.typography.labelSmall,
-                        color = extended.textSecondary
+                        color = extended.textSecondary,
+                        modifier = Modifier.clickable {
+                            versionTapCount++
+                            if (versionTapCount >= 7 && !isDevModeEnabled) {
+                                scope.launch {
+                                    prefs.setDeveloperModeEnabled(true)
+                                    LaterBoxSnackbarController.showMessage("Developer Mode Enabled! Demo Data Lab unlocked.")
+                                }
+                            }
+                        }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -866,6 +881,64 @@ fun SettingsScreen(
                             activeUpdateForDetails = info
                         }
                     )
+                }
+            }
+
+            // Developer Tools (Visible in Debug builds or when Developer Mode is enabled)
+            if (BuildConfig.DEBUG || isDevModeEnabled) {
+                item {
+                    SettingsSection(
+                        title = "Developer Tools",
+                        icon = Icons.Default.BugReport
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onNavigateToDemoDataLab() }
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Demo Data Lab",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = extended.primaryBlack
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(extended.interactiveAccent.copy(alpha = 0.12f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "DEV",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = extended.interactiveAccent
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Generate 200 synthetic records (100 general + 100 rich notes) & benchmark stress tests.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = extended.secondaryText
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "Open Demo Data Lab",
+                                tint = extended.secondaryText
+                            )
+                        }
+                    }
                 }
             }
 

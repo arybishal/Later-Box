@@ -97,6 +97,8 @@ class BackupManager(
                     put("readProgress", item.readProgress.toDouble())
                     put("mediaSize", item.mediaSize)
                     put("downloadStatus", item.downloadStatus.name)
+                    put("isDemo", item.isDemo)
+                    put("demoRecordType", item.demoRecordType ?: JSONObject.NULL)
                 }
                 itemsArray.put(itemObj)
             }
@@ -112,6 +114,7 @@ class BackupManager(
                     put("coverUrl", p.coverUrl ?: JSONObject.NULL)
                     put("createdAt", p.createdAt)
                     put("isDefaultInbox", p.isDefaultInbox)
+                    put("isDemo", p.isDemo)
                 }
                 playlistsArray.put(pObj)
             }
@@ -373,7 +376,8 @@ class BackupManager(
                         iconName = pObj.optString("iconName", "bookmark"),
                         coverUrl = if (pObj.isNull("coverUrl")) null else pObj.optString("coverUrl"),
                         createdAt = pObj.optLong("createdAt", System.currentTimeMillis()),
-                        isDefaultInbox = pObj.optBoolean("isDefaultInbox", false)
+                        isDefaultInbox = pObj.optBoolean("isDefaultInbox", false),
+                        isDemo = pObj.optBoolean("isDemo", false)
                     )
                     val insertedId = playlistDao.insertPlaylist(p)
                     val finalId = if (p.id != 0L) p.id else insertedId
@@ -408,7 +412,9 @@ class BackupManager(
                         notes = if (itemObj.isNull("notes")) null else itemObj.optString("notes"),
                         readProgress = itemObj.optDouble("readProgress", 0.0).toFloat(),
                         mediaSize = itemObj.optLong("mediaSize", 0L),
-                        downloadStatus = try { DownloadStatus.valueOf(itemObj.getString("downloadStatus")) } catch (_: Exception) { DownloadStatus.NONE }
+                        downloadStatus = try { DownloadStatus.valueOf(itemObj.getString("downloadStatus")) } catch (_: Exception) { DownloadStatus.NONE },
+                        isDemo = itemObj.optBoolean("isDemo", false),
+                        demoRecordType = if (itemObj.isNull("demoRecordType")) null else itemObj.optString("demoRecordType")
                     )
                     val insertedId = savedItemDao.insertItem(item)
                     val finalId = if (item.id != 0L) item.id else insertedId
@@ -444,7 +450,8 @@ class BackupManager(
                             iconName = pObj.optString("iconName", "bookmark"),
                             coverUrl = if (pObj.isNull("coverUrl")) null else pObj.optString("coverUrl"),
                             createdAt = pObj.optLong("createdAt", System.currentTimeMillis()),
-                            isDefaultInbox = pObj.optBoolean("isDefaultInbox", false)
+                            isDefaultInbox = pObj.optBoolean("isDefaultInbox", false),
+                            isDemo = pObj.optBoolean("isDemo", false)
                         )
                         val insertedId = playlistDao.insertPlaylist(p)
                         playlistNameToId[pName.lowercase()] = insertedId
@@ -484,7 +491,9 @@ class BackupManager(
                             notes = if (itemObj.isNull("notes")) null else itemObj.optString("notes"),
                             readProgress = itemObj.optDouble("readProgress", 0.0).toFloat(),
                             mediaSize = itemObj.optLong("mediaSize", 0L),
-                            downloadStatus = try { DownloadStatus.valueOf(itemObj.getString("downloadStatus")) } catch (_: Exception) { DownloadStatus.NONE }
+                            downloadStatus = try { DownloadStatus.valueOf(itemObj.getString("downloadStatus")) } catch (_: Exception) { DownloadStatus.NONE },
+                            isDemo = itemObj.optBoolean("isDemo", false),
+                            demoRecordType = if (itemObj.isNull("demoRecordType")) null else itemObj.optString("demoRecordType")
                         )
                         val insertedId = savedItemDao.insertItem(item)
                         itemUrlToId[url] = insertedId

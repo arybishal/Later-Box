@@ -18,7 +18,9 @@ import com.laterbox.data.model.DownloadStatus
         Index(value = ["isFavorite"]),
         Index(value = ["isArchived"]),
         Index(value = ["isDeleted"]),
-        Index(value = ["isSnap"])
+        Index(value = ["isSnap"]),
+        Index(value = ["isDemo"]),
+        Index(value = ["demoRecordType"])
     ]
 )
 data class SavedItemEntity(
@@ -49,5 +51,7 @@ data class SavedItemEntity(
     val captureMethod: String? = null,
     val extractedText: String? = null,
     val transcript: String? = null,
-    val sourcePackage: String? = null
+    val sourcePackage: String? = null,
+    val isDemo: Boolean = false,
+    val demoRecordType: String? = null
 )

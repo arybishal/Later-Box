@@ -23,6 +23,7 @@ sealed class Screen(val route: String, val title: String) {
     object NoteEditor : Screen("note_editor?itemId={itemId}&initialEdit={initialEdit}", "Note") {
         fun createRoute(itemId: Long = 0L, initialEdit: Boolean = true) = "note_editor?itemId=$itemId&initialEdit=$initialEdit"
     }
+    object DemoDataLab : Screen("developer/demo_data_lab", "Demo Data Lab")
 }
 
 val MAIN_BOTTOM_NAV_ROUTES = listOf(

@@ -31,6 +31,40 @@ class UserPreferencesRepository(private val context: Context) {
         val LAST_UPDATE_CHECK_TIMESTAMP = longPreferencesKey("last_update_check_timestamp")
         val LAST_DISMISSED_UPDATE_TAG = stringPreferencesKey("last_dismissed_update_tag")
         val HAS_COMPLETED_FIRST_LAUNCH_CHECK = booleanPreferencesKey("has_completed_first_launch_check")
+        val LAST_DEMO_GENERATION_TIMESTAMP = longPreferencesKey("last_demo_generation_timestamp")
+        val LAST_DEMO_DATASET_TYPE = stringPreferencesKey("last_demo_dataset_type")
+        val DEMO_SEED = longPreferencesKey("demo_seed")
+        val DEVELOPER_MODE_ENABLED = booleanPreferencesKey("developer_mode_enabled")
+    }
+
+    val lastDemoGenerationTimestamp: Flow<Long?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_DEMO_GENERATION_TIMESTAMP]
+    }
+
+    val lastDemoDatasetType: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_DEMO_DATASET_TYPE]
+    }
+
+    val demoSeed: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.DEMO_SEED] ?: 42L
+    }
+
+    val isDeveloperModeEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false
+    }
+
+    suspend fun setDeveloperModeEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] = enabled
+        }
+    }
+
+    suspend fun recordDemoGeneration(datasetType: String, seed: Long = 42L, timestamp: Long = System.currentTimeMillis()) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_DEMO_GENERATION_TIMESTAMP] = timestamp
+            preferences[PreferencesKeys.LAST_DEMO_DATASET_TYPE] = datasetType
+            preferences[PreferencesKeys.DEMO_SEED] = seed
+        }
     }
 
     val hasCompletedFirstLaunchCheck: Flow<Boolean> = context.dataStore.data.map { preferences ->

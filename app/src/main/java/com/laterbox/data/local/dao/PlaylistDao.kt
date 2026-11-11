@@ -122,4 +122,10 @@ interface PlaylistDao {
         deleteCrossRefsForPlaylist(playlistId)
         deletePlaylistById(playlistId)
     }
+
+    @Query("SELECT * FROM playlists WHERE isDemo = 1")
+    suspend fun getDemoPlaylists(): List<PlaylistEntity>
+
+    @Query("DELETE FROM playlists WHERE isDemo = 1 AND id NOT IN (SELECT playlistId FROM item_playlist_cross_ref c JOIN saved_items s ON c.contentId = s.id WHERE s.isDemo = 0)")
+    suspend fun deleteSafeDemoPlaylists(): Int
 }

@@ -215,4 +215,31 @@ interface SavedItemDao {
 
     @Query("DELETE FROM saved_items")
     suspend fun clearAllItems()
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDemo = 1")
+    fun getDemoCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDemo = 1")
+    suspend fun getDemoCountSnapshot(): Int
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDemo = 1 AND demoRecordType = 'GENERAL'")
+    fun getDemoGeneralCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDemo = 1 AND demoRecordType = 'RICH_NOTE'")
+    fun getDemoRichNotesCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM saved_items WHERE isDemo = 1 AND demoRecordType = 'STRESS'")
+    fun getDemoStressCount(): Flow<Int>
+
+    @Query("SELECT * FROM saved_items WHERE isDemo = 1")
+    suspend fun getAllDemoItemsSnapshot(): List<SavedItemEntity>
+
+    @Query("SELECT * FROM saved_items WHERE isDemo = 1 AND demoRecordType = :type")
+    suspend fun getDemoItemsByTypeSnapshot(type: String): List<SavedItemEntity>
+
+    @Query("DELETE FROM saved_items WHERE isDemo = 1")
+    suspend fun deleteAllDemoItems(): Int
+
+    @Query("DELETE FROM saved_items WHERE isDemo = 1 AND demoRecordType = :type")
+    suspend fun deleteDemoItemsByType(type: String): Int
 }

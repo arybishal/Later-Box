@@ -28,6 +28,7 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
     lateinit var aiSettingsRepository: com.laterbox.data.ai.AiSettingsRepository private set
     lateinit var geminiAnalysisService: com.laterbox.data.ai.GeminiAnalysisService private set
     lateinit var networkMonitor: com.laterbox.util.NetworkConnectivityMonitor private set
+    lateinit var demoDataGenerator: com.laterbox.data.demo.DemoDataGenerator private set
 
     override fun onCreate() {
         super.onCreate()
@@ -71,6 +72,18 @@ class LaterBoxApp : Application(), ImageLoaderFactory {
             savedItemDao = database.savedItemDao(),
             aiAnalysisDao = database.aiAnalysisDao(),
             aiSettingsRepository = aiSettingsRepository
+        )
+
+        demoDataGenerator = com.laterbox.data.demo.DemoDataGenerator(
+            context = this,
+            database = database,
+            contentRepository = contentRepository,
+            playlistRepository = playlistRepository,
+            tagRepository = tagRepository,
+            reminderRepository = reminderRepository,
+            mediaStorageManager = mediaStorageManager,
+            userPreferencesRepository = preferencesRepository,
+            geminiAnalysisService = geminiAnalysisService
         )
 
         // Schedule periodic update checks
