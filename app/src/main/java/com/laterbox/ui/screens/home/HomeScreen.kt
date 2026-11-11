@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laterbox.LaterBoxApp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import com.laterbox.ui.components.ZeroSearchResultsState
 import com.laterbox.data.ai.security.SecureApiKeyStorage
 import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ContentType
@@ -196,8 +200,9 @@ fun HomeScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = extended.interactiveAccent,
                             modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .padding(end = 2.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { onNavigateToLibrary() }
+                                .padding(vertical = 4.dp, horizontal = 4.dp)
                         )
                     }
 
@@ -221,7 +226,16 @@ fun HomeScreen(
                 // 3.5 Saved Content Cards Feed
                 if (feedItems.isEmpty()) {
                     item {
-                        HomeEmptyState(onSaveClick = { showAddDialog = true })
+                        if (allItems.isEmpty()) {
+                            HomeEmptyState(onSaveClick = { showAddDialog = true })
+                        } else {
+                            ZeroSearchResultsState(
+                                query = "",
+                                hasActiveFilters = true,
+                                onClearSearch = { selectedFilter = "All" },
+                                onResetFilters = { selectedFilter = "All" }
+                            )
+                        }
                     }
                 } else {
                     items(feedItems, key = { it.id }) { item ->

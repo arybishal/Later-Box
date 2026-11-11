@@ -196,13 +196,30 @@ fun EventsScreen(
                     .padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                EmptyStateView(
-                    icon = Icons.Default.Event,
-                    title = "No Upcoming Events",
-                    description = "Save birthdays, anniversaries, meetings, or recurring reminders to keep them organized.",
-                    actionLabel = "+ Create Reminder",
-                    onAction = { showCreateDialog = true }
-                )
+                if (selectedFilter != "ALL") {
+                    val filterName = when (selectedFilter) {
+                        "BIRTHDAY" -> "Birthday"
+                        "ANNIVERSARY" -> "Anniversary"
+                        "MEETING" -> "Meeting"
+                        "REMINDER" -> "Reminder"
+                        else -> selectedFilter.lowercase().replaceFirstChar { it.uppercase() }
+                    }
+                    EmptyStateView(
+                        icon = Icons.Default.Event,
+                        title = "No $filterName Events",
+                        description = "You don't have any $filterName events scheduled.",
+                        actionLabel = "Show All Events",
+                        onAction = { viewModel.setFilter("ALL") }
+                    )
+                } else {
+                    EmptyStateView(
+                        icon = Icons.Default.Event,
+                        title = "No Upcoming Events",
+                        description = "Save birthdays, anniversaries, meetings, or recurring reminders to keep them organized.",
+                        actionLabel = "+ Create Reminder",
+                        onAction = { showCreateDialog = true }
+                    )
+                }
             }
         } else {
             LazyColumn(

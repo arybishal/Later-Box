@@ -1,6 +1,7 @@
 package com.laterbox.ui.screens.search
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -260,7 +261,16 @@ fun SearchScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = extended.cardBackground),
                             border = BorderStroke(1.dp, extended.border),
-                            modifier = Modifier.width(220.dp)
+                            modifier = Modifier
+                                .width(220.dp)
+                                .clickable {
+                                    scope.launch {
+                                        val item = LaterBoxApp.instance.contentRepository.getItemById(reminder.contentId)
+                                        if (item != null) {
+                                            onOpenItem(item)
+                                        }
+                                    }
+                                }
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {

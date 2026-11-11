@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import com.laterbox.data.local.entity.ReminderEntity
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
@@ -835,7 +836,8 @@ fun MemorySavedContentCard(
                         fontWeight = FontWeight.Medium,
                         color = extended.secondaryText,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     Text(
@@ -843,6 +845,32 @@ fun MemorySavedContentCard(
                         fontSize = 11.sp,
                         color = extended.tertiaryText
                     )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = onFavoriteToggle,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (item.isFavorite) "Remove from favorites" else "Add to favorites",
+                            tint = if (item.isFavorite) extended.interactiveAccent else extended.tertiaryText,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = extended.tertiaryText,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
                 }
             }
 
@@ -978,8 +1006,18 @@ fun AskGeminiAssistantSheet(
     )
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     var queryText by remember { mutableStateOf("") }
+
+    val connectivityManager = remember {
+        context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+    }
+    val isOnline = remember(connectivityManager) {
+        val activeNet = connectivityManager?.activeNetwork
+        val caps = connectivityManager?.getNetworkCapabilities(activeNet)
+        caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1103,6 +1141,33 @@ fun AskGeminiAssistantSheet(
                     }
                 }
             } else {
+                if (!isOnline) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(extended.surfaceSecondary)
+                            .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CloudOff,
+                                contentDescription = null,
+                                tint = extended.secondaryIcons,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Device is offline. Gemini AI requires internet to process queries.",
+                                fontSize = 12.sp,
+                                color = extended.secondaryText
+                            )
+                        }
+                    }
+                }
+
                 // Suggestion chips
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1116,7 +1181,9 @@ fun AskGeminiAssistantSheet(
                                 .border(1.dp, extended.border, CircleShape)
                                 .clickable {
                                     queryText = prompt
-                                    onAskQuestion(prompt)
+                                    if (isOnline) {
+                                        onAskQuestion(prompt)
+                                    }
                                 }
                                 .padding(horizontal = 14.dp, vertical = 7.dp)
                         ) {
@@ -1144,16 +1211,16 @@ fun AskGeminiAssistantSheet(
                     trailingIcon = {
                         IconButton(
                             onClick = {
-                                if (queryText.isNotBlank()) {
+                                if (queryText.isNotBlank() && isOnline) {
                                     onAskQuestion(queryText)
                                 }
                             },
-                            enabled = queryText.isNotBlank() && !isAiQuerying
+                            enabled = queryText.isNotBlank() && !isAiQuerying && isOnline
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send",
-                                tint = if (queryText.isNotBlank()) extended.interactiveAccent else extended.disabled
+                                tint = if (queryText.isNotBlank() && isOnline) extended.interactiveAccent else extended.disabled
                             )
                         }
                     },
