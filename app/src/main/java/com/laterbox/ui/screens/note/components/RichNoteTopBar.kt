@@ -47,7 +47,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.laterbox.ui.components.glass.GlassSurface
 import com.laterbox.ui.screens.note.SaveStatus
+import com.laterbox.ui.theme.GlassVariant
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 
 @Composable
@@ -212,14 +214,15 @@ private fun SaveStatusBadge(
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    Box(
+    val badgeShape = RoundedCornerShape(8.dp)
+
+    GlassSurface(
+        variant = GlassVariant.SUBTLE,
+        shape = badgeShape,
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(extended.surfaceSecondary)
-            .border(1.dp, extended.border, RoundedCornerShape(8.dp))
+            .clip(badgeShape)
             .clickable(enabled = status == SaveStatus.ERROR) { onRetry() }
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

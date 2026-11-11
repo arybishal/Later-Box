@@ -73,6 +73,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
+import com.laterbox.ui.theme.GlassTokens
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.laterbox.LaterBoxApp
@@ -288,29 +291,38 @@ fun SnapQuickCaptureSheet(
         }
     }
 
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
     ModalBottomSheet(
         onDismissRequest = requestDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = extended.cardBackground,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(extended.border)
-            )
-        }
+        shape = sheetShape,
+        containerColor = Color.Transparent,
+        dragHandle = null
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp)
+        GlassSurface(
+            variant = GlassVariant.ELEVATED,
+            shape = sheetShape,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Header Row
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 12.dp, bottom = 32.dp)
+            ) {
+                // Centered glass drag handle
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 14.dp)
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(extended.secondaryText.copy(alpha = 0.35f))
+                )
+
+                // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -838,9 +850,10 @@ fun SnapQuickCaptureSheet(
             }
         }
     }
+}
 
     if (showDiscardConfirmDialog) {
-        androidx.compose.material3.AlertDialog(
+        com.laterbox.ui.components.GlassAlertDialog(
             onDismissRequest = { showDiscardConfirmDialog = false },
             title = {
                 Text(
@@ -880,8 +893,7 @@ fun SnapQuickCaptureSheet(
                     Text("Keep Editing", color = extended.primaryText)
                 }
             },
-            containerColor = extended.cardBackground,
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(26.dp)
         )
     }
 }
@@ -895,44 +907,50 @@ private fun SnapActionTile(
     modifier: Modifier = Modifier
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val tileShape = RoundedCornerShape(18.dp)
 
-    Row(
+    GlassSurface(
+        variant = GlassVariant.SUBTLE,
+        shape = tileShape,
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(extended.surfaceSecondary)
-            .border(1.dp, extended.border, RoundedCornerShape(18.dp))
+            .clip(tileShape)
             .clickable(onClick = onClick)
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(extended.cardBackground)
-                .border(1.dp, extended.border, CircleShape),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = extended.primaryText,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = extended.primaryText
-            )
-            Text(
-                text = description,
-                fontSize = 11.sp,
-                color = extended.secondaryText
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(extended.cardBackground)
+                    .border(1.dp, extended.border, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = extended.primaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = extended.primaryText
+                )
+                Text(
+                    text = description,
+                    fontSize = 11.sp,
+                    color = extended.secondaryText
+                )
+            }
         }
     }
 }

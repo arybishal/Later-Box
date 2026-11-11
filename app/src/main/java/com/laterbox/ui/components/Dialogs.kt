@@ -41,6 +41,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.Dialog
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -75,6 +78,66 @@ fun getIconForName(name: String?): ImageVector {
     return PLAYLIST_ICONS.firstOrNull { it.first == name }?.second ?: Icons.Default.Bookmark
 }
 
+/**
+ * Reusable Elevated Glass Modal Dialog for Later Box.
+ */
+@Composable
+fun GlassAlertDialog(
+    onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissButton: (@Composable () -> Unit)? = null,
+    icon: (@Composable () -> Unit)? = null,
+    title: (@Composable () -> Unit)? = null,
+    text: (@Composable () -> Unit)? = null,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(26.dp)
+) {
+    Dialog(onDismissRequest = onDismissRequest) {
+        GlassSurface(
+            variant = GlassVariant.ELEVATED,
+            shape = shape,
+            modifier = modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
+                if (icon != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 16.dp)
+                    ) {
+                        icon()
+                    }
+                }
+                if (title != null) {
+                    Box(modifier = Modifier.padding(bottom = 14.dp)) {
+                        title()
+                    }
+                }
+                if (text != null) {
+                    Box(modifier = Modifier.padding(bottom = 20.dp)) {
+                        text()
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    dismissButton?.invoke()
+                    if (dismissButton != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    confirmButton()
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun CreatePlaylistDialog(
     onDismiss: () -> Unit,
@@ -99,10 +162,9 @@ fun CreatePlaylistDialog(
     val isTooLong = name.length > 40
     val isValid = trimmedName.isNotEmpty() && !isDuplicate && !isTooLong
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = dialogTitle,
@@ -218,10 +280,9 @@ fun AddToPlaylistDialog(
     val selectedIds = remember { mutableStateListOf<Long>().apply { addAll(initiallySelectedIds) } }
     val extended = LaterBoxThemeTokens.extended
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -349,10 +410,9 @@ fun AddManualItemDialog(
                 !trimmedInput.startsWith("https://")
     }
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Save Content",
@@ -460,10 +520,9 @@ fun EditNotesDialog(
     val extended = LaterBoxThemeTokens.extended
     val isTooLong = notes.length > 2000
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Edit Notes",
@@ -533,10 +592,9 @@ fun AddTagDialog(
     val isTooLong = cleanTag.length > 30
     val isValid = cleanTag.isNotBlank() && !isTooLong
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = "Add Tag",
@@ -609,10 +667,9 @@ fun ConfirmationDialog(
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = title,

@@ -39,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.laterbox.data.model.SortOrder
 import com.laterbox.data.model.ViewMode
+import com.laterbox.ui.components.glass.GlassIconButton
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.ui.theme.SerifHeadlineFontFamily
 
@@ -65,14 +68,17 @@ fun LaterBoxHeader(
             modifier = Modifier.weight(1f)
         ) {
             if (showBack) {
-                IconButton(
+                GlassIconButton(
                     onClick = onBackClick,
-                    modifier = Modifier.padding(end = 8.dp)
+                    variant = GlassVariant.SUBTLE,
+                    size = 40.dp,
+                    modifier = Modifier.padding(end = 12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -108,46 +114,50 @@ fun GridListTogglePill(
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    Row(
+    val pillShape = RoundedCornerShape(12.dp)
+
+    GlassSurface(
+        variant = GlassVariant.SUBTLE,
+        shape = pillShape,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, extended.border, RoundedCornerShape(12.dp))
-            .background(extended.cardBackground)
-            .padding(3.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        val isGrid = currentMode == ViewMode.GRID
-
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(9.dp))
-                .background(if (isGrid) extended.pillActive else Color.Transparent)
-                .clickable { onModeChanged(ViewMode.GRID) }
-                .padding(horizontal = 14.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(3.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Grid",
-                fontSize = 13.sp,
-                fontWeight = if (isGrid) FontWeight.Bold else FontWeight.Normal,
-                color = if (isGrid) extended.pillActiveText else extended.textSecondary
-            )
-        }
+            val isGrid = currentMode == ViewMode.GRID
 
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(9.dp))
-                .background(if (!isGrid) extended.pillActive else Color.Transparent)
-                .clickable { onModeChanged(ViewMode.LIST) }
-                .padding(horizontal = 14.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "List",
-                fontSize = 13.sp,
-                fontWeight = if (!isGrid) FontWeight.Bold else FontWeight.Normal,
-                color = if (!isGrid) extended.pillActiveText else extended.textSecondary
-            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (isGrid) extended.pillActive else Color.Transparent)
+                    .clickable { onModeChanged(ViewMode.GRID) }
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Grid",
+                    fontSize = 13.sp,
+                    fontWeight = if (isGrid) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isGrid) extended.pillActiveText else extended.textSecondary
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (!isGrid) extended.pillActive else Color.Transparent)
+                    .clickable { onModeChanged(ViewMode.LIST) }
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "List",
+                    fontSize = 13.sp,
+                    fontWeight = if (!isGrid) FontWeight.Bold else FontWeight.Normal,
+                    color = if (!isGrid) extended.pillActiveText else extended.textSecondary
+                )
+            }
         }
     }
 }
@@ -174,35 +184,39 @@ fun SortDropdownSelector(
         Spacer(modifier = Modifier.width(10.dp))
 
         Box {
-            Row(
+            val selectorShape = RoundedCornerShape(10.dp)
+            GlassSurface(
+                variant = GlassVariant.SUBTLE,
+                shape = selectorShape,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, extended.border, RoundedCornerShape(10.dp))
-                    .background(extended.cardBackground)
+                    .clip(selectorShape)
                     .clickable { expanded = true }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = when (currentSort) {
-                        SortOrder.NEWEST -> "Newest first"
-                        SortOrder.OLDEST -> "Oldest first"
-                        SortOrder.TITLE_AZ -> "Title (A-Z)"
-                        SortOrder.LAST_OPENED -> "Recently opened"
-                    },
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (currentSort) {
+                            SortOrder.NEWEST -> "Newest first"
+                            SortOrder.OLDEST -> "Oldest first"
+                            SortOrder.TITLE_AZ -> "Title (A-Z)"
+                            SortOrder.LAST_OPENED -> "Recently opened"
+                        },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
 
-                Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = extended.textSecondary,
-                    modifier = Modifier.size(18.dp)
-                )
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = extended.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             DropdownMenu(

@@ -54,10 +54,9 @@ fun BackupInspectionDialog(
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault()) }
     val formattedDate = remember(manifest.createdAt) { dateFormat.format(Date(manifest.createdAt)) }
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -246,10 +245,9 @@ fun BackupProgressDialog(
 ) {
     val extended = LaterBoxThemeTokens.extended
 
-    AlertDialog(
+    GlassAlertDialog(
         onDismissRequest = {}, // Non-cancelable during critical I/O
         shape = RoundedCornerShape(26.dp),
-        containerColor = extended.cardBackground,
         title = {
             Text(
                 text = title,

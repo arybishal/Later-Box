@@ -52,6 +52,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import com.laterbox.ui.components.glass.GlassIconButton
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -137,23 +140,16 @@ fun EventsScreen(
                     )
                 }
 
-                // + New Event Action
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(extended.surfaceSecondary)
-                        .border(1.dp, extended.border, CircleShape)
-                        .clickable { showCreateDialog = true },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "New Event",
-                        tint = extended.primaryText,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                // + New Event Action Glass Button
+                GlassIconButton(
+                    onClick = { showCreateDialog = true },
+                    variant = GlassVariant.SUBTLE,
+                    icon = Icons.Default.Add,
+                    contentDescription = "New Event",
+                    tint = extended.primaryText,
+                    size = 42.dp,
+                    iconSize = 22.dp
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -280,24 +276,43 @@ private fun EventFilterChip(
     onClick: () -> Unit
 ) {
     val extended = LaterBoxThemeTokens.extended
-    val background = if (isSelected) extended.buttonPrimary else extended.surfaceSecondary
-    val textColor = if (isSelected) extended.buttonPrimaryText else extended.primaryText
-    val border = if (isSelected) extended.buttonPrimary else extended.border
 
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(background)
-            .border(1.dp, border, CircleShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp)
-    ) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = textColor
-        )
+    if (isSelected) {
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(extended.buttonPrimary)
+                .border(1.dp, extended.buttonPrimary, CircleShape)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 14.dp, vertical = 7.dp)
+        ) {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = extended.buttonPrimaryText
+            )
+        }
+    } else {
+        GlassSurface(
+            variant = GlassVariant.SUBTLE,
+            shape = CircleShape,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = onClick)
+        ) {
+            Box(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = extended.primaryText
+                )
+            }
+        }
     }
 }
 
@@ -615,11 +630,12 @@ private fun CreateEventDialog(
         }
     }
 
+    val dialogShape = RoundedCornerShape(26.dp)
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = extended.cardBackground,
-            border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
+        GlassSurface(
+            variant = GlassVariant.ELEVATED,
+            shape = dialogShape,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 680.dp)

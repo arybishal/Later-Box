@@ -74,6 +74,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.laterbox.ui.components.glass.GlassIconButton
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
 import com.laterbox.data.ai.security.SecureApiKeyStorage
 import com.laterbox.data.local.entity.AiAnalysisEntity
 import androidx.compose.runtime.Composable
@@ -198,51 +201,43 @@ fun ItemDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(extended.surfaceSecondary)
-                            .border(1.dp, extended.border, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    GlassSurface(
+                        variant = GlassVariant.SUBTLE,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.padding(vertical = 4.dp)
                     ) {
                         Text(
                             text = item.contentType.displayName.uppercase(Locale.ROOT),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = extended.primaryText,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.5.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
                 },
                 navigationIcon = {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(extended.surfaceSecondary)
-                            .border(1.dp, extended.border, CircleShape)
-                            .clickable(onClick = onBack),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = extended.primaryIcons,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    Box(modifier = Modifier.padding(start = 12.dp)) {
+                        GlassIconButton(
+                            onClick = onBack,
+                            variant = GlassVariant.SUBTLE,
+                            size = 40.dp
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = extended.primaryIcons,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 },
                 actions = {
                     // Favorite Toggle Action
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(extended.surfaceSecondary)
-                            .border(1.dp, extended.border, CircleShape)
-                            .clickable { viewModel.toggleFavorite() },
-                        contentAlignment = Alignment.Center
+                    GlassIconButton(
+                        onClick = { viewModel.toggleFavorite() },
+                        variant = GlassVariant.SUBTLE,
+                        size = 40.dp
                     ) {
                         Icon(
                             imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -256,14 +251,10 @@ fun ItemDetailScreen(
 
                     // Share Action (if hasUrl)
                     if (hasUrl) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(extended.surfaceSecondary)
-                                .border(1.dp, extended.border, CircleShape)
-                                .clickable { shareItem(context, item) },
-                            contentAlignment = Alignment.Center
+                        GlassIconButton(
+                            onClick = { shareItem(context, item) },
+                            variant = GlassVariant.SUBTLE,
+                            size = 40.dp
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -278,14 +269,10 @@ fun ItemDetailScreen(
 
                     // More Actions Overflow
                     Box {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(extended.surfaceSecondary)
-                                .border(1.dp, extended.border, CircleShape)
-                                .clickable { showMenu = true },
-                            contentAlignment = Alignment.Center
+                        GlassIconButton(
+                            onClick = { showMenu = true },
+                            variant = GlassVariant.SUBTLE,
+                            size = 40.dp
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,

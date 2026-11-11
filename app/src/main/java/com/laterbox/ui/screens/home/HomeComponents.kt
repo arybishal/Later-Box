@@ -90,6 +90,10 @@ import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.local.relation.PlaylistWithCount
 import com.laterbox.data.model.ContentType
 import com.laterbox.ui.components.formatRelativeDate
+import com.laterbox.ui.components.glass.GlassIconButton
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassTokens
+import com.laterbox.ui.theme.GlassVariant
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 import com.laterbox.ui.theme.SerifHeadlineFontFamily
 import java.io.File
@@ -149,51 +153,27 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Circular Search Action
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .shadow(1.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(extended.cardBackground)
-                    .border(1.dp, extended.border, CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onNavigateToSearch
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = "Search",
-                    tint = extended.primaryIcons,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Circular Glass Search Action
+            GlassIconButton(
+                onClick = onNavigateToSearch,
+                variant = GlassVariant.SUBTLE,
+                icon = Icons.Outlined.Search,
+                contentDescription = "Search",
+                tint = extended.primaryIcons,
+                size = 42.dp,
+                iconSize = 20.dp
+            )
 
-            // Circular Settings Action
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .shadow(1.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(extended.cardBackground)
-                    .border(1.dp, extended.border, CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onNavigateToSettings
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Settings",
-                    tint = extended.primaryIcons,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Circular Glass Settings Action
+            GlassIconButton(
+                onClick = onNavigateToSettings,
+                variant = GlassVariant.SUBTLE,
+                icon = Icons.Outlined.Settings,
+                contentDescription = "Settings",
+                tint = extended.primaryIcons,
+                size = 42.dp,
+                iconSize = 20.dp
+            )
         }
     }
 }
@@ -943,20 +923,19 @@ fun FloatingAiAssistantPill(
     modifier: Modifier = Modifier
 ) {
     val extended = LaterBoxThemeTokens.extended
+    val pillShape = RoundedCornerShape(percent = 50)
 
-    Box(
+    GlassSurface(
+        variant = GlassVariant.REFRACTIVE,
+        shape = pillShape,
         modifier = modifier
-            .shadow(6.dp, RoundedCornerShape(percent = 50), spotColor = Color(0x25000000))
-            .clip(RoundedCornerShape(percent = 50))
-            .background(extended.surfaceElevated)
-            .border(1.dp, extended.border, RoundedCornerShape(percent = 50))
+            .clip(pillShape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 20.dp, vertical = 11.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 20.dp, vertical = 11.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1019,28 +998,35 @@ fun AskGeminiAssistantSheet(
         caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
     }
 
+    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = extended.cardBackground,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .width(38.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(extended.border)
-            )
-        }
+        containerColor = Color.Transparent,
+        shape = sheetShape,
+        dragHandle = null
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+        GlassSurface(
+            variant = GlassVariant.ELEVATED,
+            shape = sheetShape,
+            modifier = Modifier.fillMaxWidth()
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 14.dp, bottom = 32.dp)
+            ) {
+                // Centered glass drag handle
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 14.dp)
+                        .width(38.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(extended.secondaryText.copy(alpha = 0.35f))
+                )
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1319,6 +1305,7 @@ fun AskGeminiAssistantSheet(
             }
         }
     }
+}
 }
 
 /**

@@ -47,6 +47,8 @@ import com.laterbox.data.model.richnote.ListType
 import com.laterbox.data.model.richnote.SpanType
 import com.laterbox.data.model.richnote.TextAlignment
 import com.laterbox.data.model.richnote.TextStyleType
+import com.laterbox.ui.components.glass.GlassSurface
+import com.laterbox.ui.theme.GlassVariant
 import com.laterbox.ui.theme.LaterBoxThemeTokens
 
 @Composable
@@ -66,14 +68,14 @@ fun RichNoteFormattingToolbar(
     val extended = LaterBoxThemeTokens.extended
     val scrollState = rememberScrollState()
 
-    Surface(
+    val toolbarShape = RoundedCornerShape(16.dp)
+
+    GlassSurface(
+        variant = GlassVariant.STANDARD,
+        shape = toolbarShape,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = extended.cardBackground,
-        border = androidx.compose.foundation.BorderStroke(1.dp, extended.border),
-        shadowElevation = 2.dp
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             modifier = Modifier

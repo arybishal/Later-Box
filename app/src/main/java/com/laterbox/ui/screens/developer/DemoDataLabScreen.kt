@@ -43,6 +43,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.laterbox.ui.components.GlassAlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -163,7 +164,7 @@ fun DemoDataLabScreen(
     uiState.pendingConfirmation?.let { conf ->
         when (conf) {
             is PendingConfirmation.Generate -> {
-                AlertDialog(
+                GlassAlertDialog(
                     onDismissRequest = { viewModel.dismissConfirmation() },
                     title = {
                         Text(
@@ -199,12 +200,11 @@ fun DemoDataLabScreen(
                             Text("Cancel", color = extended.secondaryText)
                         }
                     },
-                    containerColor = extended.cardBackground,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(26.dp)
                 )
             }
             is PendingConfirmation.Remove -> {
-                AlertDialog(
+                GlassAlertDialog(
                     onDismissRequest = { viewModel.dismissConfirmation() },
                     title = {
                         Text(
@@ -240,8 +240,7 @@ fun DemoDataLabScreen(
                             Text("Cancel", color = extended.secondaryText)
                         }
                     },
-                    containerColor = extended.cardBackground,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(26.dp)
                 )
             }
         }
