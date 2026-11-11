@@ -79,6 +79,27 @@ class PlaylistDetailViewModel(
         }
     }
 
+    fun toggleArchive(item: SavedItemEntity) {
+        viewModelScope.launch {
+            contentRepository.toggleArchive(item.id, item.isArchived)
+        }
+    }
+
+    val allPlaylists: StateFlow<List<PlaylistEntity>> = playlistRepository.getAllPlaylists()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun updateNotes(itemId: Long, notes: String?) {
+        viewModelScope.launch {
+            contentRepository.updateNotes(itemId, notes ?: "")
+        }
+    }
+
+    fun updatePlaylistsForItem(contentId: Long, playlistIds: List<Long>) {
+        viewModelScope.launch {
+            playlistRepository.updatePlaylistsForItem(contentId, playlistIds)
+        }
+    }
+
     fun moveToTrash(itemId: Long) {
         viewModelScope.launch {
             contentRepository.softDelete(itemId)

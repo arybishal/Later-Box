@@ -44,11 +44,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laterbox.LaterBoxApp
 import com.laterbox.data.local.entity.SavedItemEntity
+import com.laterbox.ui.components.AddToPlaylistDialog
 import com.laterbox.ui.components.ConfirmationDialog
 import com.laterbox.ui.components.ContentActionsSheet
 import com.laterbox.ui.components.ContentCardList
 import com.laterbox.ui.components.ContextualEmptyState
 import com.laterbox.ui.components.CreatePlaylistDialog
+import com.laterbox.ui.components.EditNotesDialog
 import com.laterbox.ui.components.EmptyStateView
 import com.laterbox.ui.components.LaterBoxHeader
 import com.laterbox.ui.components.LaterBoxSearchBar
@@ -80,6 +82,8 @@ fun PlaylistDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedItemForActions by remember { mutableStateOf<SavedItemEntity?>(null) }
+    var selectedItemForNotes by remember { mutableStateOf<SavedItemEntity?>(null) }
+    var selectedItemForPlaylists by remember { mutableStateOf<SavedItemEntity?>(null) }
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -179,15 +183,20 @@ fun PlaylistDetailScreen(
             sheetState = bottomSheetState,
             onDismiss = { selectedItemForActions = null },
             onOpenInApp = { onOpenItem(item) },
-            onAddToPlaylist = {},
+            onAddToPlaylist = { selectedItemForPlaylists = item },
             onToggleFavorite = {
                 viewModel.toggleFavorite(item)
                 LaterBoxSnackbarController.showMessage(
                     if (!item.isFavorite) "Added to Favorites" else "Removed from Favorites"
                 )
             },
-            onToggleArchive = {},
-            onEditNotes = {},
+            onToggleArchive = {
+                viewModel.toggleArchive(item)
+                LaterBoxSnackbarController.showMessage(
+                    if (!item.isArchived) "Item archived" else "Item unarchived"
+                )
+            },
+            onEditNotes = { selectedItemForNotes = item },
             onRemoveFromPlaylist = {
                 viewModel.removeItemFromPlaylist(item.id)
                 LaterBoxSnackbarController.showMessage("Removed from \"${playlist?.name}\"")
@@ -203,6 +212,38 @@ fun PlaylistDetailScreen(
                         }
                     }
                 )
+            }
+        )
+    }
+
+    // Edit Notes Dialog
+    selectedItemForNotes?.let { item ->
+        EditNotesDialog(
+            initialNotes = item.notes,
+            onDismiss = { selectedItemForNotes = null },
+            onSave = { updatedNotes ->
+                viewModel.updateNotes(item.id, updatedNotes)
+                selectedItemForNotes = null
+                LaterBoxSnackbarController.showMessage("Notes updated")
+            }
+        )
+    }
+
+    // Add To Playlist Dialog
+    selectedItemForPlaylists?.let { item ->
+        val allPlaylists by viewModel.allPlaylists.collectAsState()
+        val currentPlaylists by LaterBoxApp.instance.playlistRepository.getPlaylistsForItem(item.id).collectAsState(initial = emptyList())
+        AddToPlaylistDialog(
+            allPlaylists = allPlaylists,
+            initiallySelectedIds = currentPlaylists.map { it.id },
+            onDismiss = { selectedItemForPlaylists = null },
+            onSavePlaylists = { pIds ->
+                viewModel.updatePlaylistsForItem(item.id, pIds)
+                selectedItemForPlaylists = null
+                LaterBoxSnackbarController.showMessage("Playlists updated")
+            },
+            onCreateNewPlaylist = {
+                selectedItemForPlaylists = null
             }
         )
     }

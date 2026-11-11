@@ -126,6 +126,20 @@ fun SnapQuickCaptureSheet(
     var linkUrl by remember { mutableStateOf("") }
     var isSavingLink by remember { mutableStateOf(false) }
 
+    var showDiscardConfirmDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = (currentMode == SnapMode.VOICE_RECORD && recordingState != RecordingState.IDLE) ||
+            (currentMode == SnapMode.QUICK_NOTE && (noteTitle.isNotBlank() || noteContent.isNotBlank())) ||
+            (currentMode == SnapMode.SAVE_LINK && linkUrl.isNotBlank())
+
+    val requestDismiss = {
+        if (hasUnsavedChanges) {
+            showDiscardConfirmDialog = true
+        } else {
+            onDismiss()
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             if (audioRecorder.recordingState.value != RecordingState.IDLE) {
@@ -274,12 +288,7 @@ fun SnapQuickCaptureSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = {
-            if (recordingState != RecordingState.IDLE) {
-                audioRecorder.cancelRecording()
-            }
-            onDismiss()
-        },
+        onDismissRequest = requestDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = extended.cardBackground,
@@ -310,10 +319,11 @@ fun SnapQuickCaptureSheet(
                     if (currentMode != SnapMode.MENU) {
                         IconButton(
                             onClick = {
-                                if (recordingState != RecordingState.IDLE) {
-                                    audioRecorder.cancelRecording()
+                                if (hasUnsavedChanges) {
+                                    showDiscardConfirmDialog = true
+                                } else {
+                                    currentMode = SnapMode.MENU
                                 }
-                                currentMode = SnapMode.MENU
                             },
                             modifier = Modifier.size(36.dp)
                         ) {
@@ -511,7 +521,7 @@ fun SnapQuickCaptureSheet(
                             val minutes = elapsedSeconds / 60
                             val seconds = elapsedSeconds % 60
                             Text(
-                                text = String.format("%02d:%02d", minutes, seconds),
+                                text = String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds),
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = extended.primaryText,
@@ -598,7 +608,7 @@ fun SnapQuickCaptureSheet(
                                         scope.launch {
                                             val item = SavedItemEntity(
                                                 url = "file://${file.absolutePath}",
-                                                title = "Voice Note (${String.format("%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)})",
+                                                title = "Voice Note (${String.format(java.util.Locale.getDefault(), "%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)})",
                                                 localMediaPath = file.absolutePath,
                                                 contentType = ContentType.AUDIO,
                                                 mimeType = "audio/mp4",
@@ -726,6 +736,12 @@ fun SnapQuickCaptureSheet(
                                     )
                                 }
                             },
+                            supportingText = {
+                                val clean = linkUrl.trim()
+                                if (clean.isNotBlank() && !clean.startsWith("http://") && !clean.startsWith("https://") && clean.contains(".")) {
+                                    Text("Will be saved as https://$clean", fontSize = 11.sp, color = extended.textSecondary)
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -788,6 +804,52 @@ fun SnapQuickCaptureSheet(
                 }
             }
         }
+    }
+
+    if (showDiscardConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDiscardConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Discard unsaved changes?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = extended.primaryText
+                )
+            },
+            text = {
+                Text(
+                    text = "You have an active draft or recording that has not been saved.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = extended.secondaryText
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        if (recordingState != RecordingState.IDLE) {
+                            audioRecorder.cancelRecording()
+                        }
+                        noteTitle = ""
+                        noteContent = ""
+                        linkUrl = ""
+                        showDiscardConfirmDialog = false
+                        onDismiss()
+                    }
+                ) {
+                    Text("Discard", color = extended.warmError, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showDiscardConfirmDialog = false }
+                ) {
+                    Text("Keep Editing", color = extended.primaryText)
+                }
+            },
+            containerColor = extended.cardBackground,
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 }
 
