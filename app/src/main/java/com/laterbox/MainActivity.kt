@@ -12,6 +12,7 @@ import com.laterbox.data.update.UpdateInfo
 import com.laterbox.ui.components.UpdateDetailsDialog
 import kotlinx.coroutines.flow.first
 import com.laterbox.ui.screens.detail.ItemDetailScreen
+import com.laterbox.ui.screens.note.RichNoteEditorScreen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -392,7 +393,11 @@ fun MainAppScaffold() {
     ) { paddingValues ->
         val context = androidx.compose.ui.platform.LocalContext.current
         val handleOpenItem: (SavedItemEntity) -> Unit = { item ->
-            navController.navigate(Screen.ItemDetail.createRoute(item.id))
+            if (item.contentType == com.laterbox.data.model.ContentType.NOTE) {
+                navController.navigate(Screen.NoteEditor.createRoute(item.id, initialEdit = false))
+            } else {
+                navController.navigate(Screen.ItemDetail.createRoute(item.id))
+            }
         }
 
         Column(
@@ -426,7 +431,10 @@ fun MainAppScaffold() {
                     onNavigateToEvents = {
                         navController.navigate(Screen.Events.route)
                     },
-                    onOpenItem = handleOpenItem
+                    onOpenItem = handleOpenItem,
+                    onOpenNoteEditor = { noteId, isEdit ->
+                        navController.navigate(Screen.NoteEditor.createRoute(noteId, isEdit))
+                    }
                 )
             }
 
@@ -442,7 +450,10 @@ fun MainAppScaffold() {
                 val category = backStackEntry.arguments?.getString("category") ?: "All"
                 LibraryScreen(
                     initialCategory = category,
-                    onOpenItem = handleOpenItem
+                    onOpenItem = handleOpenItem,
+                    onOpenNoteEditor = { noteId, isEdit ->
+                        navController.navigate(Screen.NoteEditor.createRoute(noteId, isEdit))
+                    }
                 )
             }
 
@@ -510,9 +521,34 @@ fun MainAppScaffold() {
                     onOpenViewer = { item ->
                         navController.navigate(Screen.ContentViewer.createRoute(item.id))
                     },
+                    onOpenNoteEditor = { noteItemId, isEdit ->
+                        navController.navigate(Screen.NoteEditor.createRoute(noteItemId, isEdit))
+                    },
                     onNavigateToAiSettings = {
                         navController.navigate(Screen.GeminiSettings.route)
                     }
+                )
+            }
+
+            composable(
+                route = Screen.NoteEditor.route,
+                arguments = listOf(
+                    navArgument("itemId") {
+                        type = NavType.LongType
+                        defaultValue = 0L
+                    },
+                    navArgument("initialEdit") {
+                        type = NavType.BoolType
+                        defaultValue = true
+                    }
+                )
+            ) { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getLong("itemId") ?: 0L
+                val initialEdit = backStackEntry.arguments?.getBoolean("initialEdit") ?: true
+                RichNoteEditorScreen(
+                    itemId = itemId,
+                    initialEdit = initialEdit,
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -546,6 +582,9 @@ fun MainAppScaffold() {
             onDismiss = { showSnapSheet = false },
             onItemCaptured = { item ->
                 navController.navigate(Screen.ItemDetail.createRoute(item.id))
+            },
+            onOpenRichEditor = { noteId ->
+                navController.navigate(Screen.NoteEditor.createRoute(noteId, true))
             }
         )
     }

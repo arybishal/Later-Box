@@ -130,6 +130,7 @@ fun ItemDetailScreen(
     onBack: () -> Unit,
     onOpenViewer: (SavedItemEntity) -> Unit,
     onNavigateToAiSettings: () -> Unit = {},
+    onOpenNoteEditor: ((Long, Boolean) -> Unit)? = null,
     viewModel: ItemDetailViewModel = viewModel(
         factory = ItemDetailViewModelFactory(itemId)
     )
@@ -316,7 +317,11 @@ fun ItemDetailScreen(
                                 text = { Text(if (item.notes.isNullOrBlank()) "Add Note" else "Edit Note", color = extended.primaryText) },
                                 onClick = {
                                     showMenu = false
-                                    showEditNotesDialog = true
+                                    if (onOpenNoteEditor != null) {
+                                        onOpenNoteEditor(item.id, true)
+                                    } else {
+                                        showEditNotesDialog = true
+                                    }
                                 },
                                 leadingIcon = {
                                     Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, tint = extended.primaryIcons)
@@ -416,7 +421,8 @@ fun ItemDetailScreen(
                             viewModel.recordLastOpened()
                             SocialLinkResolver.openSocialOrWebLink(context, item.url)
                         }
-                    }
+                    },
+                    onOpenNoteEditor = onOpenNoteEditor
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -654,7 +660,13 @@ fun ItemDetailScreen(
                         .clip(RoundedCornerShape(20.dp))
                         .background(extended.pillInactive)
                         .border(1.dp, extended.border, RoundedCornerShape(20.dp))
-                        .clickable { onOpenViewer(item) }
+                        .clickable {
+                            if (item.contentType == ContentType.NOTE && onOpenNoteEditor != null) {
+                                onOpenNoteEditor(item.id, false)
+                            } else {
+                                onOpenViewer(item)
+                            }
+                        }
                         .padding(vertical = 12.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -683,7 +695,13 @@ fun ItemDetailScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(extended.buttonPrimary)
-                        .clickable { showEditNotesDialog = true }
+                        .clickable {
+                            if (onOpenNoteEditor != null) {
+                                onOpenNoteEditor(item.id, true)
+                            } else {
+                                showEditNotesDialog = true
+                            }
+                        }
                         .padding(vertical = 14.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -886,7 +904,13 @@ fun ItemDetailScreen(
                     color = extended.primaryBlack,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .clickable { showEditNotesDialog = true }
+                        .clickable {
+                            if (onOpenNoteEditor != null) {
+                                onOpenNoteEditor(item.id, true)
+                            } else {
+                                showEditNotesDialog = true
+                            }
+                        }
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
@@ -900,7 +924,13 @@ fun ItemDetailScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .background(extended.pillInactive)
                         .border(1.dp, extended.border, RoundedCornerShape(10.dp))
-                        .clickable { showEditNotesDialog = true }
+                        .clickable {
+                            if (onOpenNoteEditor != null) {
+                                onOpenNoteEditor(item.id, true)
+                            } else {
+                                showEditNotesDialog = true
+                            }
+                        }
                         .padding(14.dp)
                 ) {
                     Text(
@@ -1103,7 +1133,8 @@ fun ItemDetailScreen(
 private fun ContentPreviewSection(
     item: SavedItemEntity,
     onOpenViewer: () -> Unit,
-    onOpenOriginal: () -> Unit
+    onOpenOriginal: () -> Unit,
+    onOpenNoteEditor: ((Long, Boolean) -> Unit)? = null
 ) {
     val extended = LaterBoxThemeTokens.extended
     val previewModel = item.localMediaPath?.let { File(it) } ?: item.thumbnailUrl ?: item.url
@@ -1352,39 +1383,59 @@ private fun ContentPreviewSection(
         }
 
         ContentType.NOTE -> {
+            val previewText = remember(item.notes, item.title) {
+                com.laterbox.data.model.richnote.RichDocument.fromJson(item.notes).toPlainText().ifBlank { item.title }
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .background(extended.pillInactive)
                     .border(1.dp, extended.border, RoundedCornerShape(20.dp))
+                    .clickable {
+                        onOpenNoteEditor?.invoke(item.id, false)
+                    }
                     .padding(20.dp)
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Notes,
-                            contentDescription = null,
-                            tint = extended.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Notes,
+                                contentDescription = null,
+                                tint = extended.textSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "SAVED NOTE CONTENT",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = extended.textSecondary,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
                         Text(
-                            text = "SAVED NOTE CONTENT",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = extended.textSecondary,
-                            letterSpacing = 0.5.sp
+                            text = "Tap to read / edit",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = extended.interactiveAccent
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = item.notes?.ifBlank { item.title } ?: item.title,
+                        text = previewText,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             lineHeight = 22.sp
                         ),
-                        color = extended.primaryBlack
+                        color = extended.primaryBlack,
+                        maxLines = 8,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

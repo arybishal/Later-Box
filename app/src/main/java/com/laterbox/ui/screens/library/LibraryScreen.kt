@@ -68,6 +68,7 @@ import com.laterbox.ui.theme.SerifHeadlineFontFamily
 fun LibraryScreen(
     onOpenItem: (SavedItemEntity) -> Unit,
     initialCategory: String = "All",
+    onOpenNoteEditor: ((Long, Boolean) -> Unit)? = null,
     viewModel: LibraryViewModel = viewModel()
 ) {
     val extended = LaterBoxThemeTokens.extended
@@ -272,7 +273,13 @@ fun LibraryScreen(
                     if (!item.isArchived) "Item archived" else "Item unarchived"
                 )
             },
-            onEditNotes = { selectedItemForNotes = item },
+            onEditNotes = {
+                if (onOpenNoteEditor != null) {
+                    onOpenNoteEditor(item.id, true)
+                } else {
+                    selectedItemForNotes = item
+                }
+            },
             onMoveToTrash = {
                 viewModel.moveToTrash(item.id)
                 LaterBoxSnackbarController.showMessage(

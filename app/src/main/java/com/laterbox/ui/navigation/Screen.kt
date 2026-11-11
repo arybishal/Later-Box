@@ -20,6 +20,9 @@ sealed class Screen(val route: String, val title: String) {
     object GeminiSettings : Screen("settings/gemini", "Gemini AI")
     object Trash : Screen("trash", "Trash")
     object Events : Screen("events", "Events")
+    object NoteEditor : Screen("note_editor?itemId={itemId}&initialEdit={initialEdit}", "Note") {
+        fun createRoute(itemId: Long = 0L, initialEdit: Boolean = true) = "note_editor?itemId=$itemId&initialEdit=$initialEdit"
+    }
 }
 
 val MAIN_BOTTOM_NAV_ROUTES = listOf(

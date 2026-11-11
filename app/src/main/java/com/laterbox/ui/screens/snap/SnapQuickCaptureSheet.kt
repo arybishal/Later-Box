@@ -98,7 +98,8 @@ private enum class SnapMode {
 @Composable
 fun SnapQuickCaptureSheet(
     onDismiss: () -> Unit,
-    onItemCaptured: (SavedItemEntity) -> Unit = {}
+    onItemCaptured: (SavedItemEntity) -> Unit = {},
+    onOpenRichEditor: ((Long) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val extended = LaterBoxThemeTokens.extended
@@ -712,6 +713,38 @@ fun SnapQuickCaptureSheet(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Save Quick Note", fontWeight = FontWeight.Bold)
+                        }
+
+                        if (onOpenRichEditor != null) {
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        val title = noteTitle.ifBlank {
+                                            noteContent.lines().firstOrNull()?.take(40) ?: "Untitled Note"
+                                        }
+                                        val doc = com.laterbox.data.model.richnote.RichDocument(
+                                            title = title,
+                                            blocks = listOf(com.laterbox.data.model.richnote.RichBlock.Text(text = noteContent))
+                                        )
+                                        val item = SavedItemEntity(
+                                            url = "local://note/${System.currentTimeMillis()}",
+                                            title = title,
+                                            description = noteContent.take(160),
+                                            notes = doc.toJson(),
+                                            contentType = ContentType.NOTE,
+                                            isSnap = true,
+                                            captureMethod = "SNAP_NOTE"
+                                        )
+                                        val id = LaterBoxApp.instance.contentRepository.saveItem(item)
+                                        onDismiss()
+                                        onOpenRichEditor(id)
+                                    }
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Open in Full Rich Editor", color = extended.primaryBlack, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }

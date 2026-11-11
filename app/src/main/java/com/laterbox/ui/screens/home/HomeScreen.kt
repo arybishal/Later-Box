@@ -71,6 +71,7 @@ fun HomeScreen(
     onNavigateToFavorites: () -> Unit = onNavigateToLibrary,
     onNavigateToEvents: () -> Unit = {},
     onOpenItem: (SavedItemEntity) -> Unit,
+    onOpenNoteEditor: ((Long, Boolean) -> Unit)? = null,
     viewModel: HomeViewModel = viewModel()
 ) {
     val extended = LaterBoxThemeTokens.extended
@@ -344,8 +345,12 @@ fun HomeScreen(
                 selectedItemForActions = null
             },
             onEditNotes = {
-                selectedItemForNotes = item
                 selectedItemForActions = null
+                if (onOpenNoteEditor != null) {
+                    onOpenNoteEditor(item.id, true)
+                } else {
+                    selectedItemForNotes = item
+                }
             },
             onMoveToTrash = {
                 viewModel.moveToTrash(item.id)
