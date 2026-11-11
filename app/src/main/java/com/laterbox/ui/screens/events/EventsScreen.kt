@@ -244,7 +244,7 @@ fun EventsScreen(
                     )
                 }
                 item {
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(110.dp))
                 }
             }
         }

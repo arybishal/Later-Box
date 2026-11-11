@@ -943,7 +943,7 @@ fun SettingsScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(110.dp))
             }
         }
     }

@@ -257,12 +257,12 @@ fun HomeScreen(
             }
         }
 
-        // 3.6 Floating AI Assistant: Pill-shaped elevated action floating above content
+        // 3.6 Floating AI Assistant: Pill-shaped elevated action floating above content and bottom bar
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 90.dp)
         ) {
             FloatingAiAssistantPill(
                 onClick = { showAiSheet = true }

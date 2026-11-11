@@ -76,6 +76,7 @@ import com.laterbox.data.local.entity.SavedItemEntity
 import com.laterbox.data.model.ThemeMode
 import com.laterbox.ui.components.AddManualItemDialog
 import com.laterbox.ui.components.LaterBoxSnackbarController
+import com.laterbox.ui.components.LiquidGlassBottomBar
 import com.laterbox.ui.components.OfflineNoticeBanner
 import com.laterbox.ui.navigation.MAIN_BOTTOM_NAV_ROUTES
 import com.laterbox.ui.navigation.Screen
@@ -205,188 +206,9 @@ fun MainAppScaffold() {
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .padding(12.dp)
+                        .padding(bottom = if (showBottomBar) 84.dp else 0.dp)
                         .border(1.dp, extended.border, RoundedCornerShape(12.dp))
                 )
-            }
-        },
-        bottomBar = {
-            if (showBottomBar) {
-                val borderColor = extended.border
-                val surfaceColor = MaterialTheme.colorScheme.surface
-                val activeColor = extended.primaryBlack
-                val inactiveColor = extended.textSecondary
-                val highlightColor = extended.pillInactive
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(surfaceColor)
-                        .drawBehind {
-                            drawLine(
-                                color = borderColor,
-                                start = Offset(0f, 0f),
-                                end = Offset(size.width, 0f),
-                                strokeWidth = 1.dp.toPx()
-                            )
-                        }
-                        .navigationBarsPadding()
-                        .padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 1. Home
-                    val isHome = currentRoute == Screen.Home.route
-                    BottomNavTab(
-                        label = "Home",
-                        isSelected = isHome,
-                        activeColor = activeColor,
-                        inactiveColor = inactiveColor,
-                        highlightColor = highlightColor,
-                        onClick = {
-                            if (!isHome) {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = { tint ->
-                            Icon(
-                                imageVector = Icons.Outlined.Home,
-                                contentDescription = "Home",
-                                tint = tint,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    )
-
-                    // 2. Library
-                    val isLibrary = currentRoute == Screen.Library.route || currentRoute?.startsWith("library") == true
-                    BottomNavTab(
-                        label = "Library",
-                        isSelected = isLibrary,
-                        activeColor = activeColor,
-                        inactiveColor = inactiveColor,
-                        highlightColor = highlightColor,
-                        onClick = {
-                            if (!isLibrary) {
-                                navController.navigate(Screen.Library.createRoute("All")) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = { tint ->
-                            Canvas(modifier = Modifier.size(22.dp)) {
-                                val strokeW = 1.8.dp.toPx()
-                                val topY = size.height * 0.16f
-                                val botY = size.height * 0.84f
-                                drawLine(tint, Offset(size.width * 0.22f, topY), Offset(size.width * 0.22f, botY), strokeW)
-                                drawLine(tint, Offset(size.width * 0.38f, topY), Offset(size.width * 0.38f, botY), strokeW)
-                                drawLine(tint, Offset(size.width * 0.54f, topY), Offset(size.width * 0.54f, botY), strokeW)
-                                drawLine(tint, Offset(size.width * 0.68f, topY + 2f), Offset(size.width * 0.84f, botY), strokeW)
-                            }
-                        }
-                    )
-
-                    // 3. Snap (Prominent Center Action)
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable(
-                                role = androidx.compose.ui.semantics.Role.Button,
-                                onClickLabel = "Capture Snap memory"
-                            ) { showSnapSheet = true }
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(extended.buttonPrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Snap",
-                                tint = extended.buttonPrimaryText,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Snap",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeColor
-                        )
-                    }
-
-                    // 4. Events
-                    val isEvents = currentRoute == Screen.Events.route
-                    BottomNavTab(
-                        label = "Events",
-                        isSelected = isEvents,
-                        activeColor = activeColor,
-                        inactiveColor = inactiveColor,
-                        highlightColor = highlightColor,
-                        onClick = {
-                            if (!isEvents) {
-                                navController.navigate(Screen.Events.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = { tint ->
-                            Icon(
-                                imageVector = if (isEvents) Icons.Default.Event else Icons.Outlined.Event,
-                                contentDescription = "Events",
-                                tint = tint,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    )
-
-                    // 5. Settings
-                    val isSettings = currentRoute == Screen.Settings.route
-                    BottomNavTab(
-                        label = "Settings",
-                        isSelected = isSettings,
-                        activeColor = activeColor,
-                        inactiveColor = inactiveColor,
-                        highlightColor = highlightColor,
-                        onClick = {
-                            if (!isSettings) {
-                                navController.navigate(Screen.Settings.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = { tint ->
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = "Settings",
-                                tint = tint,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    )
-                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -400,23 +222,26 @@ fun MainAppScaffold() {
             }
         }
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(top = paddingValues.calculateTopPadding())
         ) {
-            if (!isOnline && !dismissOfflineBanner) {
-                OfflineNoticeBanner(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    onDismiss = { dismissOfflineBanner = true }
-                )
-            }
-
-            NavHost(
-                navController = navController,
-                startDestination = Screen.Home.route,
+            Column(
                 modifier = Modifier.fillMaxSize()
             ) {
+                if (!isOnline && !dismissOfflineBanner) {
+                    OfflineNoticeBanner(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        onDismiss = { dismissOfflineBanner = true }
+                    )
+                }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Home.route,
+                    modifier = Modifier.fillMaxSize()
+                ) {
             composable(Screen.Home.route) {
                 HomeScreen(
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
@@ -582,6 +407,64 @@ fun MainAppScaffold() {
             }
         }
     }
+
+    if (showBottomBar) {
+        LiquidGlassBottomBar(
+            currentRoute = currentRoute,
+            onNavigateToHome = {
+                if (currentRoute != Screen.Home.route) {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            },
+            onNavigateToEvents = {
+                if (currentRoute != Screen.Events.route) {
+                    navController.navigate(Screen.Events.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            },
+            onNavigateToLibrary = {
+                val isLibrary = currentRoute == Screen.Library.route || currentRoute?.startsWith("library") == true
+                if (!isLibrary) {
+                    navController.navigate(Screen.Library.createRoute("All")) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            },
+            onNavigateToSettings = {
+                if (currentRoute != Screen.Settings.route) {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            },
+            onSnapClick = { showSnapSheet = true },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+        )
+    }
+}
 }
 
     if (showSnapSheet) {
@@ -623,50 +506,6 @@ fun MainAppScaffold() {
                 navController.navigate(Screen.Settings.route)
                 updateManager.startDownload(updateInfo)
             }
-        )
-    }
-}
-
-@Composable
-private fun BottomNavTab(
-    label: String,
-    isSelected: Boolean,
-    activeColor: Color,
-    inactiveColor: Color,
-    highlightColor: Color,
-    onClick: () -> Unit,
-    icon: @Composable (tint: Color) -> Unit
-) {
-    val color = if (isSelected) activeColor else inactiveColor
-    val weight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .selectable(
-                selected = isSelected,
-                role = androidx.compose.ui.semantics.Role.Tab,
-                onClick = onClick
-            )
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isSelected) highlightColor else Color.Transparent)
-                .padding(horizontal = if (isSelected) 12.dp else 4.dp, vertical = 3.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            icon(color)
-        }
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = weight,
-            color = color
         )
     }
 }
