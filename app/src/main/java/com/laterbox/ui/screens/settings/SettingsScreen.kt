@@ -108,7 +108,7 @@ fun formatBytes(bytes: Long): String {
 
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)? = null,
     onNavigateToTrash: () -> Unit,
     onNavigateToGeminiSettings: () -> Unit = {}
 ) {
@@ -245,8 +245,8 @@ fun SettingsScreen(
             LaterBoxHeader(
                 greeting = "Settings",
                 subtitle = "Preferences, Data & Storage",
-                showBack = true,
-                onBackClick = onBack
+                showBack = onBack != null,
+                onBackClick = onBack ?: {}
             )
         },
         containerColor = extended.background
@@ -855,22 +855,6 @@ fun SettingsScreen(
                             activeUpdateForDetails = info
                         }
                     )
-
-                    if (!hasNotificationPermission && autoUpdateCheck && !dismissNotificationNotice) {
-                        Spacer(modifier = Modifier.height(14.dp))
-                        PermissionNoticeCard(
-                            title = "Notifications are disabled",
-                            description = "Enable notification access to receive alerts when app updates and scheduled reminders are ready.",
-                            actionLabel = "Open Settings",
-                            onOpenSettings = {
-                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                }
-                                context.startActivity(intent)
-                            },
-                            onDismiss = { dismissNotificationNotice = true }
-                        )
-                    }
                 }
             }
 

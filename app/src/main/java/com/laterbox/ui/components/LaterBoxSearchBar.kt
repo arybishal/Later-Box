@@ -128,51 +128,5 @@ fun PillFilterRow(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Horizontal scrollbar track matching exact screenshot styling
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "◀",
-                fontSize = 8.sp,
-                color = extended.textSecondary,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(extended.border.copy(alpha = 0.5f))
-            ) {
-                val totalItems = categories.size.toFloat()
-                val visibleIndex = listState.firstVisibleItemIndex.toFloat()
-                val offsetRatio = (visibleIndex / (totalItems - 3f).coerceAtLeast(1f)).coerceIn(0f, 0.65f)
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.35f)
-                        .height(6.dp)
-                        .align(Alignment.CenterStart)
-                        .padding(start = (offsetRatio * 180).dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(extended.textSecondary)
-                )
-            }
-
-            Text(
-                text = "▶",
-                fontSize = 8.sp,
-                color = extended.textSecondary,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
     }
 }

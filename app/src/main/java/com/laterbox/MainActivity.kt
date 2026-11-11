@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -275,15 +276,16 @@ fun MainAppScaffold() {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
                             .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClickLabel = "Capture Snap memory"
                             ) { showSnapSheet = true }
-                            .padding(horizontal = 8.dp)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(extended.buttonPrimary),
                             contentAlignment = Alignment.Center
@@ -502,7 +504,7 @@ fun MainAppScaffold() {
 
             composable(Screen.Settings.route) {
                 SettingsScreen(
-                    onBack = { navController.popBackStack() },
+                    onBack = null,
                     onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
                     onNavigateToGeminiSettings = { navController.navigate(Screen.GeminiSettings.route) }
                 )
@@ -560,11 +562,13 @@ private fun BottomNavTab(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onClick() }
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .selectable(
+                selected = isSelected,
+                role = androidx.compose.ui.semantics.Role.Tab,
+                onClick = onClick
+            )
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Box(
             modifier = Modifier
