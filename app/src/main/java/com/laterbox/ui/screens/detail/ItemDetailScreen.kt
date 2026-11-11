@@ -608,7 +608,7 @@ fun ItemDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(extended.buttonPrimary)
                         .clickable {
                             viewModel.recordLastOpened()
@@ -651,9 +651,9 @@ fun ItemDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(extended.pillInactive)
-                        .border(1.dp, extended.border, RoundedCornerShape(14.dp))
+                        .border(1.dp, extended.border, RoundedCornerShape(20.dp))
                         .clickable { onOpenViewer(item) }
                         .padding(vertical = 12.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center

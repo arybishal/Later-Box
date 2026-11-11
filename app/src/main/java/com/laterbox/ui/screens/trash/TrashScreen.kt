@@ -105,7 +105,8 @@ fun TrashScreen(
                         item = item,
                         onClick = { selectedItemForActions = item },
                         onFavoriteToggle = {},
-                        onMenuClick = { selectedItemForActions = item }
+                        onMenuClick = { selectedItemForActions = item },
+                        showFavorite = false
                     )
                 }
             }

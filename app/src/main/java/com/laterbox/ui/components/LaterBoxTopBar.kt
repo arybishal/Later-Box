@@ -121,7 +121,7 @@ fun GridListTogglePill(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(9.dp))
-                .background(if (isGrid) extended.gridListActive else Color.Transparent)
+                .background(if (isGrid) extended.pillActive else Color.Transparent)
                 .clickable { onModeChanged(ViewMode.GRID) }
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
@@ -130,14 +130,14 @@ fun GridListTogglePill(
                 text = "Grid",
                 fontSize = 13.sp,
                 fontWeight = if (isGrid) FontWeight.Bold else FontWeight.Normal,
-                color = if (isGrid) MaterialTheme.colorScheme.onBackground else extended.textSecondary
+                color = if (isGrid) extended.pillActiveText else extended.textSecondary
             )
         }
 
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(9.dp))
-                .background(if (!isGrid) extended.gridListActive else Color.Transparent)
+                .background(if (!isGrid) extended.pillActive else Color.Transparent)
                 .clickable { onModeChanged(ViewMode.LIST) }
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
@@ -146,7 +146,7 @@ fun GridListTogglePill(
                 text = "List",
                 fontSize = 13.sp,
                 fontWeight = if (!isGrid) FontWeight.Bold else FontWeight.Normal,
-                color = if (!isGrid) MaterialTheme.colorScheme.onBackground else extended.textSecondary
+                color = if (!isGrid) extended.pillActiveText else extended.textSecondary
             )
         }
     }

@@ -266,7 +266,8 @@ fun ContentCardList(
     onClick: () -> Unit,
     onFavoriteToggle: () -> Unit,
     onMenuClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showFavorite: Boolean = true
 ) {
     val extended = LaterBoxThemeTokens.extended
 
@@ -343,16 +344,18 @@ fun ContentCardList(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(
-                    onClick = onFavoriteToggle,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (item.isFavorite) extended.primaryText else extended.secondaryIcons,
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (showFavorite) {
+                    IconButton(
+                        onClick = onFavoriteToggle,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (item.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (item.isFavorite) extended.primaryText else extended.secondaryIcons,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
                 IconButton(
                     onClick = onMenuClick,
